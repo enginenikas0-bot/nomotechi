@@ -98,8 +98,16 @@ def run_bot_update_manual():
         progress_bar.progress(progress)
         status_text.text(f"📡 Σάρωση: {source}...")
         
+         
         try:
-            feed = feedparser.parse(url)
+            feed = feedparser.parse(url, agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+            
+            if not feed.entries and feed.bozo:
+                print(f"⚠️ Πρόβλημα με {source}: {feed.bozo_exception}")
+                continue
+                
+            for entry in feed.entries[:3]: 
+               
             for entry in feed.entries[:3]: 
                 if entry.link not in existing_links:
                     category = guess_category(entry.title + " " + entry.summary)
@@ -277,3 +285,4 @@ elif selected_page == "⚙️ Διαχείριση (Admin)":
         
     elif password != "":
         st.error("Λάθος κωδικός.")
+
