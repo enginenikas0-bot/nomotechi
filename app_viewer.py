@@ -4,14 +4,15 @@ import gspread
 import feedparser
 from datetime import datetime
 
-# --- ΡΥΘΜΙΣΕΙΣ ΣΕΛΙΔΑΣ (PROFESSIONAL LOOK) ---
+# --- 1. ΡΥΘΜΙΣΕΙΣ ΣΕΛΙΔΑΣ (Setup) ---
 st.set_page_config(
-    page_title="NomoTechi | Νομική Ενημέρωση Μηχανικών",
+    page_title="NomoTechi | Portal Μηχανικών",
     page_icon="🏛️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- ΣΥΝΔΕΣΗ ΜΕ GOOGLE SHEETS ---
+# --- 2. ΣΥΝΔΕΣΗ ΜΕ ΒΑΣΗ (Google Sheets) ---
 def get_db_connection():
     try:
         credentials_dict = st.secrets["gcp_service_account"]
@@ -19,7 +20,7 @@ def get_db_connection():
         sh = gc.open("laws_database")
         return sh.sheet1
     except Exception as e:
-        st.error(f"⚠️ Σφάλμα σύνδεσης συστήματος: {e}")
+        st.error(f"⚠️ Σφάλμα σύνδεσης: {e}")
         return None
 
 def load_data():
@@ -31,22 +32,21 @@ def load_data():
             return []
     return []
 
-# --- ΛΟΓΙΚΗ ΚΑΤΗΓΟΡΙΟΠΟΙΗΣΗΣ (ΕΠΙΣΗΜΑ ΣΥΜΒΟΛΑ) ---
+# --- 3. ΛΟΓΙΚΗ ΚΑΤΗΓΟΡΙΩΝ (Smart Tagging) ---
 def guess_category(text):
     text = text.lower()
-    # Χρησιμοποιούμε πιο "αυστηρά" σύμβολα
-    if any(x in text for x in ['αυθαίρετα', 'νόμος 4495', 'πολεοδομία', 'δόμηση', 'κτιριοδομικός', 'αδειες', 'ν.ο.κ.', 'νοκ']):
+    if any(x in text for x in ['αυθαίρετα', 'νόμος 4495', 'πολεοδομία', 'δόμηση', 'κτιριοδομικός', 'αδειες', 'ν.ο.κ.', 'νοκ', 'οικοδομ']):
         return "📐 Πολεοδομία & Δόμηση"
-    elif any(x in text for x in ['εξοικονομώ', 'ενέργεια', 'φωτοβολταϊκά', 'ανακύκλωση', 'περιβάλλον', 'ενεργειακ']):
+    elif any(x in text for x in ['εξοικονομώ', 'ενέργεια', 'φωτοβολταϊκά', 'ανακύκλωση', 'περιβάλλον', 'ενεργειακ', 'green']):
         return "🌱 Ενέργεια & Περιβάλλον"
-    elif any(x in text for x in ['φορολογ', 'ααδε', 'mydata', 'εφορία', 'εισφορές', 'φπα', 'μισθοδοσία']):
+    elif any(x in text for x in ['φορολογ', 'ααδε', 'mydata', 'εφορία', 'εισφορές', 'φπα', 'μισθοδοσία', 'λογιστικ']):
         return "💼 Φορολογικά & Ασφαλιστικά"
-    elif any(x in text for x in ['διαγωνισμ', 'δημόσια έργα', 'μελέτες', 'σύμβαση', 'ανάθεση']):
-        return "✒️ Δημόσια Έργα & Συμβάσεις"
+    elif any(x in text for x in ['διαγωνισμ', 'δημόσια έργα', 'μελέτες', 'σύμβαση', 'ανάθεση', 'εσπα']):
+        return "✒️ Δημόσια Έργα & ΕΣΠΑ"
     else:
         return "📢 Γενική Ενημέρωση"
 
-# --- ΛΕΙΤΟΥΡΓΙΑ ΣΥΓΧΡΟΝΙΣΜΟΥ (BACKEND) ---
+# --- 4. ΛΕΙΤΟΥΡΓΙΑ ΡΟΜΠΟΤ (Backend Sync) ---
 def run_bot_update():
     RSS_FEEDS = {
         "Taxheaven": "https://www.taxheaven.gr/rss",
@@ -67,9 +67,7 @@ def run_bot_update():
             feed = feedparser.parse(url)
             for entry in feed.entries[:3]: 
                 if entry.link not in existing_links:
-                    
                     category = guess_category(entry.title + " " + entry.summary)
-                    
                     new_row = [
                         len(existing_data) + new_items_found + 1,
                         source,
@@ -83,84 +81,116 @@ def run_bot_update():
                     new_items_found += 1
                     existing_links.append(entry.link)
         except Exception:
-            pass # Αθόρυβη λειτουργία σε περίπτωση λάθους feed
+            pass 
             
     return new_items_found
 
-# --- UI ΕΦΑΡΜΟΓΗΣ (FRONTEND) ---
+# --- 5. UI & MENU (Frontend) ---
 
-# Sidebar με πιο επίσημο ύφος
-st.sidebar.markdown("## 🏛️ NomoTechi")
-st.sidebar.caption("Πύλη Νομικής Ενημέρωσης Μηχανικών")
+# --- SIDEBAR MENU ---
+st.sidebar.title("🏛️ NomoTechi")
+st.sidebar.caption("Σύμβουλος Μηχανικού")
 st.sidebar.markdown("---")
 
-# Φόρτωση δεδομένων
+# Το Κεντρικό Μενού Πλοήγησης
+menu_options = ["🏠 Αρχική (Όλα τα θέματα)", "📂 Ανά Κατηγορία", "⚙️ Σύστημα (Admin)"]
+selected_page = st.sidebar.radio("Πλοήγηση:", menu_options)
+
+st.sidebar.markdown("---")
+st.sidebar.info("© 2026 Engineer Legal Hub")
+
+
+# --- Φόρτωση Δεδομένων ---
 data = load_data()
 df = pd.DataFrame(data)
 
-# Φίλτρα
-st.sidebar.subheader("🗂️ Φίλτρα Αναζήτησης")
-if not df.empty and 'category' in df.columns:
-    unique_categories = df['category'].unique().tolist()
-    # Ταξινόμηση κατηγοριών αλφαβητικά
-    unique_categories.sort()
-    selected_cats = st.sidebar.multiselect("Επιλέξτε Θεματολογία:", unique_categories, default=unique_categories)
-else:
-    selected_cats = []
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("⚙️ Διαχείριση")
-
-# Κουμπιά Διαχείρισης (Πιο τεχνικά)
-col1, col2 = st.sidebar.columns(2)
-with col1:
-    if st.button("🔄 Ανανέωση"):
-        st.cache_data.clear()
-        st.rerun()
-with col2:
-    if st.button("📡 Σύστημα"): # Αντί για "Ρομποτάκι"
-        with st.spinner("Συγχρονισμός..."):
-            count = run_bot_update()
-        if count > 0:
-            st.toast(f"✅ Προστέθηκαν {count} νέα θέματα!", icon="✅")
-            st.cache_data.clear()
-            st.rerun()
-        else:
-            st.toast("Το σύστημα είναι ενήμερο.", icon="ℹ️")
-
-# --- ΚΥΡΙΩΣ ΠΕΡΙΟΧΗ ---
-st.title("Επικαιρότητα & Νομοθεσία")
-st.markdown("**Τελευταία Ενημέρωση:** " + datetime.now().strftime("%d/%m/%Y"))
-st.divider()
-
-if not df.empty:
-    if 'category' in df.columns:
-        df_filtered = df[df['category'].isin(selected_cats)]
-    else:
-        df_filtered = df
+# --- ΣΕΛΙΔΑ 1: ΑΡΧΙΚΗ (Dashboard) ---
+if selected_page == "🏠 Αρχική (Όλα τα θέματα)":
+    st.title("📰 Ροή Ειδήσεων & Νομοθεσίας")
+    st.caption("Όλες οι εξελίξεις για τον Μηχανικό σε πραγματικό χρόνο.")
     
-    if not df_filtered.empty:
-        df_filtered = df_filtered.iloc[::-1]
-
-        for index, row in df_filtered.iterrows():
-            # Κάρτα Είδησης με minimal σχεδιασμό
+    if not df.empty:
+        # Στατιστικά (Metrics) - Δείχνει ωραίο επαγγελματικά
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Σύνολο Άρθρων", len(df))
+        col2.metric("Τελευταία Ενημέρωση", datetime.now().strftime("%d/%m"))
+        col3.metric("Πηγές", "3 (Live)")
+        st.divider()
+        
+        # Εμφάνιση όλων (Ταξινόμηση: Νεότερα πρώτα)
+        df_sorted = df.iloc[::-1]
+        
+        for index, row in df_sorted.iterrows():
             with st.container():
-                # Τίτλος με εικονίδιο κατηγορίας στην αρχή αν θέλουμε, ή καθαρό
                 st.subheader(f"{row['title']}")
                 
-                # Metadata line
-                col_meta1, col_meta2 = st.columns([0.7, 0.3])
-                with col_meta1:
-                    # Εμφάνιση ετικέτας με χρώμα ανάλογα την κατηγορία (Streamlit native badge)
-                    st.caption(f"📅 {row['last_update']} | Πηγή: {row['law']}")
-                with col_meta2:
-                    # Ειδική μορφοποίηση για την κατηγορία
-                    st.markdown(f"**{row['category']}**")
+                # Metadata Line
+                c1, c2 = st.columns([3, 1])
+                c1.caption(f"📅 {row['last_update']} | Πηγή: {row['law']}")
+                c2.markdown(f"**{row['category']}**") # Η κατηγορία εμφανίζεται bold δεξιά
                 
                 st.write(row['content'])
-                st.markdown(f"🔗 [Διαβάστε το πλήρες κείμενο]({row['link']})")
+                st.markdown(f"🔗 [Διαβάστε περισσότερα]({row['link']})")
                 st.divider()
     else:
-        st.info("Δεν βρέθηκαν αποτελέσματα με τα επιλεγμένα φίλτρα.")
-else:
-    st.warning("Η βάση δεδομένων είναι προσωρινά μη διαθέσιμη. Πατήστε 'Σύστημα' για ενημέρωση.")
+        st.info("Η βάση δεδομένων είναι κενή. Πηγαίνετε στο μενού 'Σύστημα' για ενημέρωση.")
+
+
+# --- ΣΕΛΙΔΑ 2: ΚΑΤΗΓΟΡΙΕΣ (Φίλτρα) ---
+elif selected_page == "📂 Ανά Κατηγορία":
+    st.title("🗂️ Θεματική Αναζήτηση")
+    
+    if not df.empty and 'category' in df.columns:
+        # Δημιουργία λίστας κατηγοριών
+        categories = sorted(df['category'].unique().tolist())
+        
+        # Dropdown Menu για επιλογή
+        selected_category = st.selectbox("Επιλέξτε τον τομέα που σας ενδιαφέρει:", categories)
+        
+        st.divider()
+        
+        # Φιλτράρισμα
+        df_filtered = df[df['category'] == selected_category].iloc[::-1]
+        
+        if not df_filtered.empty:
+            for index, row in df_filtered.iterrows():
+                with st.expander(f"{row['last_update']} - {row['title']}", expanded=True):
+                    st.write(row['content'])
+                    st.markdown(f"[Μετάβαση στο άρθρο]({row['link']})")
+        else:
+            st.warning("Δεν βρέθηκαν άρθρα σε αυτή την κατηγορία.")
+    else:
+        st.warning("Δεν υπάρχουν κατηγοριοποιημένα δεδομένα ακόμα.")
+
+
+# --- ΣΕΛΙΔΑ 3: ADMIN (Κρυφά εργαλεία) ---
+elif selected_page == "⚙️ Σύστημα (Admin)":
+    st.header("⚙️ Πίνακας Ελέγχου")
+    st.warning("Περιοχή Διαχείρισης - Προσοχή στις αλλαγές.")
+    
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
+        st.subheader("Συγχρονισμός")
+        if st.button("🚀 Έναρξη Σάρωσης (Ρομποτάκι)", type="primary"):
+            with st.spinner("Γίνεται σύνδεση με πηγές..."):
+                count = run_bot_update()
+            if count > 0:
+                st.success(f"Επιτυχία! Βρέθηκαν {count} νέα άρθρα.")
+                st.cache_data.clear()
+            else:
+                st.info("Το σύστημα είναι πλήρως ενημερωμένο.")
+                
+    with col_b:
+        st.subheader("Βάση Δεδομένων")
+        if st.button("🔄 Ανανέωση Προβολής"):
+            st.cache_data.clear()
+            st.rerun()
+            
+    st.markdown("---")
+    st.subheader("📊 Κατάσταση Δεδομένων")
+    if not df.empty:
+        st.dataframe(df, use_container_width=True) # Εμφανίζει το Excel μέσα στην εφαρμογή για έλεγχο
+    else:
+        st.error("Η βάση δεν επιστρέφει δεδομένα.")
