@@ -1,80 +1,112 @@
-import feedparser
-import json
 import os
-import datetime
-import time
+import json
+import gspread
+import feedparser
+from datetime import datetime
 
-# Αρχείο βάσης δεδομένων
-DB_FILE = 'laws_db.json'
-
-# Λίστα με πραγματικές πηγές RSS (Ειδήσεις για Μηχανικούς & Νομικά)
+# --- 1. ΟΛΕΣ ΟΙ ΠΗΓΕΣ ΕΙΔΗΣΕΩΝ (RSS) ---
 RSS_FEEDS = {
-    "Taxheaven": "https://www.taxheaven.gr/rss",
-    "Lawspot": "https://www.lawspot.gr/nomika-nea/feed",
-    "B2Green": "https://news.b2green.gr/feed"
+    "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
+    "🏗️ Ypodomes": "https://ypodomes.com/feed/",
+    "🌿 B2Green": "https://news.b2green.gr/feed",
+    "💼 Taxheaven": "https://www.taxheaven.gr/rss",
+    "⚖️ Lawspot": "https://www.lawspot.gr/nomika-nea/feed",
+    "⚡ EnergyPress": "https://energypress.gr/feed",
+    "🚜 PEDMEDE (Εργολήπτες)": "https://www.pedmede.gr/feed/",
+    "👷 Michanikos": "https://www.michanikos-online.gr/feed/",
+    "♻️ GreenAgenda": "https://greenagenda.gr/feed/",
+    "📐 Archetypes": "https://www.archetypes.gr/feed/"
 }
 
-def load_data():
-    """Φορτώνει την υπάρχουσα βάση."""
-    if not os.path.exists(DB_FILE):
-        return []
-    with open(DB_FILE, 'r', encoding='utf-8') as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []
+# --- 2. ΕΞΥΠΝΗ ΚΑΤΗΓΟΡΙΟΠΟΙΗΣΗ ---
+def guess_category(text):
+    text = text.lower()
+    
+    # Πολεοδομία & Δόμηση
+    if any(x in text for x in ['αυθαίρετα', '4495', 'πολεοδομ', 'δόμηση', 'κτιριοδομ', 'αδειες', 'ν.ο.κ.', 'νοκ', 'οικοδομ', 'κατασκευ', 'real estate', 'κτηματολόγιο', 'δασικ', 'αρχιτεκτον', 'design']):
+        return "📐 Πολεοδομία & Δόμηση"
+    
+    # Ενέργεια & Περιβάλλον
+    elif any(x in text for x in ['εξοικονομώ', 'ενέργεια', 'φωτοβολταϊκά', 'ανακύκλωση', 'περιβάλλον', 'ενεργειακ', 'green', 'απε', 'ραε', 'energy', 'απόβλητα', 'κυκλική', 'κλιματικ', 'υδρογόνο']):
+        return "🌱 Ενέργεια & Περιβάλλον"
+    
+    # Φορολογικά & Ασφαλιστικά
+    elif any(x in text for x in ['φορολογ', 'ααδε', 'mydata', 'εφορία', 'εισφορές', 'φπα', 'μισθοδοσία', 'λογιστικ', 'οικονομικ', 'τσμεδε', 'εφκα', 'επιδότηση', 'αναπτυξιακ']):
+        return "💼 Φορολογικά & Ασφαλιστικά"
+    
+    # Δημόσια Έργα & ΕΣΠΑ
+    elif any(x in text for x in ['διαγωνισμ', 'δημόσια έργα', 'μελέτες', 'σύμβαση', 'ανάθεση', 'εσπα', 'υποδομές', 'μετρό', 'οδικός', 'παραχώρηση', 'πεδμεδε', 'διακήρυξη', 'μειοδοτ', 'εργοληπ']):
+        return "✒️ Δημόσια Έργα & ΕΣΠΑ"
+    
+    # Θεσμικά ΤΕΕ & Επαγγελματικά
+    elif any(x in text for x in ['τεε', 'μηχανικ', 'επιμελητήριο', 'εκλογές', 'πειθαρχικ', 'σεμινάρι', 'ημερίδα', 'συνέδριο']):
+        return "🏛️ Θεσμικά ΤΕΕ & Επάγγελμα"
+        
+    else:
+        return "📢 Γενική Ενημέρωση"
 
-def save_data(data):
-    """Αποθηκεύει τη βάση."""
-    with open(DB_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+# --- 3. ΚΥΡΙΑ ΛΕΙΤΟΥΡΓΙΑ ΡΟΜΠΟΤ ---
+def run():
+    print("🤖 Το ρομποτάκι ξεκίνησε σάρωση σε 10 πηγές...")
+    
+    # Ανάκτηση κωδικών από τα Secrets του GitHub
+    json_creds = os.environ.get("GCP_CREDENTIALS")
+    if not json_creds:
+        print("❌ Σφάλμα: Δεν βρέθηκαν κωδικοί (GCP_CREDENTIALS).")
+        return
 
-def run_bot():
-    print("🤖 Το ρομποτάκι ξεκίνησε και σκανάρει το ίντερνετ...")
-    current_data = load_data()
-    new_entries_count = 0
+    try:
+        creds_dict = json.loads(json_creds)
+        gc = gspread.service_account_from_dict(creds_dict)
+        sh = gc.open("laws_database") # Το όνομα του Sheet σου
+        sheet = sh.sheet1
+    except Exception as e:
+        print(f"❌ Σφάλμα σύνδεσης με Google Sheets: {e}")
+        return
 
-    # Σκανάρισμα κάθε πηγής
+    # Ανάγνωση υπαρχόντων για να μην έχουμε διπλότυπα
+    try:
+        existing_data = sheet.get_all_records()
+        existing_links = [row['link'] for row in existing_data]
+    except:
+        existing_data = []
+        existing_links = []
+        
+    new_items_count = 0
+
+    # Σάρωση κάθε πηγής
     for source_name, url in RSS_FEEDS.items():
-        print(f"📡 Έλεγχος πηγής: {source_name}...")
+        print(f"📡 Έλεγχος: {source_name}...")
         try:
             feed = feedparser.parse(url)
-            
-            # Έλεγχος αν το feed κατέβηκε σωστά
-            if feed.bozo:
-                print(f"⚠️ Πρόβλημα με το feed του {source_name}")
-                continue
-
-            # Παίρνουμε τα 5 πιο πρόσφατα άρθρα από κάθε πηγή
-            for entry in feed.entries[:5]:
-                title = entry.title
-                link = entry.link
-                # Καθαρισμός ημερομηνίας (αν υπάρχει)
-                published = entry.get('published', datetime.datetime.now().strftime("%Y-%m-%d"))
-                
-                # Έλεγχος αν υπάρχει ήδη στη βάση μας (με βάση το Link)
-                if any(d.get('link') == link for d in current_data):
-                    continue  # Το έχουμε ήδη, προχωράμε
-                
-                # Δημιουργία νέας εγγραφής
-                new_article = {
-                    "id": len(current_data) + 1 + new_entries_count,
-                    "law": source_name,  # Πηγή αντί για Νόμο
-                    "article": "RSS Feed",
-                    "category": "Επικαιρότητα",
-                    "title": title,
-                    "content": f"{entry.summary[:200]}... [Διαβάστε περισσότερα]({link})",
-                    "link": link, # Αποθηκεύουμε και το link
-                    "last_update": published,
-                    "status": "ΝΕΟ"
-                }
-                
-                current_data.append(new_article)
-                new_entries_count += 1
-                print(f"   ✅ Βρέθηκε νέο άρθρο: {title[:50]}...")
-
+            # Παίρνουμε τα 3 πιο πρόσφατα από κάθε πηγή
+            for entry in feed.entries[:3]:
+                if entry.link not in existing_links:
+                    
+                    category = guess_category(entry.title + " " + entry.summary)
+                    
+                    new_row = [
+                        len(existing_data) + new_items_count + 1,
+                        source_name,
+                        entry.title,
+                        entry.summary[:200] + "...",
+                        entry.link,
+                        datetime.now().strftime("%Y-%m-%d"),
+                        category
+                    ]
+                    
+                    sheet.append_row(new_row)
+                    new_items_count += 1
+                    existing_links.append(entry.link)
+                    print(f"   ✅ Νέο: {entry.title[:40]}...")
+                    
         except Exception as e:
-            print(f"❌ Σφάλμα κατά τη σύνδεση με {source_name}: {e}")
+            print(f"   ⚠️ Πρόβλημα με το feed {source_name}: {e}")
+
+    print(f"🏁 Ολοκληρώθηκε! Προστέθηκαν {new_items_count} νέα θέματα.")
+
+if __name__ == "__main__":
+    run()
 
     if new_entries_count > 0:
         save_data(current_data)
@@ -83,4 +115,5 @@ def run_bot():
         print("\n💤 Δεν βρέθηκαν νέα θέματα. Η βάση είναι ενημερωμένη.")
 
 if __name__ == "__main__":
+
     run_bot()
