@@ -45,7 +45,6 @@ def load_data():
     return []
 
 # --- 3. LOGIKI ENIMEROSIS (GIA TO ADMIN BUTTON) ---
-# Αντιγράφουμε τη λογική και εδώ για να δουλεύει το manual κουμπί
 RSS_FEEDS = {
     "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
@@ -61,13 +60,13 @@ RSS_FEEDS = {
 
 def guess_category(text):
     text = text.lower()
-    if any(x in text for x in ['αυθαίρετα', '4495', 'πολεοδομ', 'δόμηση', 'κτιριοδομ', 'αδειες', 'ν.ο.κ.', 'νοκ', 'οικοδομ', 'κατασκευ', 'real estate', 'κτηματολόγιο', 'δασικ']):
+    if any(x in text for x in ['αυθαίρετα', '4495', 'πολεοδομ', 'δόμηση', 'κτιριοδομ', 'αδειες', 'ν.ο.κ.', 'νοκ', 'οικοδομ', 'κατασκευ', 'real estate', 'κτηματολόγιο', 'δασικ', 'αρχιτεκτον', 'design']):
         return "📐 Πολεοδομία & Δόμηση"
-    elif any(x in text for x in ['εξοικονομώ', 'ενέργεια', 'φωτοβολταϊκά', 'ανακύκλωση', 'περιβάλλον', 'ενεργειακ', 'green', 'απε', 'ραε', 'απόβλητα']):
+    elif any(x in text for x in ['εξοικονομώ', 'ενέργεια', 'φωτοβολταϊκά', 'ανακύκλωση', 'περιβάλλον', 'ενεργειακ', 'green', 'απε', 'ραε', 'energy', 'απόβλητα', 'κυκλική', 'κλιματικ', 'υδρογόνο']):
         return "🌱 Ενέργεια & Περιβάλλον"
-    elif any(x in text for x in ['φορολογ', 'ααδε', 'mydata', 'εφορία', 'εισφορές', 'φπα', 'μισθοδοσία', 'λογιστικ', 'οικονομικ', 'τσμεδε', 'εφκα']):
+    elif any(x in text for x in ['φορολογ', 'ααδε', 'mydata', 'εφορία', 'εισφορές', 'φπα', 'μισθοδοσία', 'λογιστικ', 'οικονομικ', 'τσμεδε', 'εφκα', 'επιδότηση', 'αναπτυξιακ']):
         return "💼 Φορολογικά & Ασφαλιστικά"
-    elif any(x in text for x in ['διαγωνισμ', 'δημόσια έργα', 'μελέτες', 'σύμβαση', 'ανάθεση', 'εσπα', 'υποδομές', 'μετρό', 'οδικός', 'πεδμεδε', 'διακήρυξη']):
+    elif any(x in text for x in ['διαγωνισμ', 'δημόσια έργα', 'μελέτες', 'σύμβαση', 'ανάθεση', 'εσπα', 'υποδομές', 'μετρό', 'οδικός', 'παραχώρηση', 'πεδμεδε', 'διακήρυξη', 'μειοδοτ', 'εργοληπ']):
         return "✒️ Δημόσια Έργα & ΕΣΠΑ"
     elif any(x in text for x in ['τεε', 'μηχανικ', 'επιμελητήριο', 'εκλογές', 'πειθαρχικ', 'σεμινάρι', 'ημερίδα', 'συνέδριο']):
         return "🏛️ Θεσμικά ΤΕΕ & Επάγγελμα"
@@ -98,16 +97,14 @@ def run_bot_update_manual():
         progress_bar.progress(progress)
         status_text.text(f"📡 Σάρωση: {source}...")
         
-         
         try:
+            # FIX: Προσθήκη User Agent για να μη μας μπλοκάρουν
             feed = feedparser.parse(url, agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
             
+            # Έλεγχος αν το feed είναι έγκυρο
             if not feed.entries and feed.bozo:
-                print(f"⚠️ Πρόβλημα με {source}: {feed.bozo_exception}")
                 continue
                 
-            for entry in feed.entries[:3]: 
-               
             for entry in feed.entries[:3]: 
                 if entry.link not in existing_links:
                     category = guess_category(entry.title + " " + entry.summary)
@@ -123,8 +120,8 @@ def run_bot_update_manual():
                     sheet.append_row(new_row)
                     new_items_found += 1
                     existing_links.append(entry.link)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error in {source}: {e}")
             
     progress_bar.empty()
     status_text.empty()
@@ -160,7 +157,6 @@ if selected_page == "📊 Dashboard":
         col1.metric("Σύνολο Άρθρων", len(df))
         col2.metric("Πηγές Ενημέρωσης", len(RSS_FEEDS))
         
-        # Υπολογισμός σημερινών άρθρων
         today = datetime.now().strftime("%Y-%m-%d")
         today_articles = df[df['last_update'] == today].shape[0]
         col3.metric("Σημερινά Άρθρα", today_articles, delta=today_articles)
@@ -202,7 +198,10 @@ elif selected_page == "🔍 Αναζήτηση & Αρχείο":
                 search_term = st.text_input("Αναζήτηση (π.χ. αυθαίρετα, εξοικονομώ)...")
             
             with col_cat:
-                categories = sorted(df['category'].unique().tolist()) if 'category' in df.columns else []
+                if 'category' in df.columns:
+                    categories = sorted(df['category'].unique().tolist())
+                else:
+                    categories = []
                 selected_cats = st.multiselect("Κατηγορία", categories)
                 
             with col_source:
@@ -212,19 +211,15 @@ elif selected_page == "🔍 Αναζήτηση & Αρχείο":
         # --- FILTERING LOGIC ---
         df_filtered = df.copy()
         
-        # Filter by text
         if search_term:
             df_filtered = df_filtered[df_filtered['title'].str.contains(search_term, case=False) | df_filtered['content'].str.contains(search_term, case=False)]
             
-        # Filter by category
         if selected_cats:
             df_filtered = df_filtered[df_filtered['category'].isin(selected_cats)]
             
-        # Filter by source
         if selected_sources:
             df_filtered = df_filtered[df_filtered['law'].isin(selected_sources)]
             
-        # Sort latest first
         df_filtered = df_filtered.iloc[::-1]
         
         st.markdown(f"**Βρέθηκαν {len(df_filtered)} αποτελέσματα:**")
@@ -234,7 +229,6 @@ elif selected_page == "🔍 Αναζήτηση & Αρχείο":
         for index, row in df_filtered.iterrows():
             st.markdown(f"### {row['title']}")
             
-            # Badge Line
             col_badges = st.columns([1, 1, 4])
             col_badges[0].markdown(f"📅 `{row['last_update']}`")
             col_badges[1].markdown(f"🏷️ `{row['category']}`")
@@ -285,4 +279,3 @@ elif selected_page == "⚙️ Διαχείριση (Admin)":
         
     elif password != "":
         st.error("Λάθος κωδικός.")
-
