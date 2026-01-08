@@ -1,0 +1,88 @@
+[
+    {
+        "id": 1,
+        "law": "Ν. 4067/2012 (ΝΟΚ)",
+        "article": "Άρθρο 11",
+        "category": "Δόμηση",
+        "title": "Συντελεστής Δόμησης & Μπόνους",
+        "content": "Στον συντελεστή δόμησης δεν προσμετρώνται...",
+        "last_update": "2024-02-15",
+        "status": "Ενεργός"
+    },
+    {
+        "id": 2,
+        "law": "Ν. 4495/2017",
+        "article": "Άρθρο 96",
+        "category": "Αυθαίρετα",
+        "title": "Κατηγορίες Αυθαιρέτων",
+        "content": "Οι αυθαίρετες κατασκευές κατηγοριοποιούνται ως εξής...",
+        "last_update": "2023-12-10",
+        "status": "Ενεργός"
+    },
+    {
+        "id": 3,
+        "law": "B2Green",
+        "article": "RSS Feed",
+        "category": "Επικαιρότητα",
+        "title": "Σε πτωτική πορεία τα επιτόκια στεγαστικών δανείων μετά από 15 χρόνια",
+        "content": "Στην πεντάδα των φθηνότερων χωρών της ευρωζώνης, όσον αφορά τα επιτόκια στεγαστικών δανείων βρέθηκε τον Νοέμβριο 2025 η Ελλάδα, καταγράφοντας σταθερή μείωση στο κόστος δανεισμού. Παράλληλα τον Νοέμβρι... [Διαβάστε περισσότερα](https://news.b2green.gr/69164/%cf%83%ce%b5-%cf%80%cf%84%cf%89%cf%84%ce%b9%ce%ba%ce%ae-%cf%80%ce%bf%cf%81%ce%b5%ce%af%ce%b1-%cf%84%ce%b1-%ce%b5%cf%80%ce%b9%cf%84%cf%8c%ce%ba%ce%b9%ce%b1-%cf%83%cf%84%ce%b5%ce%b3%ce%b1%cf%83%cf%84)",
+        "link": "https://news.b2green.gr/69164/%cf%83%ce%b5-%cf%80%cf%84%cf%89%cf%84%ce%b9%ce%ba%ce%ae-%cf%80%ce%bf%cf%81%ce%b5%ce%af%ce%b1-%cf%84%ce%b1-%ce%b5%cf%80%ce%b9%cf%84%cf%8c%ce%ba%ce%b9%ce%b1-%cf%83%cf%84%ce%b5%ce%b3%ce%b1%cf%83%cf%84",
+        "last_update": "Thu, 08 Jan 2026 07:33:07 +0000",
+        "status": "ΝΕΟ"
+    },
+    {
+        "id": 5,
+        "law": "B2Green",
+        "article": "RSS Feed",
+        "category": "Επικαιρότητα",
+        "title": "Πολεοδομίες στο Κτηματολόγιο: Τι αλλάζει στην πράξη, ποια «μπλοκαρίσματα» λύνει και ποια ρίσκα ανοίγει",
+        "content": "Από την Πένη Χαλάτση Η απόφαση να «κουμπώσει» η λειτουργία των πολεοδομιών πάνω στο Ελληνικό Κτηματολόγιο δεν είναι απλώς μια οργανωτική μετακίνηση υπηρεσιών. Είναι μια προσπάθεια να αλλάξει το μοντέλ... [Διαβάστε περισσότερα](https://news.b2green.gr/69162/%cf%80%ce%bf%ce%bb%ce%b5%ce%bf%ce%b4%ce%bf%ce%bc%ce%af%ce%b5%cf%82-%cf%83%cf%84%ce%bf-%ce%ba%cf%84%ce%b7%ce%bc%ce%b1%cf%84%ce%bf%ce%bb%cf%8c%ce%b3%ce%b9%ce%bf-%cf%84%ce%b9-%ce%b1%ce%bb%ce%bb%ce%ac)",
+        "link": "https://news.b2green.gr/69162/%cf%80%ce%bf%ce%bb%ce%b5%ce%bf%ce%b4%ce%bf%ce%bc%ce%af%ce%b5%cf%82-%cf%83%cf%84%ce%bf-%ce%ba%cf%84%ce%b7%ce%bc%ce%b1%cf%84%ce%bf%ce%bb%cf%8c%ce%b3%ce%b9%ce%bf-%cf%84%ce%b9-%ce%b1%ce%bb%ce%bb%ce%ac",
+        "last_update": "Thu, 08 Jan 2026 07:23:12 +0000",
+        "status": "ΝΕΟ"
+    },
+    {
+        "id": 7,
+        "law": "B2Green",
+        "article": "RSS Feed",
+        "category": "Επικαιρότητα",
+        "title": "Αύξηση τιμών κατοικιών έως 94% σε 7 χρόνια",
+        "content": "Από το Νίκο Ρουσάνογλου Μια νέα πραγματικότητα έχει διαμορφωθεί στην αγορά ακινήτων από το 2019 και μέχρι σήμερα, επιβεβαιώνοντας την άρρηκτη σύνδεσή της με την πορεία της οικονομίας. Η έξοδος από την... [Διαβάστε περισσότερα](https://news.b2green.gr/69160/%ce%b1%cf%8d%ce%be%ce%b7%cf%83%ce%b7-%cf%84%ce%b9%ce%bc%cf%8e%ce%bd-%ce%ba%ce%b1%cf%84%ce%bf%ce%b9%ce%ba%ce%b9%cf%8e%ce%bd-%ce%ad%cf%89%cf%82-94-%cf%83%ce%b5-7-%cf%87%cf%81%cf%8c%ce%bd%ce%b9%ce%b1)",
+        "link": "https://news.b2green.gr/69160/%ce%b1%cf%8d%ce%be%ce%b7%cf%83%ce%b7-%cf%84%ce%b9%ce%bc%cf%8e%ce%bd-%ce%ba%ce%b1%cf%84%ce%bf%ce%b9%ce%ba%ce%b9%cf%8e%ce%bd-%ce%ad%cf%89%cf%82-94-%cf%83%ce%b5-7-%cf%87%cf%81%cf%8c%ce%bd%ce%b9%ce%b1",
+        "last_update": "Thu, 08 Jan 2026 07:20:17 +0000",
+        "status": "ΝΕΟ"
+    },
+    {
+        "id": 9,
+        "law": "B2Green",
+        "article": "RSS Feed",
+        "category": "Επικαιρότητα",
+        "title": "Πότε έρχεται νέα δράση για ίδρυση μικρών και μεσαίων επιχειρήσεων – Σε ποιους απευθύνεται",
+        "content": "Εντός του Ιανουαρίου 2026 προκηρύσσεται το νέο «Ολοκληρωμένο πρόγραμμα ενίσχυσης της νέας επιχειρηματικότητας για ανέργους ηλικίας 18–29 ετών, με έμφαση στις γυναίκες και στην ψηφιακή &#38; πράσινη οι... [Διαβάστε περισσότερα](https://news.b2green.gr/69159/%cf%80%cf%8c%cf%84%ce%b5-%ce%ad%cf%81%cf%87%ce%b5%cf%84%ce%b1%ce%b9-%ce%bd%ce%ad%ce%b1-%ce%b4%cf%81%ce%ac%cf%83%ce%b7-%ce%b3%ce%b9%ce%b1-%ce%af%ce%b4%cf%81%cf%85%cf%83%ce%b7-%ce%bc%ce%b9%ce%ba%cf%81)",
+        "link": "https://news.b2green.gr/69159/%cf%80%cf%8c%cf%84%ce%b5-%ce%ad%cf%81%cf%87%ce%b5%cf%84%ce%b1%ce%b9-%ce%bd%ce%ad%ce%b1-%ce%b4%cf%81%ce%ac%cf%83%ce%b7-%ce%b3%ce%b9%ce%b1-%ce%af%ce%b4%cf%81%cf%85%cf%83%ce%b7-%ce%bc%ce%b9%ce%ba%cf%81",
+        "last_update": "Thu, 08 Jan 2026 07:19:09 +0000",
+        "status": "ΝΕΟ"
+    },
+    {
+        "id": 11,
+        "law": "B2Green",
+        "article": "RSS Feed",
+        "category": "Επικαιρότητα",
+        "title": "Απειλή για πλαφόν στα ενοίκια, αντιδρά η ΠΟΜΙΔΑ",
+        "content": "Από τον Στέλιο Μπούρα Με αρνητικό μάτι βλέπουν οι ιδιοκτήτες ακινήτων το ενδεχόμενο επιβολής πλαφόν στα ενοίκια των κατοικιών που εξετάζει η κυβέρνηση ως αντάλλαγμα για την πληρωμή μιας νέας επιδότηση... [Διαβάστε περισσότερα](https://news.b2green.gr/69157/%ce%b1%cf%80%ce%b5%ce%b9%ce%bb%ce%ae-%ce%b3%ce%b9%ce%b1-%cf%80%ce%bb%ce%b1%cf%86%cf%8c%ce%bd-%cf%83%cf%84%ce%b1-%ce%b5%ce%bd%ce%bf%ce%af%ce%ba%ce%b9%ce%b1-%ce%b1%ce%bd%cf%84%ce%b9%ce%b4%cf%81%ce%ac)",
+        "link": "https://news.b2green.gr/69157/%ce%b1%cf%80%ce%b5%ce%b9%ce%bb%ce%ae-%ce%b3%ce%b9%ce%b1-%cf%80%ce%bb%ce%b1%cf%86%cf%8c%ce%bd-%cf%83%cf%84%ce%b1-%ce%b5%ce%bd%ce%bf%ce%af%ce%ba%ce%b9%ce%b1-%ce%b1%ce%bd%cf%84%ce%b9%ce%b4%cf%81%ce%ac",
+        "last_update": "Thu, 08 Jan 2026 07:16:07 +0000",
+        "status": "ΝΕΟ"
+    },
+    {
+        "id": 8,
+        "law": "B2Green",
+        "article": "RSS Feed",
+        "category": "Επικαιρότητα",
+        "title": "Τι «κρατά πίσω» τις δεσμευτικές προσφορές για την ΠΥΡΚΑΛ",
+        "content": "Από τον Στέλιο Μπούρα Αγώνα δρόμου δίνει η κυβέρνηση να προχωρήσει στο επόμενο στάδιο το ακίνητο της πρώην ΠΥΡΚΑΛ που προορίζεται για κυβερνητικό πάρκο, ωστόσο το έργο της Δάφνης φαίνεται να είναι πιο... [Διαβάστε περισσότερα](https://news.b2green.gr/69166/%cf%84%ce%b9-%ce%ba%cf%81%ce%b1%cf%84%ce%ac-%cf%80%ce%af%cf%83%cf%89-%cf%84%ce%b9%cf%82-%ce%b4%ce%b5%cf%83%ce%bc%ce%b5%cf%85%cf%84%ce%b9%ce%ba%ce%ad%cf%82-%cf%80%cf%81%ce%bf%cf%83%cf%86)",
+        "link": "https://news.b2green.gr/69166/%cf%84%ce%b9-%ce%ba%cf%81%ce%b1%cf%84%ce%ac-%cf%80%ce%af%cf%83%cf%89-%cf%84%ce%b9%cf%82-%ce%b4%ce%b5%cf%83%ce%bc%ce%b5%cf%85%cf%84%ce%b9%ce%ba%ce%ad%cf%82-%cf%80%cf%81%ce%bf%cf%83%cf%86",
+        "last_update": "Thu, 08 Jan 2026 08:12:18 +0000",
+        "status": "ΝΕΟ"
+    }
+]
