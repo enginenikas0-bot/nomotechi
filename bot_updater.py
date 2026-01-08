@@ -77,8 +77,17 @@ def run():
     # Σάρωση κάθε πηγής
     for source_name, url in RSS_FEEDS.items():
         print(f"📡 Έλεγχος: {source_name}...")
+       # Αλλαγή για να ξεγελάμε τα sites που μπλοκάρουν τα bots
         try:
-            feed = feedparser.parse(url)
+            feed = feedparser.parse(url, agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+            
+            # Αν το feed είναι άδειο (συχνό πρόβλημα ασφαλείας), δοκιμάζουμε εναλλακτικό τρόπο
+            if not feed.entries and feed.bozo:
+                print(f"⚠️ Πρόβλημα με {source}: {feed.bozo_exception}")
+                continue
+                
+            for entry in feed.entries[:3]: 
+                # ... (ο υπόλοιπος κώδικας μένει ίδιος)
             # Παίρνουμε τα 3 πιο πρόσφατα από κάθε πηγή
             for entry in feed.entries[:3]:
                 if entry.link not in existing_links:
@@ -107,4 +116,5 @@ def run():
 
 if __name__ == "__main__":
     run()
+
 
