@@ -77,9 +77,17 @@ def run():
     # Σάρωση κάθε πηγής
     for source_name, url in RSS_FEEDS.items():
         print(f"📡 Έλεγχος: {source_name}...")
+       
         try:
-            feed = feedparser.parse(url)
-            # Παίρνουμε τα 3 πιο πρόσφατα από κάθε πηγή
+            feed = feedparser.parse(url, agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+            
+    
+            if not feed.entries and feed.bozo:
+                print(f"⚠️ Πρόβλημα με {source}: {feed.bozo_exception}")
+                continue
+                
+            for entry in feed.entries[:3]: 
+                
             for entry in feed.entries[:3]:
                 if entry.link not in existing_links:
                     
@@ -107,4 +115,5 @@ def run():
 
 if __name__ == "__main__":
     run()
+
 
