@@ -36,16 +36,29 @@ def remove_accents(input_str):
     return input_str.lower()
 
 def guess_category_smart(title, summary, source_name):
-    # Καθαρισμός κειμένου
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
     
-    # ΑΠΟΛΥΤΟΣ ΚΑΝΟΝΑΣ: ΝΟΜΟΘΕΣΙΑ (ΦΕΚ)
-    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου']
-    if any(w in full_text for w in fek_keywords): return "📜 Νομοθεσία & ΦΕΚ"
-    if "e-nomothesia" in source_clean: return "📜 Νομοθεσία & ΦΕΚ"
+    # --- ΚΑΝΟΝΑΣ 1: ΕΛΕΓΧΟΣ ΓΙΑ ΝΟΜΟΘΕΣΙΑ (ΦΕΚ/ΑΠΟΦΑΣΕΙΣ) ---
+    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου', 'δημοσιευθηκε στο φεκ']
+    is_fek = any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean
 
-    # Initialize Scores
+    if is_fek:
+        # ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ: Ελέγχουμε αν το ΦΕΚ αφορά Μηχανικούς/Έργα
+        eng_relevant_words = [
+            'αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', # Πολεοδομικά
+            'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'πεδμεδε', 'μηχανικ', 'τεε', # Έργα
+            'ενεργειακ', 'εξοικονομω', 'αντικειμενικ' # Ενέργεια & Ακίνητα
+        ]
+        
+        if any(w in full_text for w in eng_relevant_words):
+            # Επιστρέφουμε την ΥΒΡΙΔΙΚΗ κατηγορία (θα φαίνεται και στους 2)
+            return "📜 Νομοθεσία: Μηχανικών & Έργων"
+        else:
+            # Απλό ΦΕΚ (π.χ. για υγεία ή παιδεία), πάει μόνο στη Νομοθεσία
+            return "📜 Νομοθεσία & ΦΕΚ"
+
+    # --- ΚΑΝΟΝΑΣ 2: ΣΥΣΤΗΜΑ ΒΑΘΜΟΛΟΓΗΣΗΣ (ΓΙΑ ΤΑ ΥΠΟΛΟΙΠΑ) ---
     scores = {
         "eng_poleodomia": 0,
         "eng_energy": 0,
@@ -56,61 +69,44 @@ def guess_category_smart(title, summary, source_name):
         "news_general": 0
     }
 
-    # --- A. SOURCE BIAS (Μπόνους Πηγής) ---
-    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean:
-        scores["eng_energy"] += 3
-    elif "ypodomes" in source_clean or "pedmede" in source_clean:
-        scores["eng_projects"] += 3
-    elif "pomida" in source_clean:
-        scores["law_realestate"] += 3
-    elif "lawspot" in source_clean or "dsa" in source_clean:
-        scores["law_justice"] += 3
-    elif "taxheaven" in source_clean or "capital" in source_clean:
-        scores["finance"] += 3
+    # A. Source Bias
+    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean: scores["eng_energy"] += 3
+    elif "ypodomes" in source_clean or "pedmede" in source_clean: scores["eng_projects"] += 3
+    elif "pomida" in source_clean: scores["law_realestate"] += 3
+    elif "lawspot" in source_clean or "dsa" in source_clean: scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
 
-    # --- B. CONTENT ANALYSIS (Λέξεις Κλειδιά) ---
-    
-    # ΠΟΛΕΟΔΟΜΙΑ
+    # B. Content Analysis
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
     for w in poleodomia_words: 
         if w in full_text: scores["eng_poleodomia"] += 2
 
-    # ΕΝΕΡΓΕΙΑ
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
     for w in energy_words: 
         if w in full_text: scores["eng_energy"] += 2
 
-    # ΕΡΓΑ (Εδώ κερδίζει το B2Green αν μιλάει για έργα)
     project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
     for w in project_words: 
         if w in full_text: scores["eng_projects"] += 2
 
-    # ΑΚΙΝΗΤΑ & ΣΥΜΒΟΛΑΙΟΓΡΑΦΟΙ
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
     for w in estate_words: 
         if w in full_text: scores["law_realestate"] += 2
 
-    # ΝΟΜΙΚΑ (Με προστασία από φυσικές καταστροφές)
+    # Disaster Filter for Legal
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
-    
     justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν', 'εφετειο', 'νομικο συμβουλιο']
+    found_justice_words = sum(1 for w in justice_words if w in full_text)
     
-    found_justice_words = 0
-    for w in justice_words: 
-        if w in full_text: found_justice_words += 1
-    
-    if is_disaster and found_justice_words < 2:
-        scores["law_justice"] = -10 # Τιμωρία
-    else:
-        scores["law_justice"] += (found_justice_words * 2)
+    if is_disaster and found_justice_words < 2: scores["law_justice"] = -10 
+    else: scores["law_justice"] += (found_justice_words * 2)
 
-    # ΟΙΚΟΝΟΜΙΚΑ
     fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
     for w in fin_words: 
         if w in full_text: scores["finance"] += 2
 
-    # --- C. WINNER ---
+    # C. Determine Winner
     best_category = max(scores, key=scores.get)
     max_score = scores[best_category]
 
