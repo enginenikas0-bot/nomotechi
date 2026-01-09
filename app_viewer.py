@@ -49,7 +49,7 @@ st.markdown("""
         margin-top: 5px;
     }
 
-    /* SLOWER TICKER (60s) */
+    /* SLOWER TICKER (90s) */
     .ticker-wrap {
         width: 100%;
         background-color: #003366; /* Navy Blue */
@@ -65,7 +65,7 @@ st.markdown("""
     .ticker-item {
         display: inline-block;
         padding-left: 100%;
-        animation: ticker 60s linear infinite; /* Πιο αργό για να διαβάζεται */
+        animation: ticker 90s linear infinite; /* Πιο αργό για να διαβάζεται */
         font-weight: 600;
         font-size: 1rem;
     }
@@ -567,3 +567,4 @@ if not df.empty:
 
 else:
     st.warning("Η βάση είναι κενή. Πηγαίνετε στο Admin -> Force Scan.")
+
