@@ -5,88 +5,110 @@ import feedparser
 from datetime import datetime
 import time
 import re
+import requests
+from bs4 import BeautifulSoup
 
-# --- 1. ΟΙ ΠΗΓΕΣ ---
+# --- 1. ΟΙ ΠΗΓΕΣ (ΕΜΠΛΟΥΤΙΣΜΕΝΕΣ) ---
 RSS_FEEDS = {
+    # ΚΡΑΤΟΣ & ΔΙΚΑΙΟΣΥΝΗ (Υπουργεία, ΣτΕ, ΦΕΚ)
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
-    "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
-    "⚖️ Lawspot": "https://www.lawspot.gr/nomika-nea/feed",
-    "🎓 Dikaiologitika": "https://www.dikaiologitika.gr/feed", 
-    "💼 Taxheaven": "https://www.taxheaven.gr/rss",
-    "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
-    "🏗️ Ypodomes": "https://ypodomes.com/feed/",
-    "🌿 B2Green": "https://news.b2green.gr/feed",
-    "⚡ EnergyPress": "https://energypress.gr/feed",
-    "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
-    "👷 Michanikos": "https://www.michanikos-online.gr/feed/",
+    "⚖️ ΔΣΑ (Δικηγόροι)": "https://www.dsa.gr/rss.xml",
+    "🏛️ LawNet (ΣτΕ & Αποφάσεις)": "https://www.lawnet.gr/feed/", # Προσθήκη για Νομολογία
+    "🎓 Dikaiologitika (Κράτος)": "https://www.dikaiologitika.gr/feed", 
+    "💼 Taxheaven (Φορολογικά)": "https://www.taxheaven.gr/rss",
+    "📈 Naftemporiki (Οικονομία/Business)": "https://www.naftemporiki.gr/feed",
+
+    # ΜΗΧΑΝΙΚΟΙ & ΠΕΡΙΒΑΛΛΟΝ (ΥΠΕΝ, Έργα)
+    "🏛️ ΤΕΕ (Επίσημο)": "https://web.tee.gr/feed/",
+    "🏗️ Ypodomes (Δημόσια Έργα)": "https://ypodomes.com/feed/",
+    "🌿 B2Green (Εξοικονομώ/ΥΠΕΝ)": "https://news.b2green.gr/feed",
+    "⚡ EnergyPress (Ενέργεια)": "https://energypress.gr/feed",
+    "🚜 PEDMEDE (Εργολήπτες)": "https://www.pedmede.gr/feed/",
+    "👷 Michanikos Online": "https://www.michanikos-online.gr/feed/",
     "🌍 GreenAgenda": "https://greenagenda.gr/feed/",
-    "🏠 POMIDA": "https://www.pomida.gr/feed/",
-    "📐 Archetypes": "https://www.archetypes.gr/feed/",
-    "💰 Capital": "https://www.capital.gr/rss/oikonomia"
+    
+    # ΑΚΙΝΗΤΑ
+    "🏠 POMIDA (Ιδιοκτήτες)": "https://www.pomida.gr/feed/",
+    "📐 Archetypes (Design)": "https://www.archetypes.gr/feed/",
+    "💰 Capital (Real Estate)": "https://www.capital.gr/rss/oikonomia"
 }
 
-# --- 2. ADVANCED AI SCORING SYSTEM ---
+# --- 2. IMAGE SCRAPER (ΤΟ ΝΕΟ ΟΠΛΟ) ---
+def fetch_article_image(url):
+    """
+    Μπαίνει στη σελίδα και προσπαθεί να βρει την κύρια εικόνα (Open Graph).
+    Αν αποτύχει, επιστρέφει κενό string.
+    """
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=5) # 5 seconds timeout
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            # Ψάχνουμε για og:image (Facebook/Social Image) που είναι συνήθως η κύρια φωτό
+            og_image = soup.find("meta", property="og:image")
+            if og_image and og_image.get("content"):
+                return og_image["content"]
+    except:
+        return ""
+    return ""
+
+# --- 3. HELPER FUNCTIONS ---
 def remove_accents(input_str):
     replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
     for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
 
+def clean_summary(text):
+    text = re.sub('<[^<]+?>', '', text) # Αφαίρεση HTML tags
+    return text[:500] + "..."
+
+# --- 4. ADVANCED CATEGORIZATION ---
 def guess_category_smart(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
     
-    # ΚΑΝΟΝΑΣ 1: ΕΛΕΓΧΟΣ ΓΙΑ ΝΟΜΟΘΕΣΙΑ (ΦΕΚ/ΑΠΟΦΑΣΕΙΣ)
+    # ΚΑΝΟΝΑΣ 1: ΦΕΚ & ΝΟΜΟΘΕΣΙΑ
     fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου', 'δημοσιευθηκε στο φεκ']
     is_fek = any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean
 
     if is_fek:
-        # Υβριδικός έλεγχος
         eng_relevant_words = [
             'αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 
             'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'πεδμεδε', 'μηχανικ', 'τεε', 
-            'ενεργειακ', 'εξοικονομω', 'αντικειμενικ'
+            'ενεργειακ', 'εξοικονομω', 'αντικειμενικ', 'στατικ', 'αντισεισμικ', 'σκυροδεμ', 'οπλισμ', 'ευρωκωδικ', 'γεφυροποι', 'οδοποι'
         ]
         if any(w in full_text for w in eng_relevant_words):
             return "📜 Νομοθεσία: Μηχανικών & Έργων"
-        else:
-            return "📜 Νομοθεσία & ΦΕΚ"
+        return "📜 Νομοθεσία & ΦΕΚ"
 
-    # ΚΑΝΟΝΑΣ 2: SCORING SYSTEM
-    scores = {
-        "eng_poleodomia": 0,
-        "eng_energy": 0,
-        "eng_projects": 0,
-        "law_realestate": 0,
-        "law_justice": 0,
-        "finance": 0,
-        "news_general": 0
-    }
+    # SCORING SYSTEM
+    scores = {"eng_poleodomia": 0, "eng_energy": 0, "eng_projects": 0, "law_realestate": 0, "law_justice": 0, "finance": 0, "news_general": 0}
 
-    # A. Source Bias
+    # Source Bias
     if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean: scores["eng_energy"] += 3
     elif "ypodomes" in source_clean or "pedmede" in source_clean: scores["eng_projects"] += 3
     elif "pomida" in source_clean: scores["law_realestate"] += 3
-    elif "lawspot" in source_clean or "dsa" in source_clean: scores["law_justice"] += 3
-    elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
+    elif "lawnet" in source_clean or "dsa" in source_clean or "lawspot" in source_clean: scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean or "naftemporiki" in source_clean: scores["finance"] += 3
 
-    # B. Content Analysis
+    # Keywords
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
     for w in poleodomia_words: 
         if w in full_text: scores["eng_poleodomia"] += 2
-
+            
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
     for w in energy_words: 
         if w in full_text: scores["eng_energy"] += 2
-
-    project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
+            
+    project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ', 'στατικ', 'σκυροδεμ']
     for w in project_words: 
         if w in full_text: scores["eng_projects"] += 2
-
+            
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
     for w in estate_words: 
         if w in full_text: scores["law_realestate"] += 2
 
-    # Disaster Filter for Legal
+    # Legal / Justice
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
     justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν', 'εφετειο', 'νομικο συμβουλιο']
@@ -99,13 +121,10 @@ def guess_category_smart(title, summary, source_name):
     for w in fin_words: 
         if w in full_text: scores["finance"] += 2
 
-    # C. Winner
+    # Winner
     best_category = max(scores, key=scores.get)
-    max_score = scores[best_category]
-
-    if max_score < 2:
-        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']):
-            return "📢 Θεσμικά & Ανακοινώσεις"
+    if scores[best_category] < 2:
+        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']): return "📢 Θεσμικά & Ανακοινώσεις"
         return "🌐 Γενική Ενημέρωση"
 
     category_map = {
@@ -117,17 +136,11 @@ def guess_category_smart(title, summary, source_name):
         "finance": "💼 Φορολογικά & Οικονομία",
         "news_general": "🌐 Γενική Ενημέρωση"
     }
-    
     return category_map[best_category]
 
-def clean_summary(text):
-    # Αφαιρεί HTML tags και κενά
-    text = re.sub('<[^<]+?>', '', text)
-    return text[:500] + "..." # Αυξήσαμε το όριο σε 500 χαρακτήρες για να έχουμε "ψωμί"
-
-# --- 3. RUN LOOP ---
+# --- 5. RUN LOOP ---
 def run():
-    print(f"🤖 [NomoTechi AI] Σάρωση και Κατηγοριοποίηση ξεκίνησε...")
+    print(f"🤖 [NomoTechi AI] Ξεκινάει σάρωση με Image Scraping...")
     
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
@@ -149,20 +162,22 @@ def run():
         existing_links = []
         
     new_items_count = 0
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    headers = {'User-Agent': 'Mozilla/5.0'}
 
     for source_name, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url, agent=headers['User-Agent'])
             if not feed.entries and feed.bozo: continue
                 
-            for entry in feed.entries[:5]: 
+            for entry in feed.entries[:3]: 
                 if entry.link not in existing_links:
                     title = entry.title
-                    raw_summary = entry.summary if 'summary' in entry else ""
-                    summary = clean_summary(raw_summary)
-                    
+                    summary = clean_summary(entry.summary if 'summary' in entry else "")
                     category = guess_category_smart(title, summary, source_name)
+                    
+                    # --- ΤΟ ΝΕΟ ΚΟΜΜΑΤΙ: ΒΡΙΣΚΟΥΜΕ ΤΗ ΦΩΤΟΓΡΑΦΙΑ ---
+                    print(f"   📸 Scraping image for: {title[:20]}...")
+                    real_image_url = fetch_article_image(entry.link)
                     
                     new_row = [
                         len(existing_data) + new_items_count + 1,
@@ -171,15 +186,17 @@ def run():
                         summary,
                         entry.link,
                         datetime.now().strftime("%Y-%m-%d"),
-                        category
+                        category,
+                        real_image_url # Νέα στήλη 8: URL Φωτογραφίας
                     ]
                     
                     sheet.append_row(new_row)
                     new_items_count += 1
                     existing_links.append(entry.link)
-                    print(f"   ✅ [{category}] {title[:30]}...")
+                    print(f"   ✅ Saved.")
                     
-        except Exception:
+        except Exception as e:
+            print(f"Error on {source_name}: {e}")
             pass
 
     print(f"🏁 Ολοκληρώθηκε. Νέα άρθρα: {new_items_count}")
