@@ -4,17 +4,15 @@ import gspread
 import feedparser
 from datetime import datetime
 import time
+import re
 
 # --- 1. ΟΙ ΠΗΓΕΣ ---
 RSS_FEEDS = {
-    # ΝΟΜΟΘΕΣΙΑ & ΔΙΚΑΙΟΣΥΝΗ
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
     "⚖️ Lawspot": "https://www.lawspot.gr/nomika-nea/feed",
     "🎓 Dikaiologitika": "https://www.dikaiologitika.gr/feed", 
     "💼 Taxheaven": "https://www.taxheaven.gr/rss",
-
-    # ΤΕΧΝΙΚΑ & ΠΕΡΙΒΑΛΛΟΝΤΙΚΑ
     "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🌿 B2Green": "https://news.b2green.gr/feed",
@@ -22,8 +20,6 @@ RSS_FEEDS = {
     "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
     "👷 Michanikos": "https://www.michanikos-online.gr/feed/",
     "🌍 GreenAgenda": "https://greenagenda.gr/feed/",
-    
-    # ΑΚΙΝΗΤΑ & ΟΙΚΟΝΟΜΙΑ
     "🏠 POMIDA": "https://www.pomida.gr/feed/",
     "📐 Archetypes": "https://www.archetypes.gr/feed/",
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
@@ -39,26 +35,23 @@ def guess_category_smart(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
     
-    # --- ΚΑΝΟΝΑΣ 1: ΕΛΕΓΧΟΣ ΓΙΑ ΝΟΜΟΘΕΣΙΑ (ΦΕΚ/ΑΠΟΦΑΣΕΙΣ) ---
+    # ΚΑΝΟΝΑΣ 1: ΕΛΕΓΧΟΣ ΓΙΑ ΝΟΜΟΘΕΣΙΑ (ΦΕΚ/ΑΠΟΦΑΣΕΙΣ)
     fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου', 'δημοσιευθηκε στο φεκ']
     is_fek = any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean
 
     if is_fek:
-        # ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ: Ελέγχουμε αν το ΦΕΚ αφορά Μηχανικούς/Έργα
+        # Υβριδικός έλεγχος
         eng_relevant_words = [
-            'αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', # Πολεοδομικά
-            'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'πεδμεδε', 'μηχανικ', 'τεε', # Έργα
-            'ενεργειακ', 'εξοικονομω', 'αντικειμενικ' # Ενέργεια & Ακίνητα
+            'αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 
+            'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'πεδμεδε', 'μηχανικ', 'τεε', 
+            'ενεργειακ', 'εξοικονομω', 'αντικειμενικ'
         ]
-        
         if any(w in full_text for w in eng_relevant_words):
-            # Επιστρέφουμε την ΥΒΡΙΔΙΚΗ κατηγορία (θα φαίνεται και στους 2)
             return "📜 Νομοθεσία: Μηχανικών & Έργων"
         else:
-            # Απλό ΦΕΚ (π.χ. για υγεία ή παιδεία), πάει μόνο στη Νομοθεσία
             return "📜 Νομοθεσία & ΦΕΚ"
 
-    # --- ΚΑΝΟΝΑΣ 2: ΣΥΣΤΗΜΑ ΒΑΘΜΟΛΟΓΗΣΗΣ (ΓΙΑ ΤΑ ΥΠΟΛΟΙΠΑ) ---
+    # ΚΑΝΟΝΑΣ 2: SCORING SYSTEM
     scores = {
         "eng_poleodomia": 0,
         "eng_energy": 0,
@@ -106,7 +99,7 @@ def guess_category_smart(title, summary, source_name):
     for w in fin_words: 
         if w in full_text: scores["finance"] += 2
 
-    # C. Determine Winner
+    # C. Winner
     best_category = max(scores, key=scores.get)
     max_score = scores[best_category]
 
@@ -126,6 +119,11 @@ def guess_category_smart(title, summary, source_name):
     }
     
     return category_map[best_category]
+
+def clean_summary(text):
+    # Αφαιρεί HTML tags και κενά
+    text = re.sub('<[^<]+?>', '', text)
+    return text[:500] + "..." # Αυξήσαμε το όριο σε 500 χαρακτήρες για να έχουμε "ψωμί"
 
 # --- 3. RUN LOOP ---
 def run():
@@ -161,7 +159,8 @@ def run():
             for entry in feed.entries[:5]: 
                 if entry.link not in existing_links:
                     title = entry.title
-                    summary = entry.summary.replace("<p>", "").replace("</p>", "")[:250] + "..." if 'summary' in entry else ""
+                    raw_summary = entry.summary if 'summary' in entry else ""
+                    summary = clean_summary(raw_summary)
                     
                     category = guess_category_smart(title, summary, source_name)
                     
