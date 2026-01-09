@@ -59,45 +59,100 @@ def remove_accents(input_str):
     return input_str.lower()
 
 def guess_category_smart(title, summary, source_name):
+    # Καθαρισμός κειμένου
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
-
-    # 1. Source Weighting
+    
+    # ΑΠΟΛΥΤΟΣ ΚΑΝΟΝΑΣ: ΝΟΜΟΘΕΣΙΑ (ΦΕΚ)
+    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου']
+    if any(w in full_text for w in fek_keywords): return "📜 Νομοθεσία & ΦΕΚ"
     if "e-nomothesia" in source_clean: return "📜 Νομοθεσία & ΦΕΚ"
-    if "greenagenda" in source_clean or "b2green" in source_clean:
-        if any(w in full_text for w in ['φεκ', 'τροπολογια']): return "📜 Νομοθεσία & ΦΕΚ"
-        return "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον"
-    if "pomida" in source_clean: return "🖋️ Συμβολαιογραφικά & Ακίνητα"
 
-    # 2. Safety Net for Natural Disasters
-    nature_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'πλημμυρα', 'καιρος']
-    is_nature = any(w in full_text for w in nature_words)
+    # Initialize Scores
+    scores = {
+        "eng_poleodomia": 0,
+        "eng_energy": 0,
+        "eng_projects": 0,
+        "law_realestate": 0,
+        "law_justice": 0,
+        "finance": 0,
+        "news_general": 0
+    }
 
-    # 3. Priority Keywords
-    if any(w in full_text for w in ['φεκ', 'εγκυκλιος', 'κυα', 'προεδriko διαταγμα', 'νομοσχεδιο']): return "📜 Νομοθεσία & ΦΕΚ"
+    # --- A. SOURCE BIAS ---
+    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean:
+        scores["eng_energy"] += 3
+    elif "ypodomes" in source_clean or "pedmede" in source_clean:
+        scores["eng_projects"] += 3
+    elif "pomida" in source_clean:
+        scores["law_realestate"] += 3
+    elif "lawspot" in source_clean or "dsa" in source_clean:
+        scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean:
+        scores["finance"] += 3
+
+    # --- B. CONTENT ANALYSIS ---
     
-    eng_keywords = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'νοκ', 'τοπογραφικ', 'κτηματολογιο']
-    if any(w in full_text for w in eng_keywords): return "📐 Μηχανικοί: Πολεοδομία"
+    # ΠΟΛΕΟΔΟΜΙΑ
+    poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
+    for w in poleodomia_words: 
+        if w in full_text: scores["eng_poleodomia"] += 2
 
-    erga_keywords = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'εσπα']
-    if any(w in full_text for w in erga_keywords): return "✒️ Μηχανικοί: Έργα"
+    # ΕΝΕΡΓΕΙΑ
+    energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
+    for w in energy_words: 
+        if w in full_text: scores["eng_energy"] += 2
 
-    energy_keywords = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'κλιματικ']
-    if any(w in full_text for w in energy_keywords): return "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον"
+    # ΕΡΓΑ
+    project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
+    for w in project_words: 
+        if w in full_text: scores["eng_projects"] += 2
 
-    prop_keywords = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'υποθηκοφυλακ']
-    if any(w in full_text for w in prop_keywords): return "🖋️ Συμβολαιογραφικά & Ακίνητα"
+    # ΑΚΙΝΗΤΑ
+    estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
+    for w in estate_words: 
+        if w in full_text: scores["law_realestate"] += 2
 
-    # Legal Check with Safety Net
-    legal_keywords = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ']
-    strong_legal = ['αρεοπαγ', 'στε', 'εφετειο']
-    if any(w in full_text for w in strong_legal): return "⚖️ Νομικά Θέματα"
-    if any(w in full_text for w in legal_keywords) and not is_nature: return "⚖️ Νομικά Θέματα"
-
-    if any(w in full_text for w in ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια']): return "💼 Φορολογικά & Οικονομία"
-    if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']): return "📢 Θεσμικά & Ανακοινώσεις"
+    # ΝΟΜΙΚΑ
+    disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
+    is_disaster = any(w in full_text for w in disaster_words)
     
-    return "🌐 Γενική Ενημέρωση"
+    justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν', 'εφετειο', 'νομικο συμβουλιο']
+    
+    found_justice_words = 0
+    for w in justice_words: 
+        if w in full_text: found_justice_words += 1
+    
+    if is_disaster and found_justice_words < 2:
+        scores["law_justice"] = -10 
+    else:
+        scores["law_justice"] += (found_justice_words * 2)
+
+    # ΟΙΚΟΝΟΜΙΚΑ
+    fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
+    for w in fin_words: 
+        if w in full_text: scores["finance"] += 2
+
+    # --- C. WINNER ---
+    best_category = max(scores, key=scores.get)
+    max_score = scores[best_category]
+
+    if max_score < 2:
+        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']):
+            return "📢 Θεσμικά & Ανακοινώσεις"
+        return "🌐 Γενική Ενημέρωση"
+
+    category_map = {
+        "eng_poleodomia": "📐 Μηχανικοί: Πολεοδομία",
+        "eng_energy": "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον",
+        "eng_projects": "✒️ Μηχανικοί: Έργα",
+        "law_realestate": "🖋️ Συμβολαιογραφικά & Ακίνητα",
+        "law_justice": "⚖️ Νομικά Θέματα",
+        "finance": "💼 Φορολογικά & Οικονομία",
+        "news_general": "🌐 Γενική Ενημέρωση"
+    }
+    
+    return category_map[best_category]
 
 def get_db_connection():
     try:
