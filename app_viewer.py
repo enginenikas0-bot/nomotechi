@@ -7,88 +7,55 @@ import time
 import hashlib
 import re
 
-# --- 1. SETUP ΣΕΛΙΔΑΣ ---
+# --- 1. SETUP ---
 st.set_page_config(
-    page_title="NomoTechi | Το Portal του Επαγγελματία",
+    page_title="NomoTechi | Professional Hub",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS (MSN / PROFESSIONAL STYLE) ---
+# --- 2. CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #F8F9FA;
-        color: #212529;
-    }
-    
-    .header-container {
-        background-color: white;
-        padding: 20px 0;
-        border-bottom: 5px solid #003366;
-        text-align: center;
-    }
-    .header-logo { font-size: 3rem; font-weight: 900; color: #003366; line-height: 1; }
-    .header-sub { color: #6c757d; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 5px; }
-
-    /* SEARCH BAR STYLING */
-    .search-container {
-        max-width: 600px;
-        margin: 20px auto;
-        padding: 0 20px;
-    }
-    .stTextInput input {
-        border-radius: 20px;
-        border: 2px solid #ddd;
-        padding: 10px 15px;
-    }
-    .stTextInput input:focus { border-color: #003366; box-shadow: 0 0 5px rgba(0,51,102,0.2); }
-
-    .ticker-wrap {
-        width: 100%; background-color: #003366; color: white; height: 45px;
-        overflow: hidden; white-space: nowrap; display: flex; align-items: center;
-    }
-    .ticker-item {
-        display: inline-block; padding-left: 100%;
-        animation: ticker 60s linear infinite; font-weight: 600; font-size: 1rem;
-    }
-    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-    .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 10px; border-radius: 8px; gap: 15px; }
-    .stTabs [data-baseweb="tab"] { height: 55px; color: #333 !important; font-weight: 600 !important; font-size: 1rem !important; }
-    .stTabs [aria-selected="true"] { color: #cc0000 !important; border-bottom: 3px solid #cc0000 !important; background-color: #FFF0F0 !important; }
-
-    .hero-wrapper { position: relative; height: 450px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: #000; }
-    .hero-image { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: transform 5s ease; }
-    .hero-image:hover { transform: scale(1.05); opacity: 0.9; }
-    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
-    .hero-cat { background-color: #cc0000; color: white; padding: 4px 10px; font-size: 0.75rem; font-weight: 700; border-radius: 3px; }
-    .hero-title { color: white; font-size: 2rem; font-weight: 700; line-height: 1.2; margin-top: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    .hero-title a { color: white !important; text-decoration: none; }
-
-    .list-item { background: white; padding: 18px; border-bottom: 1px solid #eee; border-left: 3px solid transparent; transition: 0.2s; }
-    .list-item:hover { background-color: #f1f5f9; border-left: 3px solid #003366; }
-    .list-title { font-size: 1.05rem; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
-    .list-title a { color: #1a1a1a !important; text-decoration: none; }
-    .list-summary { font-size: 0.9rem; color: #555; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .list-meta { font-size: 0.8rem; color: #888; }
-
-    .grid-card { background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; height: 100%; display: flex; flex-direction: column; }
-    .grid-img { height: 160px; overflow: hidden; background: #eee; }
-    .grid-img img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
-    .grid-card:hover .grid-img img { transform: scale(1.05); }
-    .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .grid-title { font-size: 1.1rem; font-weight: 700; color: #222; margin-bottom: 8px; line-height: 1.3; }
-    .grid-text { font-size: 0.9rem; color: #555; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px;}
+    html, body, [class*="css"] {font-family: 'Segoe UI', sans-serif; background-color: #F8F9FA; color: #212529;}
+    .header-container {background-color: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center;}
+    .header-logo {font-size: 3rem; font-weight: 900; color: #003366; line-height: 1;}
+    .header-sub {color: #6c757d; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 5px;}
+    .ticker-wrap {width: 100%; background-color: #003366; color: white; height: 45px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
+    .ticker-item {display: inline-block; padding-left: 100%; animation: ticker 60s linear infinite; font-weight: 600; font-size: 1rem;}
+    @keyframes ticker {0% {transform: translate3d(0, 0, 0);} 100% {transform: translate3d(-100%, 0, 0);}}
+    .stTabs [data-baseweb="tab-list"] {background-color: white; padding: 10px; border-radius: 8px; gap: 15px;}
+    .stTabs [data-baseweb="tab"] {height: 55px; color: #333 !important; font-weight: 600 !important; font-size: 1rem !important;}
+    .stTabs [aria-selected="true"] {color: #cc0000 !important; border-bottom: 3px solid #cc0000 !important; background-color: #FFF0F0 !important;}
+    .hero-wrapper {position: relative; height: 450px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: #000;}
+    .hero-image {width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: transform 5s ease;}
+    .hero-image:hover {transform: scale(1.05); opacity: 0.9;}
+    .hero-overlay {position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.5), transparent);}
+    .hero-cat {display: inline-block; background-color: #cc0000; color: white; padding: 4px 10px; font-size: 0.75rem; font-weight: 700; border-radius: 3px; margin-bottom: 10px;}
+    .hero-title {color: white; font-size: 2rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+    .hero-title a {color: white !important; text-decoration: none;}
+    .list-item {background: white; padding: 18px; border-bottom: 1px solid #eee; transition: 0.2s; border-left: 3px solid transparent;}
+    .list-item:hover {background-color: #f1f5f9; border-left: 3px solid #003366;}
+    .list-title {font-size: 1.05rem; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;}
+    .list-title a {color: #1a1a1a !important; text-decoration: none;}
+    .list-title a:hover {color: #004B87 !important;}
+    .list-summary {font-size: 0.9rem; color: #555; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+    .list-meta {font-size: 0.8rem; color: #888;}
+    .grid-card {background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; height: 100%; display: flex; flex-direction: column;}
+    .grid-img {height: 160px; overflow: hidden; background: #eee;}
+    .grid-img img {width: 100%; height: 100%; object-fit: cover; transition: 0.3s;}
+    .grid-card:hover .grid-img img {transform: scale(1.05);}
+    .grid-content {padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;}
+    .grid-title {font-size: 1.1rem; font-weight: 700; color: #222; margin-bottom: 8px; line-height: 1.3;}
+    .grid-text {font-size: 0.9rem; color: #555; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px;}
+    .search-container {max-width: 600px; margin: 20px auto; padding: 0 20px;}
+    .stTextInput input {border-radius: 20px; border: 2px solid #ddd; padding: 10px 15px;}
 </style>
 """, unsafe_allow_html=True)
 
 # --- 3. LOGIC ---
-# (RSS Feeds & Stock Images kept for fallback)
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -96,6 +63,11 @@ IMAGE_POOL = {
     "FEK": ["https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=1200","https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1200"],
     "GENERAL": ["https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200"]
 }
+
+def remove_accents(input_str):
+    replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
+    for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
+    return input_str.lower()
 
 def get_stock_image(category, title):
     if "Πολεοδομία" in category or "Έργα" in category: pool = IMAGE_POOL["ENG"]
@@ -122,35 +94,23 @@ def reset_database():
     sheet = get_db_connection()
     if not sheet: return False
     try:
-        sheet.batch_clear(["A2:H5000"]) # Clear up to H (8th column)
+        sheet.batch_clear(["A2:H5000"])
         return True
     except: return False
 
-def run_force_scan_trigger():
-    pass 
-
 # --- 4. RENDER UI ---
-
-st.markdown("""
-<div class="header-container">
-    <div class="header-logo">🏛️ NomoTechi</div>
-    <div class="header-sub">Η Ενιαία Πύλη για Μηχανικούς, Δικηγόρους & Συμβολαιογράφους</div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Η Ενιαία Πύλη για Μηχανικούς, Δικηγόρους & Συμβολαιογράφους</div></div>""", unsafe_allow_html=True)
 
 data = load_data()
 df = pd.DataFrame(data)
 
-# --- SEARCH BAR ---
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση ειδήσεων, ΦΕΚ, αποφάσεων...")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# FILTER DATA BASED ON SEARCH
 if not df.empty and search_query:
     df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
 
-# TICKER
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']} ({row['law']})" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div><br>""", unsafe_allow_html=True)
@@ -169,7 +129,6 @@ if not df.empty:
         return df
 
     def get_display_image(row):
-        # Check if column 8 (image_url) exists and is not empty
         if 'image_url' in row and str(row['image_url']).startswith('http'):
             return row['image_url']
         return get_stock_image(row['category'], row['title'])
@@ -180,7 +139,6 @@ if not df.empty:
             st.info("Δεν βρέθηκαν αποτελέσματα.")
             return
 
-        # HERO SLIDER (Only if not searching, or keep it always)
         if not search_query: 
             col_hero_wrap, col_list = st.columns([1.8, 1.2]) 
             
@@ -223,9 +181,6 @@ if not df.empty:
                     """, unsafe_allow_html=True)
             st.markdown("---")
 
-        # GRID SECTION
-        st.subheader("📌 Όλα τα Θέματα" if not search_query else f"🔎 Αποτελέσματα για: '{search_query}'")
-        
         start_idx = 6 if not search_query else 0
         grid_df = current_df.iloc[start_idx:] 
         
@@ -247,7 +202,7 @@ if not df.empty:
                                     <div class="grid-title">{row['title']}</div>
                                     <div class="grid-text">{row['content']}</div>
                                     <div style="margin-top:10px; font-size:0.75rem; color:#888;">
-                                        {row['law']} | <a href="{row['link']}" target="_blank" style="color:#003366; font-weight:bold;">Διαβάστε περισσότερα ></a>
+                                        {row['law']} | <a href="{row['link']}" target="_blank" style="color:#003366; font-weight:bold;">Διαβάστε</a>
                                     </div>
                                 </div>
                             </div>
@@ -263,14 +218,14 @@ if not df.empty:
         pw = st.text_input("Κωδικός Διαχειριστή", type="password")
         if pw == st.secrets.get("admin_password", ""):
             st.success("Admin Access: OK")
-            st.info("Για να ενεργοποιηθούν οι πραγματικές εικόνες, πρέπει να γίνει 'Reset' και 'Force Scan'.")
+            st.info("Για ενεργοποίηση, τρέξτε το Workflow από το GitHub.")
             c1, c2 = st.columns(2)
             with c1:
-                st.button("🚀 Force Scan (Scheduled)", disabled=True, help="Η σάρωση γίνεται αυτόματα κάθε 4 ώρες.")
+                st.button("🚀 Force Scan (GitHub Action)", disabled=True)
             with c2:
                 if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
                 if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
             st.dataframe(df)
 
 else:
-    st.warning("Η βάση είναι κενή. Παρακαλώ περιμένετε την αυτόματη ενημέρωση ή εκτελέστε το script.")
+    st.warning("Η βάση είναι κενή. Τρέξτε το GitHub Workflow.")
