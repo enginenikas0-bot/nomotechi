@@ -206,11 +206,18 @@ if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
-    def get_filtered_df(tab_name):
-        if tab_name == "HOME": return df
-        if tab_name == "ENG": return df[df['category'].str.contains("Μηχανικ|Πολεοδομ|Ενέργεια|Έργα|Θεσμικά", case=False)]
-        if tab_name == "LAW": return df[df['category'].str.contains("Νομικ|Συμβολαιο|Δικηγόρ|Φορολογ", case=False)]
-        if tab_name == "FEK": return df[df['category'].str.contains("Νομοθεσία|ΦΕΚ", case=False)]
+   def get_filtered_df(tab_name):
+        if tab_name == "HOME": 
+            return df
+        if tab_name == "ENG": 
+            # Ψάχνει αν υπάρχει η ετικέτα ENGINEERS ή λέξεις κλειδιά
+            return df[df['category'].str.contains("ENGINEERS|Μηχανικ|ENG", case=False, na=False)]
+        if tab_name == "LAW": 
+            # Ψάχνει για LEGAL
+            return df[df['category'].str.contains("LEGAL|Νομικ|LAW", case=False, na=False)]
+        if tab_name == "FEK": 
+            # Ψάχνει για LEGISLATION
+            return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|FEK", case=False, na=False)]
         return df
 
     def get_display_image(row):
@@ -339,3 +346,4 @@ if not df.empty:
 
 else:
     st.warning("Η βάση ενημερώνεται... Παρακαλώ περιμένετε 1 λεπτό και κάντε ανανέωση.")
+
