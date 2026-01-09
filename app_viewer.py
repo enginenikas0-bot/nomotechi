@@ -215,7 +215,6 @@ RSS_FEEDS = {
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
 }
 
-# ΕΛΕΓΜΕΝΕΣ ΕΙΚΟΝΕΣ (UPDATED LINKS)
 IMAGE_POOL = {
     "ENG": [
         "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200",
@@ -291,21 +290,26 @@ def guess_category_smart(title, summary, source_name):
     elif "taxheaven" in source_clean or "capital" in source_clean:
         scores["finance"] += 3
 
+    # ΔΙΟΡΘΩΜΕΝΗ ΔΟΜΗ ΓΙΑ ΝΑ ΜΗΝ ΧΤΥΠΑΕΙ SYNTAX ERROR
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
     for w in poleodomia_words:
-        if w in full_text: scores["eng_poleodomia"] += 2
+        if w in full_text:
+            scores["eng_poleodomia"] += 2
             
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
     for w in energy_words:
-        if w in full_text: scores["eng_energy"] += 2
+        if w in full_text:
+            scores["eng_energy"] += 2
             
     project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
     for w in project_words:
-        if w in full_text: scores["eng_projects"] += 2
+        if w in full_text:
+            scores["eng_projects"] += 2
             
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
     for w in estate_words:
-        if w in full_text: scores["law_realestate"] += 2
+        if w in full_text:
+            scores["law_realestate"] += 2
 
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
@@ -319,7 +323,8 @@ def guess_category_smart(title, summary, source_name):
 
     fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
     for w in fin_words:
-        if w in full_text: scores["finance"] += 2
+        if w in full_text:
+            scores["finance"] += 2
 
     best_category = max(scores, key=scores.get)
     if scores[best_category] < 2:
