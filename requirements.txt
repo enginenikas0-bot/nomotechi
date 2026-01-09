@@ -3,3 +3,5 @@ oauth2client
 streamlit
 pandas
 feedparser
+requests
+beautifulsoup4
