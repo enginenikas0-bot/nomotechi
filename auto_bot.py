@@ -36,12 +36,14 @@ def fetch_article_image(url):
             og_image = soup.find("meta", property="og:image")
             if og_image and og_image.get("content"):
                 return og_image["content"]
-    except: return ""
+    except:
+        return ""
     return ""
 
 def remove_accents(input_str):
     replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
-    for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
+    for char, rep in replacements.items():
+        input_str = input_str.replace(char, rep)
     return input_str.lower()
 
 def clean_summary(text):
@@ -63,11 +65,16 @@ def guess_category_smart(title, summary, source_name):
 
     scores = {"eng_poleodomia": 0, "eng_energy": 0, "eng_projects": 0, "law_realestate": 0, "law_justice": 0, "finance": 0, "news_general": 0}
 
-    if "b2green" in source_clean or "greenagenda" in source_clean: scores["eng_energy"] += 3
-    elif "ypodomes" in source_clean or "pedmede" in source_clean: scores["eng_projects"] += 3
-    elif "pomida" in source_clean: scores["law_realestate"] += 3
-    elif "lawspot" in source_clean or "dsa" in source_clean: scores["law_justice"] += 3
-    elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
+    if "b2green" in source_clean or "greenagenda" in source_clean:
+        scores["eng_energy"] += 3
+    elif "ypodomes" in source_clean or "pedmede" in source_clean:
+        scores["eng_projects"] += 3
+    elif "pomida" in source_clean:
+        scores["law_realestate"] += 3
+    elif "lawspot" in source_clean or "dsa" in source_clean:
+        scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean:
+        scores["finance"] += 3
 
     # ΔΙΟΡΘΩΜΕΝΟΙ ΒΡΟΓΧΟΙ (Σωστό Indentation)
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
@@ -161,7 +168,8 @@ def run():
                     sheet.append_row(new_row)
                     new_items_count += 1
                     existing_links.append(entry.link)
-        except: pass
+        except:
+            pass
     print(f"🏁 Done. New: {new_items_count}")
 
 if __name__ == "__main__":
