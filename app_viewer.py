@@ -58,88 +58,54 @@ def remove_accents(input_str):
     for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
 
+# --- Ο ΕΞΥΠΝΟΣ ΑΛΓΟΡΙΘΜΟΣ (ΙΔΙΟΣ ΜΕ ΠΡΙΝ) ---
 def guess_category_smart(title, summary, source_name):
-    # Καθαρισμός κειμένου
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
     
-    # ΑΠΟΛΥΤΟΣ ΚΑΝΟΝΑΣ: ΝΟΜΟΘΕΣΙΑ (ΦΕΚ)
     fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου']
     if any(w in full_text for w in fek_keywords): return "📜 Νομοθεσία & ΦΕΚ"
     if "e-nomothesia" in source_clean: return "📜 Νομοθεσία & ΦΕΚ"
 
-    # Initialize Scores
-    scores = {
-        "eng_poleodomia": 0,
-        "eng_energy": 0,
-        "eng_projects": 0,
-        "law_realestate": 0,
-        "law_justice": 0,
-        "finance": 0,
-        "news_general": 0
-    }
+    scores = {"eng_poleodomia": 0, "eng_energy": 0, "eng_projects": 0, "law_realestate": 0, "law_justice": 0, "finance": 0, "news_general": 0}
 
-    # --- A. SOURCE BIAS ---
-    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean:
-        scores["eng_energy"] += 3
-    elif "ypodomes" in source_clean or "pedmede" in source_clean:
-        scores["eng_projects"] += 3
-    elif "pomida" in source_clean:
-        scores["law_realestate"] += 3
-    elif "lawspot" in source_clean or "dsa" in source_clean:
-        scores["law_justice"] += 3
-    elif "taxheaven" in source_clean or "capital" in source_clean:
-        scores["finance"] += 3
+    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean: scores["eng_energy"] += 3
+    elif "ypodomes" in source_clean or "pedmede" in source_clean: scores["eng_projects"] += 3
+    elif "pomida" in source_clean: scores["law_realestate"] += 3
+    elif "lawspot" in source_clean or "dsa" in source_clean: scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
 
-    # --- B. CONTENT ANALYSIS ---
-    
-    # ΠΟΛΕΟΔΟΜΙΑ
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
     for w in poleodomia_words: 
         if w in full_text: scores["eng_poleodomia"] += 2
 
-    # ΕΝΕΡΓΕΙΑ
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
     for w in energy_words: 
         if w in full_text: scores["eng_energy"] += 2
 
-    # ΕΡΓΑ
     project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
     for w in project_words: 
         if w in full_text: scores["eng_projects"] += 2
 
-    # ΑΚΙΝΗΤΑ
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
     for w in estate_words: 
         if w in full_text: scores["law_realestate"] += 2
 
-    # ΝΟΜΙΚΑ
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
-    
     justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν', 'εφετειο', 'νομικο συμβουλιο']
+    found_justice_words = sum(1 for w in justice_words if w in full_text)
     
-    found_justice_words = 0
-    for w in justice_words: 
-        if w in full_text: found_justice_words += 1
-    
-    if is_disaster and found_justice_words < 2:
-        scores["law_justice"] = -10 
-    else:
-        scores["law_justice"] += (found_justice_words * 2)
+    if is_disaster and found_justice_words < 2: scores["law_justice"] = -10 
+    else: scores["law_justice"] += (found_justice_words * 2)
 
-    # ΟΙΚΟΝΟΜΙΚΑ
     fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
     for w in fin_words: 
         if w in full_text: scores["finance"] += 2
 
-    # --- C. WINNER ---
     best_category = max(scores, key=scores.get)
-    max_score = scores[best_category]
-
-    if max_score < 2:
-        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']):
-            return "📢 Θεσμικά & Ανακοινώσεις"
+    if scores[best_category] < 2:
+        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']): return "📢 Θεσμικά & Ανακοινώσεις"
         return "🌐 Γενική Ενημέρωση"
 
     category_map = {
@@ -151,9 +117,9 @@ def guess_category_smart(title, summary, source_name):
         "finance": "💼 Φορολογικά & Οικονομία",
         "news_general": "🌐 Γενική Ενημέρωση"
     }
-    
     return category_map[best_category]
 
+# --- 4. BACKEND FUNCTIONS ---
 def get_db_connection():
     try:
         credentials_dict = st.secrets["gcp_service_account"]
@@ -170,6 +136,17 @@ def get_badge_class(category):
     if "Νομικά" in category or "Συμβολαιο" in category: return "badge-law"
     if "Νομοθεσία" in category: return "badge-fek"
     return "badge-gen"
+
+def reset_database():
+    """ΣΒΗΝΕΙ ΤΑ ΠΑΝΤΑ ΕΚΤΟΣ ΑΠΟ ΤΟΥΣ ΤΙΤΛΟΥΣ"""
+    sheet = get_db_connection()
+    if not sheet: return False
+    try:
+        # Καθαρίζει τα περιεχόμενα από τη 2η γραμμή και κάτω (A2:G1000)
+        sheet.batch_clear(["A2:G5000"])
+        return True
+    except:
+        return False
 
 def run_force_scan():
     sheet = get_db_connection()
@@ -209,7 +186,7 @@ def run_force_scan():
     status.empty()
     return count
 
-# --- 4. UI ---
+# --- 5. UI LAYOUT ---
 st.markdown("""
 <div class="header-bar">
     <div style="font-size: 2.2rem; font-weight: 800;">🏛️ NomoTechi</div>
@@ -274,21 +251,41 @@ if not df.empty:
         for idx, row in fek_df.iterrows():
             st.markdown(f"""<div style="background:#F0FDF4; padding:20px; border-radius:10px; margin-bottom:10px; border:1px solid #BBF7D0;"><span style="color:#16A34A; font-weight:800;">ΦΕΚ / ΑΠΟΦΑΣΗ</span> | <span style="font-size:0.9rem; color:#666;">{row['law']}</span><div style="font-size:1.2rem; font-weight:700; margin-top:5px;"><a href="{row['link']}" target="_blank" style="color:#14532D!important;">{row['title']}</a></div><div style="margin-top:10px; color:#374151;">{row['content']}</div></div>""", unsafe_allow_html=True)
 
-    with tabs[4]: # ADMIN
-        st.header("Διαχείριση")
-        pw = st.text_input("Κωδικός Διαχειριστή", type="password")
-        if pw == st.secrets.get("admin_password", ""):
-            st.success("Admin Access: OK")
-            if st.button("🚀 Force Scan (Σάρωση Τώρα)", type="primary"):
+with tabs[4]: # ADMIN
+    st.header("Διαχείριση")
+    pw = st.text_input("Κωδικός Διαχειριστή", type="password")
+    
+    if pw == st.secrets.get("admin_password", ""):
+        st.success("Admin Access: OK")
+        
+        col1, col2 = st.columns(2)
+        
+        # ΚΟΥΜΠΙ 1: ΣΑΡΩΣΗ
+        with col1:
+            st.subheader("🔄 Ενημέρωση (Update)")
+            st.write("Ψάχνει ΜΟΝΟ για νέα άρθρα (δεν πειράζει τα παλιά).")
+            if st.button("🚀 Force Scan", type="primary"):
                 with st.spinner("Γίνεται σάρωση..."):
                     new_count = run_force_scan()
                 if new_count > 0:
                     st.success(f"Βρέθηκαν {new_count} νέα άρθρα!")
-                    time.sleep(2)
+                    time.sleep(1)
                     st.rerun()
                 else: st.info("Δεν βρέθηκαν νέα άρθρα.")
-            if st.button("🧹 Clear Cache"):
-                st.cache_data.clear()
-                st.rerun()
-            st.divider()
-            st.dataframe(df)
+
+        # ΚΟΥΜΠΙ 2: ΟΛΙΚΗ ΕΠΑΝΕΚΚΙΝΗΣΗ (ΤΟ ΝΕΟ ΚΟΥΜΠΙ)
+        with col2:
+            st.subheader("🗑️ Διαγραφή & Επανεκκίνηση")
+            st.write("⚠️ Σβήνει ΟΛΑ τα άρθρα για να τα ξανα-κατεβάσει σωστά.")
+            if st.button("🔴 RESET DATABASE (Ολική Διαγραφή)"):
+                with st.spinner("Καθαρισμός βάσης..."):
+                    success = reset_database()
+                    st.cache_data.clear()
+                if success:
+                    st.warning("Η βάση άδειασε! Πατήστε τώρα 'Force Scan' για να γεμίσει σωστά.")
+                else:
+                    st.error("Σφάλμα κατά τη διαγραφή.")
+
+        st.divider()
+        st.subheader("Raw Data Preview")
+        st.dataframe(df)
