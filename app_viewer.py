@@ -47,7 +47,7 @@ st.markdown("""
     }
     .ticker-item {
         display: inline-block; padding-left: 100%;
-        animation: ticker 75s linear infinite; font-weight: 600; font-size: 0.95rem;
+        animation: ticker 80s linear infinite; font-weight: 600; font-size: 0.95rem;
     }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
@@ -342,4 +342,5 @@ if not df.empty:
 
 else:
     st.warning("Η βάση ενημερώνεται... Παρακαλώ περιμένετε 1 λεπτό και κάντε ανανέωση.")
+
 
