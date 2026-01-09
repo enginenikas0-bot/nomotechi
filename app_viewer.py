@@ -5,6 +5,7 @@ import feedparser
 from datetime import datetime
 import time
 import hashlib
+import re
 
 # --- 1. SETUP ΣΕΛΙΔΑΣ ---
 st.set_page_config(
@@ -17,7 +18,6 @@ st.set_page_config(
 # --- 2. CSS (MSN / PROFESSIONAL STYLE) ---
 st.markdown("""
 <style>
-    /* Γενική Τυπογραφία */
     @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
     
     html, body, [class*="css"] {
@@ -26,7 +26,6 @@ st.markdown("""
         color: #212529;
     }
     
-    /* HEADER */
     .header-container {
         background-color: white;
         padding: 20px 0;
@@ -49,10 +48,9 @@ st.markdown("""
         margin-top: 5px;
     }
 
-    /* SLOWER TICKER (90s) */
     .ticker-wrap {
         width: 100%;
-        background-color: #003366; /* Navy Blue */
+        background-color: #003366;
         color: white;
         height: 45px;
         overflow: hidden;
@@ -65,7 +63,7 @@ st.markdown("""
     .ticker-item {
         display: inline-block;
         padding-left: 100%;
-        animation: ticker 90s linear infinite; /* Πιο αργό για να διαβάζεται */
+        animation: ticker 60s linear infinite;
         font-weight: 600;
         font-size: 1rem;
     }
@@ -74,7 +72,6 @@ st.markdown("""
         100% { transform: translate3d(-100%, 0, 0); }
     }
 
-    /* TABS STYLING (FIXED VISIBILITY) */
     .stTabs [data-baseweb="tab-list"] {
         background-color: white;
         padding: 10px;
@@ -87,18 +84,17 @@ st.markdown("""
         white-space: pre-wrap;
         background-color: transparent;
         border-radius: 4px;
-        color: #333333 !important; /* Μαύρα γράμματα πάντα */
-        opacity: 1 !important;     /* Πλήρης ορατότητα */
+        color: #333333 !important; 
+        opacity: 1 !important;     
         font-weight: 600 !important;
         font-size: 1rem !important;
     }
     .stTabs [aria-selected="true"] {
-        color: #cc0000 !important; /* Κόκκινο όταν επιλεγεί */
+        color: #cc0000 !important;
         background-color: #FFF0F0 !important;
         border-bottom: 3px solid #cc0000 !important;
     }
 
-    /* CAROUSEL / HERO SECTION */
     .hero-wrapper {
         position: relative;
         height: 450px;
@@ -145,20 +141,8 @@ st.markdown("""
     }
     .hero-title a { color: white !important; text-decoration: none; }
     .hero-title a:hover { text-decoration: underline; }
-    
-    /* ARROWS STYLING (Minimal) */
-    .arrow-btn {
-        background: none;
-        border: none;
-        color: #333;
-        font-size: 2rem;
-        cursor: pointer;
-        opacity: 0.5;
-        transition: 0.3s;
-    }
-    .arrow-btn:hover { opacity: 1; color: #003366; transform: scale(1.2); }
 
-    /* LIST ITEMS */
+    /* LIST ITEMS - ΤΩΡΑ ΜΕ ΠΕΡΙΓΡΑΦΗ */
     .list-item {
         background: white;
         padding: 18px;
@@ -174,14 +158,26 @@ st.markdown("""
         font-size: 1.05rem;
         font-weight: 600;
         color: #1a1a1a;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
         line-height: 1.4;
     }
     .list-title a { color: #1a1a1a !important; text-decoration: none; }
     .list-title a:hover { color: #004B87 !important; }
+    
+    /* NEO CSS ΓΙΑ ΤΗΝ ΠΕΡΙΛΗΨΗ ΣΤΗ ΛΙΣΤΑ */
+    .list-summary {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 8px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Κόβει στις 2 γραμμές */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
     .list-meta { font-size: 0.8rem; color: #888; }
 
-    /* GRID CARDS */
     .grid-card {
         background: white;
         border: 1px solid #e0e0e0;
@@ -221,46 +217,22 @@ RSS_FEEDS = {
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
 }
 
-# --- IMAGES POOL (ΠΟΛΛΕΣ ΕΙΚΟΝΕΣ ΓΙΑ ΚΑΘΕ ΚΑΤΗΓΟΡΙΑ) ---
 IMAGE_POOL = {
-    "ENG": [
-        "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1600&auto=format&fit=crop", # Construction
-        "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop", # Architecture
-        "https://images.unsplash.com/photo-1581094794329-cd9a15a93976?q=80&w=1600&auto=format&fit=crop", # Blueprints
-        "https://images.unsplash.com/photo-1590986221737-f8e658e45c43?q=80&w=1600&auto=format&fit=crop", # Hard Hat
-        "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=1600&auto=format&fit=crop", # Excavator
-    ],
-    "ENERGY": [
-        "https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600&auto=format&fit=crop", # Solar
-        "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1600&auto=format&fit=crop", # Forest
-        "https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1600&auto=format&fit=crop", # Wind
-        "https://images.unsplash.com/photo-1497436072909-60f360e1d4b0?q=80&w=1600&auto=format&fit=crop", # Green Tech
-        "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?q=80&w=1600&auto=format&fit=crop", # Recycling
-    ],
-    "LAW": [
-        "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1600&auto=format&fit=crop", # Gavel
-        "https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1600&auto=format&fit=crop", # Books
-        "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1600&auto=format&fit=crop", # Signing
-        "https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1600&auto=format&fit=crop", # Handshake
-        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600&auto=format&fit=crop", # Real Estate Keys
-    ],
-    "FEK": [
-        "https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=1600&auto=format&fit=crop", # Greek Flag style or Columns
-        "https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1600&auto=format&fit=crop", # Math/Stats
-        "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop", # Planning
-        "https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1600&auto=format&fit=crop", # Finance
-    ],
-    "GENERAL": [
-        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop",
-    ]
+    "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1600","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600","https://images.unsplash.com/photo-1581094794329-cd9a15a93976?q=80&w=1600","https://images.unsplash.com/photo-1590986221737-f8e658e45c43?q=80&w=1600","https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=1600"],
+    "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1600","https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1600","https://images.unsplash.com/photo-1497436072909-60f360e1d4b0?q=80&w=1600","https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?q=80&w=1600"],
+    "LAW": ["https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1600","https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1600","https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1600","https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1600","https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600"],
+    "FEK": ["https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=1600","https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1600","https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600","https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1600"],
+    "GENERAL": ["https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1600","https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1600","https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600"]
 }
 
 def remove_accents(input_str):
     replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
     for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
+
+def clean_summary(text):
+    text = re.sub('<[^<]+?>', '', text)
+    return text[:200] + "..." # Truncate for display
 
 def guess_category_smart(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
@@ -290,23 +262,19 @@ def guess_category_smart(title, summary, source_name):
 
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
     for w in poleodomia_words:
-        if w in full_text:
-            scores["eng_poleodomia"] += 2
+        if w in full_text: scores["eng_poleodomia"] += 2
             
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
     for w in energy_words:
-        if w in full_text:
-            scores["eng_energy"] += 2
+        if w in full_text: scores["eng_energy"] += 2
             
     project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
     for w in project_words:
-        if w in full_text:
-            scores["eng_projects"] += 2
+        if w in full_text: scores["eng_projects"] += 2
             
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
     for w in estate_words:
-        if w in full_text:
-            scores["law_realestate"] += 2
+        if w in full_text: scores["law_realestate"] += 2
 
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
@@ -320,8 +288,7 @@ def guess_category_smart(title, summary, source_name):
 
     fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
     for w in fin_words:
-        if w in full_text:
-            scores["finance"] += 2
+        if w in full_text: scores["finance"] += 2
 
     best_category = max(scores, key=scores.get)
     if scores[best_category] < 2:
@@ -340,21 +307,16 @@ def guess_category_smart(title, summary, source_name):
     }
     return category_map[best_category]
 
-# --- IMAGE SELECTION LOGIC (DETERMINISTIC) ---
 def get_category_image(category, title):
-    # Επιλογή λίστας ανάλογα την κατηγορία
     if "Πολεοδομία" in category or "Έργα" in category: pool = IMAGE_POOL["ENG"]
     elif "Ενέργεια" in category or "Περιβάλλον" in category: pool = IMAGE_POOL["ENERGY"]
     elif "Νομικά" in category or "Συμβολαιο" in category or "Ακίνητα" in category: pool = IMAGE_POOL["LAW"]
     elif "Νομοθεσία" in category or "ΦΕΚ" in category: pool = IMAGE_POOL["FEK"]
     else: pool = IMAGE_POOL["GENERAL"]
     
-    # "Έξυπνη" επιλογή: Χρησιμοποιούμε τον τίτλο για να διαλέγουμε πάντα την ίδια εικόνα για το ίδιο άρθρο
-    # αλλά διαφορετική για διαφορετικά άρθρα.
     hash_obj = hashlib.md5(title.encode())
     hash_int = int(hash_obj.hexdigest(), 16)
     index = hash_int % len(pool)
-    
     return pool[index]
 
 def get_db_connection():
@@ -402,7 +364,7 @@ def run_force_scan():
             if not feed.entries and feed.bozo: continue
             for entry in feed.entries[:3]:
                 if entry.link not in existing_links:
-                    summary = entry.summary.replace("<p>", "").replace("</p>", "")[:200] + "..." if 'summary' in entry else ""
+                    summary = clean_summary(entry.summary if 'summary' in entry else "")
                     cat = guess_category_smart(entry.title, summary, source)
                     new_row = [len(existing_data)+count+1, source, entry.title, summary, entry.link, datetime.now().strftime("%Y-%m-%d"), cat]
                     sheet.append_row(new_row)
@@ -416,7 +378,6 @@ def run_force_scan():
 
 # --- 4. RENDER UI ---
 
-# Header Section
 st.markdown("""
 <div class="header-container">
     <div class="header-logo">🏛️ NomoTechi</div>
@@ -424,29 +385,17 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Load Data
 data = load_data()
 df = pd.DataFrame(data)
 
-# Ticker (Automatic Flow)
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']} ({row['law']})" for idx, row in df.head(10).iterrows()])
-    st.markdown(f"""
-    <div class="ticker-wrap">
-        <div class="ticker-item">
-            {latest_titles}
-        </div>
-    </div>
-    <br>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div><br>""", unsafe_allow_html=True)
 
-# Tabs
 tabs = st.tabs(["🏠 ΡΟΗ ΕΙΔΗΣΕΩΝ", "📐 ΜΗΧΑΝΙΚΟΙ & ΕΡΓΑ", "⚖️ ΝΟΜΙΚΑ & ΑΚΙΝΗΤΑ", "📜 ΦΕΚ & ΝΟΜΟΘΕΣΙΑ", "⚙️ ADMIN"])
 
 if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
-    
-    # Session State for Slider
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
     def get_filtered_df(tab_name):
@@ -462,17 +411,14 @@ if not df.empty:
             st.info("Δεν υπάρχουν ειδήσεις σε αυτή την κατηγορία.")
             return
 
-        # --- MSN STYLE SLIDER (TOP LEFT) & LIST (RIGHT) ---
         col_hero_wrap, col_list = st.columns([1.8, 1.2]) 
         
         with col_hero_wrap:
-            # Slider Logic
             slider_len = min(5, len(current_df))
             current_slide = st.session_state.slider_idx % slider_len
             hero_article = current_df.iloc[current_slide]
             hero_img = get_category_image(hero_article['category'], hero_article['title'])
             
-            # THE HERO BOX
             st.markdown(f"""
             <div class="hero-wrapper">
                 <img src="{hero_img}" class="hero-image">
@@ -486,8 +432,6 @@ if not df.empty:
             </div>
             """, unsafe_allow_html=True)
             
-            # DISCREET NAVIGATION ARROWS
-            # Βάζουμε 3 κολώνες κάτω από την εικόνα: Αριστερά βελάκι, κενό, Δεξιά βελάκι
             c_left, c_mid, c_right = st.columns([0.1, 0.8, 0.1])
             with c_left:
                 if st.button("❮", key=f"prev_{tab_code}"):
@@ -500,11 +444,12 @@ if not df.empty:
 
         with col_list:
             st.markdown(f"### 📰 Τελευταία {tab_code if tab_code != 'HOME' else 'Ροή'}")
-            # List items
             for idx, row in current_df.head(6).iterrows():
+                # ΕΔΩ ΕΙΝΑΙ Η ΠΡΟΣΘΗΚΗ ΤΗΣ ΠΕΡΙΛΗΨΗΣ
                 st.markdown(f"""
                 <div class="list-item">
                     <div class="list-title"><a href="{row['link']}" target="_blank">{row['title']}</a></div>
+                    <div class="list-summary">{row['content'][:160]}...</div>
                     <div class="list-meta">
                         <span style="color:#cc0000; font-weight:bold;">{row['category'].split(':')[0]}</span>
                         <span>{row['law']}</span>
@@ -515,11 +460,9 @@ if not df.empty:
 
         st.markdown("---")
         
-        # --- GRID SECTION (ALL NEWS) ---
         st.subheader("📌 Περισσότερα Θέματα")
         
-        # Grid logic
-        grid_df = current_df.iloc[6:] # Skip top 6
+        grid_df = current_df.iloc[6:] 
         if not grid_df.empty:
             rows = len(grid_df) // 3 + 1
             for i in range(rows):
@@ -544,13 +487,11 @@ if not df.empty:
                             </div>
                             """, unsafe_allow_html=True)
 
-    # Render Tabs
     with tabs[0]: render_tab_content("HOME")
     with tabs[1]: render_tab_content("ENG")
     with tabs[2]: render_tab_content("LAW")
     with tabs[3]: render_tab_content("FEK")
     
-    # Admin Tab
     with tabs[4]:
         st.header("Διαχείριση")
         pw = st.text_input("Κωδικός Διαχειριστή", type="password")
@@ -567,4 +508,3 @@ if not df.empty:
 
 else:
     st.warning("Η βάση είναι κενή. Πηγαίνετε στο Admin -> Force Scan.")
-
