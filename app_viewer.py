@@ -228,35 +228,57 @@ def guess_category_smart(title, summary, source_name):
 
     scores = {"eng_poleodomia": 0, "eng_energy": 0, "eng_projects": 0, "law_realestate": 0, "law_justice": 0, "finance": 0, "news_general": 0}
 
-    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean: scores["eng_energy"] += 3
-    elif "ypodomes" in source_clean or "pedmede" in source_clean: scores["eng_projects"] += 3
-    elif "pomida" in source_clean: scores["law_realestate"] += 3
-    elif "lawspot" in source_clean or "dsa" in source_clean: scores["law_justice"] += 3
-    elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
+    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean:
+        scores["eng_energy"] += 3
+    elif "ypodomes" in source_clean or "pedmede" in source_clean:
+        scores["eng_projects"] += 3
+    elif "pomida" in source_clean:
+        scores["law_realestate"] += 3
+    elif "lawspot" in source_clean or "dsa" in source_clean:
+        scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean:
+        scores["finance"] += 3
 
+    # ΔΙΟΡΘΩΜΕΝΟΙ ΒΡΟΓΧΟΙ ΓΙΑ ΑΠΟΦΥΓΗ SYNTAX ERROR
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
-    for w in poleodomia_words: if w in full_text: scores["eng_poleodomia"] += 2
+    for w in poleodomia_words:
+        if w in full_text:
+            scores["eng_poleodomia"] += 2
+            
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
-    for w in energy_words: if w in full_text: scores["eng_energy"] += 2
+    for w in energy_words:
+        if w in full_text:
+            scores["eng_energy"] += 2
+            
     project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
-    for w in project_words: if w in full_text: scores["eng_projects"] += 2
+    for w in project_words:
+        if w in full_text:
+            scores["eng_projects"] += 2
+            
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
-    for w in estate_words: if w in full_text: scores["law_realestate"] += 2
+    for w in estate_words:
+        if w in full_text:
+            scores["law_realestate"] += 2
 
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
     justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν', 'εφετειο', 'νομικο συμβουλιο']
     found_justice_words = sum(1 for w in justice_words if w in full_text)
     
-    if is_disaster and found_justice_words < 2: scores["law_justice"] = -10 
-    else: scores["law_justice"] += (found_justice_words * 2)
+    if is_disaster and found_justice_words < 2:
+        scores["law_justice"] = -10 
+    else:
+        scores["law_justice"] += (found_justice_words * 2)
 
     fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
-    for w in fin_words: if w in full_text: scores["finance"] += 2
+    for w in fin_words:
+        if w in full_text:
+            scores["finance"] += 2
 
     best_category = max(scores, key=scores.get)
     if scores[best_category] < 2:
-        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']): return "📢 Θεσμικά & Ανακοινώσεις"
+        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']):
+            return "📢 Θεσμικά & Ανακοινώσεις"
         return "🌐 Γενική Ενημέρωση"
 
     category_map = {
@@ -271,7 +293,6 @@ def guess_category_smart(title, summary, source_name):
     return category_map[best_category]
 
 # --- IMAGE PLACEHOLDER LOGIC ---
-# Επειδή δεν έχουμε εικόνες στη βάση, βάζουμε High Quality Unsplash εικόνες ανά κατηγορία
 def get_category_image(category):
     if "Πολεοδομία" in category: return "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop"
     if "Ενέργεια" in category: return "https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600&auto=format&fit=crop"
@@ -421,7 +442,7 @@ if not df.empty:
 
         with col_list:
             st.markdown(f"### 📰 Τελευταία {tab_code if tab_code != 'HOME' else 'Ροή'}")
-            # List items (skipping the one shown in hero if possible, or just top 6)
+            # List items
             for idx, row in current_df.head(6).iterrows():
                 st.markdown(f"""
                 <div class="list-item">
