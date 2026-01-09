@@ -142,7 +142,6 @@ st.markdown("""
     .hero-title a { color: white !important; text-decoration: none; }
     .hero-title a:hover { text-decoration: underline; }
 
-    /* LIST ITEMS - ΤΩΡΑ ΜΕ ΠΕΡΙΓΡΑΦΗ */
     .list-item {
         background: white;
         padding: 18px;
@@ -164,14 +163,13 @@ st.markdown("""
     .list-title a { color: #1a1a1a !important; text-decoration: none; }
     .list-title a:hover { color: #004B87 !important; }
     
-    /* NEO CSS ΓΙΑ ΤΗΝ ΠΕΡΙΛΗΨΗ ΣΤΗ ΛΙΣΤΑ */
     .list-summary {
         font-size: 0.9rem;
         color: #555;
         margin-bottom: 8px;
         line-height: 1.4;
         display: -webkit-box;
-        -webkit-line-clamp: 2; /* Κόβει στις 2 γραμμές */
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -188,7 +186,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
     }
-    .grid-img { height: 160px; overflow: hidden; }
+    .grid-img { height: 160px; overflow: hidden; background-color: #eee; }
     .grid-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
     .grid-card:hover .grid-img img { transform: scale(1.05); }
     .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
@@ -217,12 +215,45 @@ RSS_FEEDS = {
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
 }
 
+# ΕΛΕΓΜΕΝΕΣ ΕΙΚΟΝΕΣ (UPDATED LINKS)
 IMAGE_POOL = {
-    "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1600","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600","https://images.unsplash.com/photo-1581094794329-cd9a15a93976?q=80&w=1600","https://images.unsplash.com/photo-1590986221737-f8e658e45c43?q=80&w=1600","https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=1600"],
-    "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1600","https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1600","https://images.unsplash.com/photo-1497436072909-60f360e1d4b0?q=80&w=1600","https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?q=80&w=1600"],
-    "LAW": ["https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1600","https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1600","https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1600","https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1600","https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600"],
-    "FEK": ["https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=1600","https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1600","https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600","https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1600"],
-    "GENERAL": ["https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1600","https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1600","https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600"]
+    "ENG": [
+        "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200",
+        "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200",
+        "https://images.unsplash.com/photo-1581094794329-cd9a15a93976?q=80&w=1200",
+        "https://images.unsplash.com/photo-1590986221737-f8e658e45c43?q=80&w=1200",
+        "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=1200",
+        "https://images.unsplash.com/photo-1487958449943-2429e8be8625?q=80&w=1200"
+    ],
+    "ENERGY": [
+        "https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200",
+        "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200",
+        "https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1200",
+        "https://images.unsplash.com/photo-1497436072909-60f360e1d4b0?q=80&w=1200",
+        "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?q=80&w=1200",
+        "https://images.unsplash.com/photo-1496247749665-49cf5b1022e9?q=80&w=1200"
+    ],
+    "LAW": [
+        "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1200",
+        "https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1200",
+        "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1200",
+        "https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1200",
+        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1200",
+        "https://images.unsplash.com/photo-1555374018-13a8994ab246?q=80&w=1200"
+    ],
+    "FEK": [
+        "https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=1200",
+        "https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1200",
+        "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1200",
+        "https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1200",
+        "https://images.unsplash.com/photo-1556155092-490a1ba16284?q=80&w=1200"
+    ],
+    "GENERAL": [
+        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200",
+        "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1200",
+        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1200",
+        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200"
+    ]
 }
 
 def remove_accents(input_str):
@@ -232,7 +263,7 @@ def remove_accents(input_str):
 
 def clean_summary(text):
     text = re.sub('<[^<]+?>', '', text)
-    return text[:200] + "..." # Truncate for display
+    return text[:200] + "..." 
 
 def guess_category_smart(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
@@ -421,7 +452,7 @@ if not df.empty:
             
             st.markdown(f"""
             <div class="hero-wrapper">
-                <img src="{hero_img}" class="hero-image">
+                <img src="{hero_img}" class="hero-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
                 <div class="hero-overlay">
                     <div class="hero-cat">{hero_article['category']}</div>
                     <div class="hero-title">
@@ -445,7 +476,6 @@ if not df.empty:
         with col_list:
             st.markdown(f"### 📰 Τελευταία {tab_code if tab_code != 'HOME' else 'Ροή'}")
             for idx, row in current_df.head(6).iterrows():
-                # ΕΔΩ ΕΙΝΑΙ Η ΠΡΟΣΘΗΚΗ ΤΗΣ ΠΕΡΙΛΗΨΗΣ
                 st.markdown(f"""
                 <div class="list-item">
                     <div class="list-title"><a href="{row['link']}" target="_blank">{row['title']}</a></div>
@@ -475,7 +505,7 @@ if not df.empty:
                         with col:
                             st.markdown(f"""
                             <div class="grid-card">
-                                <div class="grid-img"><img src="{card_img}"></div>
+                                <div class="grid-img"><img src="{card_img}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';"></div>
                                 <div class="grid-content">
                                     <div class="grid-cat">{row['category'].split(':')[0]}</div>
                                     <div class="grid-title">{row['title']}</div>
