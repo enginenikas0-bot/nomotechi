@@ -200,7 +200,7 @@ if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']} ({row['law']})" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
 
-tabs = st.tabs(["🏠 ΡΟΗ ΕΙΔΗΣΕΩΝ", "📐 ΜΗΧΑΝΙΚΟΙ & ΕΡΓΑ", "⚖️ ΝΟΜΙΚΑ & ΑΚΙΝΗΤΑ", "📜 ΦΕΚ & ΝΟΜΟΘΕΣΙΑ", "⚙️ ADMIN"])
+tabs = st.tabs(["⚠️ ΡΟΗ ΕΙΔΗΣΕΩΝ", "📐 ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΦΕΚ & ΝΟΜΟΘΕΣΙΑ", "⚙️ ADMIN"])
 
 if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
@@ -346,4 +346,5 @@ if not df.empty:
 
 else:
     st.warning("Η βάση ενημερώνεται... Παρακαλώ περιμένετε 1 λεπτό και κάντε ανανέωση.")
+
 
