@@ -66,7 +66,8 @@ IMAGE_POOL = {
 
 def remove_accents(input_str):
     replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
-    for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
+    for char, rep in replacements.items():
+        input_str = input_str.replace(char, rep)
     return input_str.lower()
 
 def get_stock_image(category, title):
