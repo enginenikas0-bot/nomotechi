@@ -5,36 +5,190 @@ import feedparser
 from datetime import datetime
 import time
 
-# --- 1. SETUP ---
+# --- 1. SETUP ΣΕΛΙΔΑΣ ---
 st.set_page_config(
-    page_title="NomoTechi | Professional Hub",
+    page_title="NomoTechi | Το Portal του Επαγγελματία",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (MSN / PROFESSIONAL STYLE) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-    html, body, [class*="css"] {font-family: 'Inter', sans-serif; color: #334155; background-color: #F8FAFC;}
-    .header-bar {background: linear-gradient(135deg, #0F172A 0%, #334155 100%); padding: 25px; color: white; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);}
-    .stTabs [data-baseweb="tab-list"] {gap: 20px; justify-content: center;}
-    .stTabs [data-baseweb="tab"] {height: 50px; background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
-    .stTabs [aria-selected="true"] {background-color: #EFF6FF; color: #2563EB; font-weight: bold; border-bottom: 2px solid #2563EB;}
-    .news-card {background: white; border-radius: 12px; padding: 20px; height: 100%; border: 1px solid #F1F5F9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: transform 0.2s; display: flex; flex-direction: column; justify-content: space-between;}
-    .news-card:hover {transform: translateY(-3px); border-color: #cbd5e1; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);}
-    .cat-badge {display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 10px; width: fit-content;}
-    .badge-eng {background: #E0F2FE; color: #0284C7;}
-    .badge-law {background: #FEF2F2; color: #DC2626;}
-    .badge-fek {background: #F0FDF4; color: #16A34A;}
-    .badge-gen {background: #F1F5F9; color: #475569;}
-    a {text-decoration: none; color: #1E293B !important; font-weight: 700;}
-    a:hover {color: #2563EB !important;}
+    /* Γενική Τυπογραφία - Segoe UI για MSN look */
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #F3F3F3; /* Απαλό γκρι φόντο όπως τα portals */
+        color: #262626;
+    }
+    
+    /* HEADER */
+    .header-container {
+        background-color: white;
+        padding: 15px 0;
+        border-bottom: 4px solid #004B87; /* Official Blue */
+        margin-bottom: 20px;
+    }
+    .header-logo {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #003366;
+        letter-spacing: -1px;
+        text-align: center;
+    }
+    .header-sub {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    /* NEWS TICKER (Κυλιόμενη Μπάρα) */
+    .ticker-wrap {
+        width: 100%;
+        background-color: #003366;
+        color: white;
+        height: 40px;
+        overflow: hidden;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .ticker-item {
+        display: inline-block;
+        padding-left: 100%;
+        animation: ticker 30s linear infinite;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    @keyframes ticker {
+        0%   { transform: translate3d(0, 0, 0); }
+        100% { transform: translate3d(-100%, 0, 0); }
+    }
+
+    /* CAROUSEL / HERO SECTION (Το πλαίσιο πάνω αριστερά) */
+    .hero-container {
+        position: relative;
+        background-color: black;
+        border-radius: 4px;
+        overflow: hidden;
+        height: 400px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.7; /* Για να φαίνονται τα γράμματα */
+        transition: opacity 0.3s;
+    }
+    .hero-image:hover { opacity: 0.8; }
+    
+    .hero-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 30px;
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    }
+    .hero-cat {
+        color: #FFD700; /* Χρυσό για την κατηγορία */
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .hero-title {
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+    .hero-title a { color: white !important; text-decoration: none; }
+    .hero-title a:hover { text-decoration: underline; }
+
+    /* NEWS LIST (Δεξιά Στήλη) */
+    .list-item {
+        background: white;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        transition: background 0.2s;
+    }
+    .list-item:hover { background-color: #f9f9f9; }
+    .list-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #003366;
+        margin-bottom: 5px;
+        line-height: 1.4;
+    }
+    .list-title a { color: #003366 !important; text-decoration: none; }
+    .list-title a:hover { color: #0056b3 !important; text-decoration: underline; }
+    .list-meta {
+        font-size: 0.8rem;
+        color: #888;
+        display: flex;
+        gap: 10px;
+    }
+
+    /* GRID CARDS (Κάτω μέρος) */
+    .grid-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+        height: 100%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .grid-img {
+        height: 140px;
+        background-color: #eee;
+        overflow: hidden;
+    }
+    .grid-img img { width: 100%; height: 100%; object-fit: cover; }
+    .grid-content { padding: 15px; }
+    .grid-cat { font-size: 0.7rem; font-weight: 800; color: #cc0000; text-transform: uppercase; margin-bottom: 5px; }
+    .grid-title { font-size: 1rem; font-weight: 700; color: #222; margin-bottom: 10px; line-height: 1.3; }
+    .grid-text { font-size: 0.9rem; color: #555; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* STYLING THE TABS */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        gap: 20px;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #cc0000 !important;
+        border-bottom-color: #cc0000 !important;
+        font-weight: 800;
+    }
+    
+    /* Navigation Buttons for Slider */
+    .nav-btn {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid white;
+        color: white;
+        padding: 5px 15px;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 20px;
+    }
+    .nav-btn:hover { background: white; color: black; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC ---
+# --- 3. DATA & FUNCTIONS ---
 RSS_FEEDS = {
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
@@ -58,14 +212,19 @@ def remove_accents(input_str):
     for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
 
-# --- Ο ΕΞΥΠΝΟΣ ΑΛΓΟΡΙΘΜΟΣ (ΙΔΙΟΣ ΜΕ ΠΡΙΝ) ---
+# --- Ο ΕΞΥΠΝΟΣ ΑΛΓΟΡΙΘΜΟΣ ---
 def guess_category_smart(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
     
-    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου']
-    if any(w in full_text for w in fek_keywords): return "📜 Νομοθεσία & ΦΕΚ"
-    if "e-nomothesia" in source_clean: return "📜 Νομοθεσία & ΦΕΚ"
+    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου', 'δημοσιευθηκε στο φεκ']
+    is_fek = any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean
+
+    if is_fek:
+        eng_relevant_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'πεδμεδε', 'μηχανικ', 'τεε', 'ενεργειακ', 'εξοικονομω', 'αντικειμενικ']
+        if any(w in full_text for w in eng_relevant_words):
+            return "📜 Νομοθεσία: Μηχανικών & Έργων" 
+        return "📜 Νομοθεσία & ΦΕΚ"
 
     scores = {"eng_poleodomia": 0, "eng_energy": 0, "eng_projects": 0, "law_realestate": 0, "law_justice": 0, "finance": 0, "news_general": 0}
 
@@ -76,20 +235,13 @@ def guess_category_smart(title, summary, source_name):
     elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
 
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
-    for w in poleodomia_words: 
-        if w in full_text: scores["eng_poleodomia"] += 2
-
+    for w in poleodomia_words: if w in full_text: scores["eng_poleodomia"] += 2
     energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
-    for w in energy_words: 
-        if w in full_text: scores["eng_energy"] += 2
-
+    for w in energy_words: if w in full_text: scores["eng_energy"] += 2
     project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
-    for w in project_words: 
-        if w in full_text: scores["eng_projects"] += 2
-
+    for w in project_words: if w in full_text: scores["eng_projects"] += 2
     estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
-    for w in estate_words: 
-        if w in full_text: scores["law_realestate"] += 2
+    for w in estate_words: if w in full_text: scores["law_realestate"] += 2
 
     disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
     is_disaster = any(w in full_text for w in disaster_words)
@@ -100,8 +252,7 @@ def guess_category_smart(title, summary, source_name):
     else: scores["law_justice"] += (found_justice_words * 2)
 
     fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
-    for w in fin_words: 
-        if w in full_text: scores["finance"] += 2
+    for w in fin_words: if w in full_text: scores["finance"] += 2
 
     best_category = max(scores, key=scores.get)
     if scores[best_category] < 2:
@@ -119,7 +270,18 @@ def guess_category_smart(title, summary, source_name):
     }
     return category_map[best_category]
 
-# --- 4. BACKEND FUNCTIONS ---
+# --- IMAGE PLACEHOLDER LOGIC ---
+# Επειδή δεν έχουμε εικόνες στη βάση, βάζουμε High Quality Unsplash εικόνες ανά κατηγορία
+def get_category_image(category):
+    if "Πολεοδομία" in category: return "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop"
+    if "Ενέργεια" in category: return "https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600&auto=format&fit=crop"
+    if "Έργα" in category: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1600&auto=format&fit=crop"
+    if "Νομοθεσία" in category or "ΦΕΚ" in category: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1600&auto=format&fit=crop"
+    if "Νομικά" in category or "Δικαιοσύνη" in category: return "https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1600&auto=format&fit=crop"
+    if "Συμβολαιο" in category or "Ακίνητα" in category: return "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600&auto=format&fit=crop"
+    if "Οικονομία" in category: return "https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1600&auto=format&fit=crop"
+    return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1600&auto=format&fit=crop" # General
+
 def get_db_connection():
     try:
         credentials_dict = st.secrets["gcp_service_account"]
@@ -131,22 +293,13 @@ def load_data():
     sheet = get_db_connection()
     return sheet.get_all_records() if sheet else []
 
-def get_badge_class(category):
-    if "Μηχανικοί" in category: return "badge-eng"
-    if "Νομικά" in category or "Συμβολαιο" in category: return "badge-law"
-    if "Νομοθεσία" in category: return "badge-fek"
-    return "badge-gen"
-
 def reset_database():
-    """ΣΒΗΝΕΙ ΤΑ ΠΑΝΤΑ ΕΚΤΟΣ ΑΠΟ ΤΟΥΣ ΤΙΤΛΟΥΣ"""
     sheet = get_db_connection()
     if not sheet: return False
     try:
-        # Καθαρίζει τα περιεχόμενα από τη 2η γραμμή και κάτω (A2:G1000)
         sheet.batch_clear(["A2:G5000"])
         return True
-    except:
-        return False
+    except: return False
 
 def run_force_scan():
     sheet = get_db_connection()
@@ -186,106 +339,152 @@ def run_force_scan():
     status.empty()
     return count
 
-# --- 5. UI LAYOUT ---
+# --- 4. RENDER UI ---
+
+# Header Section
 st.markdown("""
-<div class="header-bar">
-    <div style="font-size: 2.2rem; font-weight: 800;">🏛️ NomoTechi</div>
-    <div style="font-size: 1rem; opacity: 0.9;">Η Ενιαία Πύλη για Μηχανικούς, Δικηγόρους & Συμβολαιογράφους</div>
+<div class="header-container">
+    <div class="header-logo">🏛️ NomoTechi</div>
+    <div class="header-sub">Η Ενιαία Πύλη για Μηχανικούς, Δικηγόρους & Συμβολαιογράφους</div>
 </div>
 """, unsafe_allow_html=True)
 
+# Load Data
 data = load_data()
 df = pd.DataFrame(data)
 
-tabs = st.tabs(["🏠 Όλα (Ροή)", "📐 Μηχανικοί", "⚖️ Νομικοί / Συμβ.", "📜 Νομοθεσία (ΦΕΚ)", "⚙️ Admin"])
+# Ticker (Automatic Flow)
+if not df.empty:
+    latest_titles = "   +++   ".join([f"{row['title']} ({row['law']})" for idx, row in df.head(10).iterrows()])
+    st.markdown(f"""
+    <div class="ticker-wrap">
+        <div class="ticker-item">
+            {latest_titles}
+        </div>
+    </div>
+    <br>
+    """, unsafe_allow_html=True)
+
+# Tabs
+tabs = st.tabs(["🏠 ΡΟΗ ΕΙΔΗΣΕΩΝ", "📐 ΜΗΧΑΝΙΚΟΙ & ΕΡΓΑ", "⚖️ ΝΟΜΙΚΑ & ΑΚΙΝΗΤΑ", "📜 ΦΕΚ & ΝΟΜΟΘΕΣΙΑ", "⚙️ ADMIN"])
 
 if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
-
-    with tabs[0]: # HOME
-        hero = df.iloc[0]
-        badge_style = get_badge_class(hero['category'])
-        st.markdown(f"""
-        <div style="background:white; padding:30px; border-radius:15px; border-left:5px solid #0F172A; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom:30px;">
-            <span class="cat-badge {badge_style}">{hero['category']}</span>
-            <div style="font-size:1.8rem; font-weight:800; margin-top:10px; line-height:1.2;">
-                <a href="{hero['link']}" target="_blank">{hero['title']}</a>
-            </div>
-            <div style="color:#475569; margin-top:10px; font-size:1.1rem;">{hero['content']}</div>
-            <div style="margin-top:15px; font-size:0.9rem; color:#94A3B8;">📅 {hero['last_update']} • Πηγή: {hero['law']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("### 🔔 Πρόσφατη Ενημέρωση")
-        cols = st.columns(3)
-        for i, col in enumerate(cols):
-            if i + 1 < len(df):
-                row = df.iloc[i+1]
-                badge = get_badge_class(row['category'])
-                with col:
-                    st.markdown(f"""
-                    <div class="news-card">
-                        <div>
-                            <span class="cat-badge {badge}">{row['category'].split(':')[0]}</span>
-                            <div style="font-weight:700; font-size:1.1rem; margin-bottom:10px;"><a href="{row['link']}" target="_blank">{row['title']}</a></div>
-                            <div style="font-size:0.9rem; color:#64748B;">{row['content'][:100]}...</div>
-                        </div>
-                        <div style="font-size:0.8rem; color:#94A3B8; margin-top:15px; border-top:1px solid #f1f5f9; padding-top:10px;">{row['law']} • {row['last_update']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-    with tabs[1]: # ENGINEERS
-        st.caption("Πολεοδομία, Ενέργεια, Δημόσια Έργα & Τεχνική Νομοθεσία")
-        eng_df = df[df['category'].str.contains("Μηχανικ|Πολεοδομ|Ενέργεια|Έργα|Θεσμικά", case=False)]
-        for idx, row in eng_df.iterrows():
-            st.markdown(f"""<div style="padding:15px; border-bottom:1px solid #E2E8F0; background:white;"><span class="cat-badge badge-eng">{row['category']}</span><span style="font-size:1.1rem; font-weight:700; margin-left:10px;"><a href="{row['link']}" target="_blank">{row['title']}</a></span><div style="color:#64748B; font-size:0.9rem; margin-top:5px;">{row['law']} • {row['last_update']}</div></div>""", unsafe_allow_html=True)
-
-    with tabs[2]: # LAWYERS
-        st.caption("Νομικά Θέματα, Δικαστήρια, Κτηματολόγιο, Συμβόλαια")
-        law_df = df[df['category'].str.contains("Νομικ|Συμβολαιο|Δικηγόρ|Φορολογ", case=False)]
-        for idx, row in law_df.iterrows():
-            st.markdown(f"""<div style="padding:15px; border-bottom:1px solid #E2E8F0; background:white;"><span class="cat-badge badge-law">{row['category']}</span><span style="font-size:1.1rem; font-weight:700; margin-left:10px;"><a href="{row['link']}" target="_blank">{row['title']}</a></span><div style="color:#64748B; font-size:0.9rem; margin-top:5px;">{row['law']} • {row['last_update']}</div></div>""", unsafe_allow_html=True)
-
-    with tabs[3]: # FEK
-        st.info("📜 Εμφάνιση αποκλειστικά ΦΕΚ, Εγκυκλίων και Νομοθεσίας.")
-        fek_df = df[df['category'].str.contains("Νομοθεσία|ΦΕΚ", case=False)]
-        for idx, row in fek_df.iterrows():
-            st.markdown(f"""<div style="background:#F0FDF4; padding:20px; border-radius:10px; margin-bottom:10px; border:1px solid #BBF7D0;"><span style="color:#16A34A; font-weight:800;">ΦΕΚ / ΑΠΟΦΑΣΗ</span> | <span style="font-size:0.9rem; color:#666;">{row['law']}</span><div style="font-size:1.2rem; font-weight:700; margin-top:5px;"><a href="{row['link']}" target="_blank" style="color:#14532D!important;">{row['title']}</a></div><div style="margin-top:10px; color:#374151;">{row['content']}</div></div>""", unsafe_allow_html=True)
-
-with tabs[4]: # ADMIN
-    st.header("Διαχείριση")
-    pw = st.text_input("Κωδικός Διαχειριστή", type="password")
     
-    if pw == st.secrets.get("admin_password", ""):
-        st.success("Admin Access: OK")
-        
-        col1, col2 = st.columns(2)
-        
-        # ΚΟΥΜΠΙ 1: ΣΑΡΩΣΗ
-        with col1:
-            st.subheader("🔄 Ενημέρωση (Update)")
-            st.write("Ψάχνει ΜΟΝΟ για νέα άρθρα (δεν πειράζει τα παλιά).")
-            if st.button("🚀 Force Scan", type="primary"):
-                with st.spinner("Γίνεται σάρωση..."):
-                    new_count = run_force_scan()
-                if new_count > 0:
-                    st.success(f"Βρέθηκαν {new_count} νέα άρθρα!")
-                    time.sleep(1)
-                    st.rerun()
-                else: st.info("Δεν βρέθηκαν νέα άρθρα.")
+    # Session State for Slider
+    if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
-        # ΚΟΥΜΠΙ 2: ΟΛΙΚΗ ΕΠΑΝΕΚΚΙΝΗΣΗ (ΤΟ ΝΕΟ ΚΟΥΜΠΙ)
-        with col2:
-            st.subheader("🗑️ Διαγραφή & Επανεκκίνηση")
-            st.write("⚠️ Σβήνει ΟΛΑ τα άρθρα για να τα ξανα-κατεβάσει σωστά.")
-            if st.button("🔴 RESET DATABASE (Ολική Διαγραφή)"):
-                with st.spinner("Καθαρισμός βάσης..."):
-                    success = reset_database()
-                    st.cache_data.clear()
-                if success:
-                    st.warning("Η βάση άδειασε! Πατήστε τώρα 'Force Scan' για να γεμίσει σωστά.")
-                else:
-                    st.error("Σφάλμα κατά τη διαγραφή.")
+    def get_filtered_df(tab_name):
+        if tab_name == "HOME": return df
+        if tab_name == "ENG": return df[df['category'].str.contains("Μηχανικ|Πολεοδομ|Ενέργεια|Έργα|Θεσμικά", case=False)]
+        if tab_name == "LAW": return df[df['category'].str.contains("Νομικ|Συμβολαιο|Δικηγόρ|Φορολογ", case=False)]
+        if tab_name == "FEK": return df[df['category'].str.contains("Νομοθεσία|ΦΕΚ", case=False)]
+        return df
 
-        st.divider()
-        st.subheader("Raw Data Preview")
-        st.dataframe(df)
+    def render_tab_content(tab_code):
+        current_df = get_filtered_df(tab_code).reset_index(drop=True)
+        if current_df.empty:
+            st.info("Δεν υπάρχουν ειδήσεις σε αυτή την κατηγορία.")
+            return
+
+        # --- MSN STYLE SLIDER (TOP LEFT) & LIST (RIGHT) ---
+        col_hero, col_list = st.columns([1.8, 1.2]) # 60% - 40% split
+        
+        with col_hero:
+            # Slider Logic
+            slider_len = min(5, len(current_df))
+            current_slide = st.session_state.slider_idx % slider_len
+            hero_article = current_df.iloc[current_slide]
+            hero_img = get_category_image(hero_article['category'])
+            
+            st.markdown(f"""
+            <div class="hero-container">
+                <img src="{hero_img}" class="hero-image">
+                <div class="hero-overlay">
+                    <div class="hero-cat">{hero_article['category']}</div>
+                    <div class="hero-title">
+                        <a href="{hero_article['link']}" target="_blank">{hero_article['title']}</a>
+                    </div>
+                    <div style="color:white; margin-top:5px; font-size:0.9rem;">{hero_article['law']} • {hero_article['last_update']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Arrows
+            c_prev, c_txt, c_next = st.columns([1, 4, 1])
+            if c_prev.button("⬅️", key=f"prev_{tab_code}"):
+                st.session_state.slider_idx -= 1
+                st.rerun()
+            if c_next.button("➡️", key=f"next_{tab_code}"):
+                st.session_state.slider_idx += 1
+                st.rerun()
+
+        with col_list:
+            st.markdown(f"### 📰 Τελευταία {tab_code if tab_code != 'HOME' else 'Ροή'}")
+            # List items (skipping the one shown in hero if possible, or just top 6)
+            for idx, row in current_df.head(6).iterrows():
+                st.markdown(f"""
+                <div class="list-item">
+                    <div class="list-title"><a href="{row['link']}" target="_blank">{row['title']}</a></div>
+                    <div class="list-meta">
+                        <span style="color:#cc0000; font-weight:bold;">{row['category'].split(':')[0]}</span>
+                        <span>{row['law']}</span>
+                        <span>{row['last_update']}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        
+        # --- GRID SECTION (ALL NEWS) ---
+        st.subheader("📌 Περισσότερα Θέματα")
+        
+        # Grid logic
+        grid_df = current_df.iloc[6:] # Skip top 6
+        if not grid_df.empty:
+            rows = len(grid_df) // 3 + 1
+            for i in range(rows):
+                c1, c2, c3 = st.columns(3)
+                for j, col in enumerate([c1, c2, c3]):
+                    idx = i * 3 + j
+                    if idx < len(grid_df):
+                        row = grid_df.iloc[idx]
+                        card_img = get_category_image(row['category'])
+                        with col:
+                            st.markdown(f"""
+                            <div class="grid-card">
+                                <div class="grid-img"><img src="{card_img}"></div>
+                                <div class="grid-content">
+                                    <div class="grid-cat">{row['category'].split(':')[0]}</div>
+                                    <div class="grid-title">{row['title']}</div>
+                                    <div class="grid-text">{row['content']}</div>
+                                    <div style="margin-top:10px; font-size:0.75rem; color:#888;">
+                                        {row['law']} | <a href="{row['link']}" target="_blank" style="color:#003366; font-weight:bold;">Διαβάστε περισσότερα ></a>
+                                    </div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+    # Render Tabs
+    with tabs[0]: render_tab_content("HOME")
+    with tabs[1]: render_tab_content("ENG")
+    with tabs[2]: render_tab_content("LAW")
+    with tabs[3]: render_tab_content("FEK")
+    
+    # Admin Tab
+    with tabs[4]:
+        st.header("Διαχείριση")
+        pw = st.text_input("Κωδικός Διαχειριστή", type="password")
+        if pw == st.secrets.get("admin_password", ""):
+            st.success("Admin Access: OK")
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("🚀 Force Scan", type="primary"):
+                    with st.spinner("Σάρωση..."): run_force_scan(); st.success("Done!"); time.sleep(1); st.rerun()
+            with c2:
+                if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
+                if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
+            st.dataframe(df)
+
+else:
+    st.warning("Η βάση είναι κενή. Πηγαίνετε στο Admin -> Force Scan.")
