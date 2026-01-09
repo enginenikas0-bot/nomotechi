@@ -6,13 +6,14 @@ from datetime import datetime
 import time
 import hashlib
 import re
+import streamlit.components.v1 as components
 
 # --- 1. SETUP ---
 st.set_page_config(
-    page_title="NomoTechi | Το Νο1 Portal Ενημέρωσης",
+    page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="expanded" # Ανοιχτή μπάρα για να φαίνονται τα widgets
+    initial_sidebar_state="expanded"
 )
 
 # --- 2. CSS (PROFESSIONAL & RESPONSIVE) ---
@@ -133,11 +134,12 @@ IMAGE_POOL = {
 }
 
 def get_stock_image(category, title):
-    if "Πολεοδομία" in category or "Έργα" in category: pool = IMAGE_POOL["ENG"]
-    elif "Ενέργεια" in category or "Περιβάλλον" in category: pool = IMAGE_POOL["ENERGY"]
-    elif "Νομικά" in category or "Συμβολαιο" in category: pool = IMAGE_POOL["LAW"]
-    elif "Νομοθεσία" in category or "ΦΕΚ" in category: pool = IMAGE_POOL["FEK"]
+    if "ENGINEERS" in category or "Μηχανικ" in category: pool = IMAGE_POOL["ENG"]
+    elif "LEGAL" in category or "Νομικ" in category: pool = IMAGE_POOL["LAW"]
+    elif "LEGISLATION" in category or "ΦΕΚ" in category: pool = IMAGE_POOL["FEK"]
+    elif "Ενέργεια" in category: pool = IMAGE_POOL["ENERGY"]
     else: pool = IMAGE_POOL["GENERAL"]
+    
     hash_obj = hashlib.md5(title.encode())
     index = int(hash_obj.hexdigest(), 16) % len(pool)
     return pool[index]
@@ -161,28 +163,24 @@ def reset_database():
         return True
     except: return False
 
-# --- 4. SIDEBAR WIDGETS (ΝΕΟ) ---
+# --- 4. SIDEBAR WIDGETS ---
 with st.sidebar:
-    st.markdown("### ☁️ Καιρός (Εργοτάξιο)")
-    # Ενσωμάτωση Meteoblue Widget (Clean)
-    st.components.v1.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=240)
+    st.markdown("### ☁️ Καιρός")
+    components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=240)
     
     st.markdown("---")
     st.markdown("### 📬 Ενημέρωση")
-    st.caption("Εγγραφείτε για να λαμβάνετε τα σημαντικότερα ΦΕΚ της εβδομάδας.")
+    st.caption("Λάβετε τα σημαντικότερα ΦΕΚ στο email σας.")
     email = st.text_input("Το Email σας", placeholder="name@company.com")
-    if st.button("Εγγραφή στο Newsletter", type="primary"):
+    if st.button("Εγγραφή", type="primary"):
         if email:
-            st.success("✅ Εγγραφήκατε επιτυχώς!")
+            st.success("✅ Εγγραφήκατε!")
             time.sleep(2)
-        else:
-            st.warning("Παρακαλώ συμπληρώστε email.")
-            
     st.markdown("---")
-    st.info("💡 **Tip:** Χρησιμοποιήστε την αναζήτηση για να βρείτε παλαιότερα ΦΕΚ.")
+    st.info("💡 **Tip:** Το NomoTechi χρησιμοποιεί AI για να κατηγοριοποιεί αυτόματα τη νομοθεσία.")
 
 # --- 5. MAIN UI ---
-st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Το Απόλυτο Εργαλείο για Μηχανικούς & Νομικούς</div></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Intelligence Platform for Engineers & Lawyers</div></div>""", unsafe_allow_html=True)
 
 data = load_data()
 df = pd.DataFrame(data)
@@ -200,23 +198,24 @@ if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']} ({row['law']})" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
 
-tabs = st.tabs(["⚠️ ΡΟΗ ΕΙΔΗΣΕΩΝ", "📐 ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΦΕΚ & ΝΟΜΟΘΕΣΙΑ", "⚙️ ADMIN"])
+# --- 6. ΚΑΤΗΓΟΡΙΕΣ (NEW LOGIC - CORRECTED TABS) ---
+tabs = st.tabs(["🏠 ΡΟΗ ΕΙΔΗΣΕΩΝ", "🏗️ ΜΗΧΑΝΙΚΟΣ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "⚙️ ADMIN"])
 
 if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
-   def get_filtered_df(tab_name):
+    def get_filtered_df(tab_name):
         if tab_name == "HOME": 
             return df
         if tab_name == "ENG": 
-            # Ψάχνει αν υπάρχει η ετικέτα ENGINEERS ή λέξεις κλειδιά
-            return df[df['category'].str.contains("ENGINEERS|Μηχανικ|ENG", case=False, na=False)]
+            # Ψάχνει ετικέτες ENGINEERS, Μηχανικοί, Έργα, Ακίνητα
+            return df[df['category'].str.contains("ENGINEERS|Μηχανικ|ENG|Ακίνητα", case=False, na=False)]
         if tab_name == "LAW": 
-            # Ψάχνει για LEGAL
+            # Ψάχνει LEGAL, Νομικά, Δικαιοσύνη
             return df[df['category'].str.contains("LEGAL|Νομικ|LAW", case=False, na=False)]
         if tab_name == "FEK": 
-            # Ψάχνει για LEGISLATION
+            # Ψάχνει LEGISLATION, ΦΕΚ
             return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|FEK", case=False, na=False)]
         return df
 
@@ -228,7 +227,7 @@ if not df.empty:
     def render_tab_content(tab_code):
         current_df = get_filtered_df(tab_code).reset_index(drop=True)
         if current_df.empty:
-            st.info("Δεν βρέθηκαν αποτελέσματα.")
+            st.info("Δεν βρέθηκαν αποτελέσματα για αυτή την κατηγορία.")
             return
 
         # HERO (Only on Home or when not searching)
@@ -293,13 +292,12 @@ if not df.empty:
                     if idx < len(grid_df):
                         row = grid_df.iloc[idx]
                         card_img = get_display_image(row)
-                        share_link = row['link']
                         with col:
                             st.markdown(f"""
                             <div class="grid-card">
                                 <div class="grid-img">
                                     <img src="{card_img}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
-                                    <div class="grid-cat-badge">{row['category'].split(':')[0]}</div>
+                                    <div class="grid-cat-badge">{row['category'].split(',')[0]}</div>
                                 </div>
                                 <div class="grid-content">
                                     <div>
@@ -325,7 +323,7 @@ if not df.empty:
         if pw == st.secrets.get("admin_password", ""):
             st.success("Authenticated")
             c1, c2 = st.columns(2)
-            with c1: st.button("🚀 Bot Status: ACTIVE (GitHub)", disabled=True)
+            with c1: st.button("🚀 Bot Status: ACTIVE (GitHub AI)", disabled=True)
             with c2:
                 if st.button("🧹 Clear Cache (Refresh)"): st.cache_data.clear(); st.rerun()
                 if st.button("🔴 RESET DATABASE (Emergency Only)"): reset_database(); st.cache_data.clear(); st.rerun()
@@ -334,17 +332,13 @@ if not df.empty:
     # FOOTER
     st.markdown("""
     <div class="footer">
-        <p>© 2024 NomoTechi. All Rights Reserved.</p>
+        <p>© 2024 NomoTechi. Powered by Gemini AI.</p>
         <p>
             <a href="#">Όροι Χρήσης</a> | 
-            <a href="#">Πολιτική Απορρήτου</a> | 
-            <a href="#">Επικοινωνία</a>
+            <a href="#">Πολιτική Απορρήτου</a>
         </p>
-        <div style="margin-top:10px; font-size:0.8rem; opacity:0.6;">Powered by Python & Streamlit</div>
     </div>
     """, unsafe_allow_html=True)
 
 else:
     st.warning("Η βάση ενημερώνεται... Παρακαλώ περιμένετε 1 λεπτό και κάντε ανανέωση.")
-
-
