@@ -7,7 +7,7 @@ import time
 import hashlib
 import re
 
-# --- 1. SETUP ---
+# --- 1. SETUP ΣΕΛΙΔΑΣ ---
 st.set_page_config(
     page_title="NomoTechi | Το Portal του Επαγγελματία",
     page_icon="🏛️",
@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (MSN / PROFESSIONAL STYLE) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
@@ -126,13 +126,7 @@ def reset_database():
         return True
     except: return False
 
-# Placeholder function for manual scan trigger (same as before)
 def run_force_scan_trigger():
-    # In a real scenario, this would trigger the backend script.
-    # Here we just show a message because Streamlit Cloud can't run the backend script directly like this.
-    # However, since you are copying the logic, we assume you run the logic manually or via this button.
-    # We will simulate the "logic" import here if possible, or assume external execution.
-    # For now, we rely on the fact that you updated auto_bot.py and run it.
     pass 
 
 # --- 4. RENDER UI ---
@@ -272,9 +266,6 @@ if not df.empty:
             st.info("Για να ενεργοποιηθούν οι πραγματικές εικόνες, πρέπει να γίνει 'Reset' και 'Force Scan'.")
             c1, c2 = st.columns(2)
             with c1:
-                # Εδώ δεν μπορούμε να τρέξουμε το auto_bot.py απευθείας από το κουμπί στο Cloud εύκολα.
-                # Προτρέπουμε τον χρήστη να περιμένει το χρονοδιάγραμμα ή να το τρέξει αν το έχει συνδέσει.
-                # Αλλά για λόγους συμβατότητας, αφήνουμε το κουμπί ως έχει.
                 st.button("🚀 Force Scan (Scheduled)", disabled=True, help="Η σάρωση γίνεται αυτόματα κάθε 4 ώρες.")
             with c2:
                 if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
