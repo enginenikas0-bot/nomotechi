@@ -4,6 +4,7 @@ import gspread
 import feedparser
 from datetime import datetime
 import time
+import hashlib
 
 # --- 1. SETUP ΣΕΛΙΔΑΣ ---
 st.set_page_config(
@@ -16,175 +17,188 @@ st.set_page_config(
 # --- 2. CSS (MSN / PROFESSIONAL STYLE) ---
 st.markdown("""
 <style>
-    /* Γενική Τυπογραφία - Segoe UI για MSN look */
+    /* Γενική Τυπογραφία */
     @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #F3F3F3; /* Απαλό γκρι φόντο όπως τα portals */
-        color: #262626;
+        background-color: #F8F9FA;
+        color: #212529;
     }
     
     /* HEADER */
     .header-container {
         background-color: white;
-        padding: 15px 0;
-        border-bottom: 4px solid #004B87; /* Official Blue */
-        margin-bottom: 20px;
+        padding: 20px 0;
+        border-bottom: 5px solid #003366;
+        margin-bottom: 0px;
+        text-align: center;
     }
     .header-logo {
-        font-size: 2.5rem;
-        font-weight: 800;
+        font-size: 3rem;
+        font-weight: 900;
         color: #003366;
         letter-spacing: -1px;
-        text-align: center;
+        line-height: 1;
     }
     .header-sub {
-        text-align: center;
-        color: #666;
-        font-size: 0.9rem;
+        color: #6c757d;
+        font-size: 0.95rem;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
+        margin-top: 5px;
     }
 
-    /* NEWS TICKER (Κυλιόμενη Μπάρα) */
+    /* SLOWER TICKER (60s) */
     .ticker-wrap {
         width: 100%;
-        background-color: #003366;
+        background-color: #003366; /* Navy Blue */
         color: white;
-        height: 40px;
+        height: 45px;
         overflow: hidden;
         white-space: nowrap;
         display: flex;
         align-items: center;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
     }
     .ticker-item {
         display: inline-block;
         padding-left: 100%;
-        animation: ticker 30s linear infinite;
+        animation: ticker 60s linear infinite; /* Πιο αργό για να διαβάζεται */
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 1rem;
     }
     @keyframes ticker {
         0%   { transform: translate3d(0, 0, 0); }
         100% { transform: translate3d(-100%, 0, 0); }
     }
 
-    /* CAROUSEL / HERO SECTION (Το πλαίσιο πάνω αριστερά) */
-    .hero-container {
-        position: relative;
-        background-color: black;
+    /* TABS STYLING (FIXED VISIBILITY) */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        gap: 15px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 55px;
+        white-space: pre-wrap;
+        background-color: transparent;
         border-radius: 4px;
+        color: #333333 !important; /* Μαύρα γράμματα πάντα */
+        opacity: 1 !important;     /* Πλήρης ορατότητα */
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #cc0000 !important; /* Κόκκινο όταν επιλεγεί */
+        background-color: #FFF0F0 !important;
+        border-bottom: 3px solid #cc0000 !important;
+    }
+
+    /* CAROUSEL / HERO SECTION */
+    .hero-wrapper {
+        position: relative;
+        height: 450px;
+        border-radius: 8px;
         overflow: hidden;
-        height: 400px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        background-color: #000;
     }
     .hero-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        opacity: 0.7; /* Για να φαίνονται τα γράμματα */
-        transition: opacity 0.3s;
+        opacity: 0.8;
+        transition: transform 5s ease;
     }
-    .hero-image:hover { opacity: 0.8; }
+    .hero-image:hover { transform: scale(1.05); opacity: 0.9; }
     
     .hero-overlay {
         position: absolute;
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 30px;
-        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+        padding: 40px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.5), transparent);
     }
     .hero-cat {
-        color: #FFD700; /* Χρυσό για την κατηγορία */
-        font-size: 0.8rem;
-        font-weight: 800;
+        display: inline-block;
+        background-color: #cc0000;
+        color: white;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        border-radius: 3px;
     }
     .hero-title {
         color: white;
-        font-size: 1.8rem;
+        font-size: 2rem;
         font-weight: 700;
         line-height: 1.2;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
     .hero-title a { color: white !important; text-decoration: none; }
     .hero-title a:hover { text-decoration: underline; }
+    
+    /* ARROWS STYLING (Minimal) */
+    .arrow-btn {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 2rem;
+        cursor: pointer;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+    .arrow-btn:hover { opacity: 1; color: #003366; transform: scale(1.2); }
 
-    /* NEWS LIST (Δεξιά Στήλη) */
+    /* LIST ITEMS */
     .list-item {
         background: white;
-        padding: 15px;
-        border-bottom: 1px solid #e0e0e0;
-        display: flex;
-        flex-direction: column;
+        padding: 18px;
+        border-bottom: 1px solid #eee;
         transition: background 0.2s;
+        border-left: 3px solid transparent;
     }
-    .list-item:hover { background-color: #f9f9f9; }
+    .list-item:hover { 
+        background-color: #f1f5f9; 
+        border-left: 3px solid #003366;
+    }
     .list-title {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 600;
-        color: #003366;
-        margin-bottom: 5px;
+        color: #1a1a1a;
+        margin-bottom: 6px;
         line-height: 1.4;
     }
-    .list-title a { color: #003366 !important; text-decoration: none; }
-    .list-title a:hover { color: #0056b3 !important; text-decoration: underline; }
-    .list-meta {
-        font-size: 0.8rem;
-        color: #888;
-        display: flex;
-        gap: 10px;
-    }
+    .list-title a { color: #1a1a1a !important; text-decoration: none; }
+    .list-title a:hover { color: #004B87 !important; }
+    .list-meta { font-size: 0.8rem; color: #888; }
 
-    /* GRID CARDS (Κάτω μέρος) */
+    /* GRID CARDS */
     .grid-card {
         background: white;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
         overflow: hidden;
         height: 100%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
     }
-    .grid-img {
-        height: 140px;
-        background-color: #eee;
-        overflow: hidden;
-    }
-    .grid-img img { width: 100%; height: 100%; object-fit: cover; }
-    .grid-content { padding: 15px; }
-    .grid-cat { font-size: 0.7rem; font-weight: 800; color: #cc0000; text-transform: uppercase; margin-bottom: 5px; }
-    .grid-title { font-size: 1rem; font-weight: 700; color: #222; margin-bottom: 10px; line-height: 1.3; }
-    .grid-text { font-size: 0.9rem; color: #555; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .grid-img { height: 160px; overflow: hidden; }
+    .grid-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .grid-card:hover .grid-img img { transform: scale(1.05); }
+    .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .grid-title { font-size: 1.1rem; font-weight: 700; color: #222; margin-bottom: 8px; line-height: 1.3; }
+    .grid-text { font-size: 0.9rem; color: #555; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px;}
 
-    /* STYLING THE TABS */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: white;
-        padding: 10px;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        gap: 20px;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #cc0000 !important;
-        border-bottom-color: #cc0000 !important;
-        font-weight: 800;
-    }
-    
-    /* Navigation Buttons for Slider */
-    .nav-btn {
-        background: rgba(255,255,255,0.2);
-        border: 1px solid white;
-        color: white;
-        padding: 5px 15px;
-        cursor: pointer;
-        font-weight: bold;
-        border-radius: 20px;
-    }
-    .nav-btn:hover { background: white; color: black; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -207,12 +221,47 @@ RSS_FEEDS = {
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
 }
 
+# --- IMAGES POOL (ΠΟΛΛΕΣ ΕΙΚΟΝΕΣ ΓΙΑ ΚΑΘΕ ΚΑΤΗΓΟΡΙΑ) ---
+IMAGE_POOL = {
+    "ENG": [
+        "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1600&auto=format&fit=crop", # Construction
+        "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop", # Architecture
+        "https://images.unsplash.com/photo-1581094794329-cd9a15a93976?q=80&w=1600&auto=format&fit=crop", # Blueprints
+        "https://images.unsplash.com/photo-1590986221737-f8e658e45c43?q=80&w=1600&auto=format&fit=crop", # Hard Hat
+        "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=1600&auto=format&fit=crop", # Excavator
+    ],
+    "ENERGY": [
+        "https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600&auto=format&fit=crop", # Solar
+        "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1600&auto=format&fit=crop", # Forest
+        "https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1600&auto=format&fit=crop", # Wind
+        "https://images.unsplash.com/photo-1497436072909-60f360e1d4b0?q=80&w=1600&auto=format&fit=crop", # Green Tech
+        "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?q=80&w=1600&auto=format&fit=crop", # Recycling
+    ],
+    "LAW": [
+        "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1600&auto=format&fit=crop", # Gavel
+        "https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1600&auto=format&fit=crop", # Books
+        "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1600&auto=format&fit=crop", # Signing
+        "https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1600&auto=format&fit=crop", # Handshake
+        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600&auto=format&fit=crop", # Real Estate Keys
+    ],
+    "FEK": [
+        "https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=1600&auto=format&fit=crop", # Greek Flag style or Columns
+        "https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1600&auto=format&fit=crop", # Math/Stats
+        "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop", # Planning
+        "https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1600&auto=format&fit=crop", # Finance
+    ],
+    "GENERAL": [
+        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1600&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1600&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop",
+    ]
+}
+
 def remove_accents(input_str):
     replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
     for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
 
-# --- Ο ΕΞΥΠΝΟΣ ΑΛΓΟΡΙΘΜΟΣ ---
 def guess_category_smart(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
@@ -239,7 +288,6 @@ def guess_category_smart(title, summary, source_name):
     elif "taxheaven" in source_clean or "capital" in source_clean:
         scores["finance"] += 3
 
-    # ΔΙΟΡΘΩΜΕΝΟΙ ΒΡΟΓΧΟΙ ΓΙΑ ΑΠΟΦΥΓΗ SYNTAX ERROR
     poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
     for w in poleodomia_words:
         if w in full_text:
@@ -292,16 +340,22 @@ def guess_category_smart(title, summary, source_name):
     }
     return category_map[best_category]
 
-# --- IMAGE PLACEHOLDER LOGIC ---
-def get_category_image(category):
-    if "Πολεοδομία" in category: return "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop"
-    if "Ενέργεια" in category: return "https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1600&auto=format&fit=crop"
-    if "Έργα" in category: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1600&auto=format&fit=crop"
-    if "Νομοθεσία" in category or "ΦΕΚ" in category: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1600&auto=format&fit=crop"
-    if "Νομικά" in category or "Δικαιοσύνη" in category: return "https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1600&auto=format&fit=crop"
-    if "Συμβολαιο" in category or "Ακίνητα" in category: return "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600&auto=format&fit=crop"
-    if "Οικονομία" in category: return "https://images.unsplash.com/photo-1554224155-98406894d009?q=80&w=1600&auto=format&fit=crop"
-    return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1600&auto=format&fit=crop" # General
+# --- IMAGE SELECTION LOGIC (DETERMINISTIC) ---
+def get_category_image(category, title):
+    # Επιλογή λίστας ανάλογα την κατηγορία
+    if "Πολεοδομία" in category or "Έργα" in category: pool = IMAGE_POOL["ENG"]
+    elif "Ενέργεια" in category or "Περιβάλλον" in category: pool = IMAGE_POOL["ENERGY"]
+    elif "Νομικά" in category or "Συμβολαιο" in category or "Ακίνητα" in category: pool = IMAGE_POOL["LAW"]
+    elif "Νομοθεσία" in category or "ΦΕΚ" in category: pool = IMAGE_POOL["FEK"]
+    else: pool = IMAGE_POOL["GENERAL"]
+    
+    # "Έξυπνη" επιλογή: Χρησιμοποιούμε τον τίτλο για να διαλέγουμε πάντα την ίδια εικόνα για το ίδιο άρθρο
+    # αλλά διαφορετική για διαφορετικά άρθρα.
+    hash_obj = hashlib.md5(title.encode())
+    hash_int = int(hash_obj.hexdigest(), 16)
+    index = hash_int % len(pool)
+    
+    return pool[index]
 
 def get_db_connection():
     try:
@@ -409,17 +463,18 @@ if not df.empty:
             return
 
         # --- MSN STYLE SLIDER (TOP LEFT) & LIST (RIGHT) ---
-        col_hero, col_list = st.columns([1.8, 1.2]) # 60% - 40% split
+        col_hero_wrap, col_list = st.columns([1.8, 1.2]) 
         
-        with col_hero:
+        with col_hero_wrap:
             # Slider Logic
             slider_len = min(5, len(current_df))
             current_slide = st.session_state.slider_idx % slider_len
             hero_article = current_df.iloc[current_slide]
-            hero_img = get_category_image(hero_article['category'])
+            hero_img = get_category_image(hero_article['category'], hero_article['title'])
             
+            # THE HERO BOX
             st.markdown(f"""
-            <div class="hero-container">
+            <div class="hero-wrapper">
                 <img src="{hero_img}" class="hero-image">
                 <div class="hero-overlay">
                     <div class="hero-cat">{hero_article['category']}</div>
@@ -431,14 +486,17 @@ if not df.empty:
             </div>
             """, unsafe_allow_html=True)
             
-            # Arrows
-            c_prev, c_txt, c_next = st.columns([1, 4, 1])
-            if c_prev.button("⬅️", key=f"prev_{tab_code}"):
-                st.session_state.slider_idx -= 1
-                st.rerun()
-            if c_next.button("➡️", key=f"next_{tab_code}"):
-                st.session_state.slider_idx += 1
-                st.rerun()
+            # DISCREET NAVIGATION ARROWS
+            # Βάζουμε 3 κολώνες κάτω από την εικόνα: Αριστερά βελάκι, κενό, Δεξιά βελάκι
+            c_left, c_mid, c_right = st.columns([0.1, 0.8, 0.1])
+            with c_left:
+                if st.button("❮", key=f"prev_{tab_code}"):
+                    st.session_state.slider_idx -= 1
+                    st.rerun()
+            with c_right:
+                if st.button("❯", key=f"next_{tab_code}"):
+                    st.session_state.slider_idx += 1
+                    st.rerun()
 
         with col_list:
             st.markdown(f"### 📰 Τελευταία {tab_code if tab_code != 'HOME' else 'Ροή'}")
@@ -470,7 +528,7 @@ if not df.empty:
                     idx = i * 3 + j
                     if idx < len(grid_df):
                         row = grid_df.iloc[idx]
-                        card_img = get_category_image(row['category'])
+                        card_img = get_category_image(row['category'], row['title'])
                         with col:
                             st.markdown(f"""
                             <div class="grid-card">
