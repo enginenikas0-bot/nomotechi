@@ -8,8 +8,23 @@ import re
 import requests
 from bs4 import BeautifulSoup
 import random
+import google.generativeai as genai # Βιβλιοθήκη για το AI
 
-# --- 1. CONFIG ---
+# --- 1. CONFIG & API SETUP ---
+# Προσπαθούμε να συνδεθούμε με το AI
+HAS_AI = False
+try:
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro')
+        HAS_AI = True
+        print("✅ Gemini AI Connected!")
+    else:
+        print("⚠️ No Google API Key found. Switching to Keyword Mode.")
+except Exception as e:
+    print(f"⚠️ AI Init Error: {e}")
+
 RSS_FEEDS = {
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
@@ -28,116 +43,85 @@ RSS_FEEDS = {
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
 }
 
-# Λίστα με User-Agents για να ξεγελάμε τα sites ότι είμαστε browser
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0'
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
+# --- 2. AI BRAIN (Ο ΕΓΚΕΦΑΛΟΣ) ---
+def ask_gemini_categories(title, summary):
+    """Ρωτάει το AI σε ποιες κατηγορίες ανήκει το άρθρο"""
+    if not HAS_AI: return None
+    
+    prompt = f"""
+    Act as a professional editor for a Greek news portal for Engineers and Lawyers.
+    Analyze this article title and summary:
+    Title: {title}
+    Summary: {summary}
+    
+    Assign it to one or more of these categories based on relevance:
+    - ENGINEERS (if it's about construction, energy, urban planning, public works, real estate technicalities)
+    - LEGAL (if it's about court decisions, lawyers, laws, justice, tax laws)
+    - LEGISLATION (ONLY if it is a FEK, Law, Ministerial Decision, Circular)
+    
+    Return ONLY the categories separated by comma. Example: ENGINEERS, LEGISLATION
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip().upper()
+    except:
+        return None
+
+# --- 3. CLASSIC LOGIC (BACKUP) ---
+def guess_category_classic(title, summary, source_name):
+    full_text = remove_accents(title + " " + summary)
+    source_clean = remove_accents(source_name)
+    categories = []
+
+    # 1. Check for Legislation (ΦΕΚ)
+    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση']
+    if any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean:
+        categories.append("LEGISLATION")
+
+    # 2. Check for Engineers/Real Estate
+    eng_keywords = ['μηχανικ', 'εργα', 'ακινητ', 'δομηση', 'αυθαιρετα', 'ενεργεια', 'εξοικονομω', 'κτηματολογιο', 'πολεοδομ', 'κατασκευ', 'υποδομες']
+    if any(w in full_text for w in eng_keywords) or any(x in source_clean for x in ['b2green', 'ypodomes', 'tee', 'michanikos', 'pedmede', 'energy']):
+        categories.append("ENGINEERS")
+
+    # 3. Check for Legal
+    law_keywords = ['δικαστηρι', 'δικηγορ', 'συμβολαιογραφ', 'αρεοπαγ', 'στε', 'νομικ', 'δικαιοσυνη']
+    if any(w in full_text for w in law_keywords) or any(x in source_clean for x in ['dsa', 'lawspot', 'taxheaven']):
+        categories.append("LEGAL")
+
+    # Default
+    if not categories: categories.append("GENERAL")
+    
+    return ", ".join(categories)
+
+# --- 4. HELPER FUNCTIONS ---
 def fetch_article_image(url):
     try:
-        # Διαλέγουμε τυχαία ταυτότητα browser
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=10) # Αυξήσαμε τον χρόνο αναμονής
-        
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            # 1. Πρώτη προσπάθεια: Open Graph Image (Facebook standard)
             og_image = soup.find("meta", property="og:image")
-            if og_image and og_image.get("content"):
-                return og_image["content"]
-            
-            # 2. Δεύτερη προσπάθεια: Twitter Card Image
-            twitter_image = soup.find("meta", name="twitter:image")
-            if twitter_image and twitter_image.get("content"):
-                return twitter_image["content"]
-                
-    except Exception as e:
-        print(f"   ⚠️ Image Error on {url}: {e}")
-        return ""
+            if og_image and og_image.get("content"): return og_image["content"]
+    except: return ""
     return ""
 
 def remove_accents(input_str):
-    replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
-    for char, rep in replacements.items():
-        input_str = input_str.replace(char, rep)
+    replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω'}
+    for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
 
 def clean_summary(text):
     text = re.sub('<[^<]+?>', '', text)
-    return text[:500] + "..."
+    return text[:600] + "..."
 
-def guess_category_smart(title, summary, source_name):
-    full_text = remove_accents(title + " " + summary)
-    source_clean = remove_accents(source_name)
-    
-    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου']
-    is_fek = any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean
-
-    if is_fek:
-        eng_relevant_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'πεδμεδε', 'μηχανικ', 'τεε', 'ενεργειακ', 'εξοικονομω', 'αντικειμενικ', 'στατικ', 'αντισεισμικ', 'σκυροδεμ', 'οπλισμ']
-        if any(w in full_text for w in eng_relevant_words):
-            return "📜 Νομοθεσία: Μηχανικών & Έργων"
-        return "📜 Νομοθεσία & ΦΕΚ"
-
-    scores = {"eng_poleodomia": 0, "eng_energy": 0, "eng_projects": 0, "law_realestate": 0, "law_justice": 0, "finance": 0, "news_general": 0}
-
-    if "b2green" in source_clean or "greenagenda" in source_clean: scores["eng_energy"] += 3
-    elif "ypodomes" in source_clean or "pedmede" in source_clean: scores["eng_projects"] += 3
-    elif "pomida" in source_clean: scores["law_realestate"] += 3
-    elif "lawspot" in source_clean or "dsa" in source_clean: scores["law_justice"] += 3
-    elif "taxheaven" in source_clean or "capital" in source_clean: scores["finance"] += 3
-
-    poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
-    for w in poleodomia_words:
-        if w in full_text: scores["eng_poleodomia"] += 2
-            
-    energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα']
-    for w in energy_words:
-        if w in full_text: scores["eng_energy"] += 2
-            
-    project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
-    for w in project_words:
-        if w in full_text: scores["eng_projects"] += 2
-            
-    estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
-    for w in estate_words:
-        if w in full_text: scores["law_realestate"] += 2
-
-    disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
-    is_disaster = any(w in full_text for w in disaster_words)
-    justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν']
-    found_justice_words = sum(1 for w in justice_words if w in full_text)
-    
-    if is_disaster and found_justice_words < 2:
-        scores["law_justice"] = -10 
-    else:
-        scores["law_justice"] += (found_justice_words * 2)
-
-    fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα']
-    for w in fin_words:
-        if w in full_text: scores["finance"] += 2
-
-    best_category = max(scores, key=scores.get)
-    if scores[best_category] < 2:
-        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']): return "📢 Θεσμικά & Ανακοινώσεις"
-        return "🌐 Γενική Ενημέρωση"
-
-    category_map = {
-        "eng_poleodomia": "📐 Μηχανικοί: Πολεοδομία",
-        "eng_energy": "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον",
-        "eng_projects": "✒️ Μηχανικοί: Έργα",
-        "law_realestate": "🖋️ Συμβολαιογραφικά & Ακίνητα",
-        "law_justice": "⚖️ Νομικά Θέματα",
-        "finance": "💼 Φορολογικά & Οικονομία",
-        "news_general": "🌐 Γενική Ενημέρωση"
-    }
-    return category_map[best_category]
-
-# --- 5. MAIN ---
+# --- 5. MAIN LOOP ---
 def run():
-    print(f"🤖 [NomoTechi AI] Ξεκινάει σάρωση με Advanced Image Scraping...")
+    print(f"🤖 [NomoTechi AI] Starting Scan...")
     
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
@@ -148,12 +132,8 @@ def run():
         sh = gc.open("laws_database")
         sheet = sh.sheet1
         
-        # --- ΑΥΤΟΜΑΤΗ ΔΙΟΡΘΩΣΗ ΕΠΙΚΕΦΑΛΙΔΩΝ (Header Fix) ---
-        # Ελέγχουμε αν το κελί H1 είναι κενό ή λάθος και το διορθώνουμε
-        header_check = sheet.acell('H1').value
-        if header_check != 'image_url':
-            print("🔧 Διόρθωση επικεφαλίδας H1 σε 'image_url'...")
-            sheet.update_cell(1, 8, 'image_url')
+        # Check Header
+        if sheet.acell('H1').value != 'image_url': sheet.update_cell(1, 8, 'image_url')
 
     except Exception as e:
         print(f"Connection Error: {e}")
@@ -167,28 +147,29 @@ def run():
         existing_links = []
         
     new_items_count = 0
-    # headers variable here is for feedparser, requests uses random user agents inside the function
-    feed_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    feed_headers = {'User-Agent': 'Mozilla/5.0'}
 
     for source_name, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url, agent=feed_headers['User-Agent'])
-            if not feed.entries and feed.bozo: continue
+            if not feed.entries: continue
             
-            # Παίρνουμε τα 3 πρώτα άρθρα από κάθε πηγή
             for entry in feed.entries[:3]: 
                 if entry.link not in existing_links:
                     title = entry.title
                     summary = clean_summary(entry.summary if 'summary' in entry else "")
-                    category = guess_category_smart(title, summary, source_name)
                     
-                    print(f"   📸 Ψάχνω εικόνα για: {title[:30]}...")
+                    # --- AI DECISION ---
+                    print(f"   🧠 Analyzing: {title[:30]}...")
+                    category = ask_gemini_categories(title, summary)
+                    
+                    # Fallback to classic if AI fails or key is missing
+                    if not category:
+                        category = guess_category_classic(title, summary, source_name)
+                    
+                    print(f"      🏷️ Tags: {category}")
+
                     real_image_url = fetch_article_image(entry.link)
-                    
-                    if real_image_url:
-                        print(f"      ✅ Βρέθηκε!")
-                    else:
-                        print(f"      ❌ Δεν βρέθηκε, θα μπει Stock.")
 
                     new_row = [
                         len(existing_data) + new_items_count + 1,
@@ -197,18 +178,18 @@ def run():
                         summary,
                         entry.link,
                         datetime.now().strftime("%Y-%m-%d"),
-                        category,
-                        real_image_url # Στήλη H
+                        category, # Multi-tag string (e.g. "ENGINEERS, LEGISLATION")
+                        real_image_url
                     ]
                     
                     sheet.append_row(new_row)
                     new_items_count += 1
                     existing_links.append(entry.link)
         except Exception as e:
-            print(f"Σφάλμα στην πηγή {source_name}: {e}")
+            print(f"Error on {source_name}: {e}")
             pass
 
-    print(f"🏁 Ολοκληρώθηκε. Νέα άρθρα: {new_items_count}")
+    print(f"🏁 Done. New articles: {new_items_count}")
 
 if __name__ == "__main__":
     run()
