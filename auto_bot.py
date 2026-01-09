@@ -3,7 +3,7 @@ import json
 import gspread
 import feedparser
 from datetime import datetime
-import re
+import time
 
 # --- 1. ΟΙ ΠΗΓΕΣ ---
 RSS_FEEDS = {
@@ -29,93 +29,109 @@ RSS_FEEDS = {
     "💰 Capital": "https://www.capital.gr/rss/oikonomia"
 }
 
-# --- 2. ADVANCED AI CLASSIFIER ---
+# --- 2. ADVANCED AI SCORING SYSTEM ---
 def remove_accents(input_str):
-    """Βοηθητική συνάρτηση για να καθαρίζει τόνους (π.χ. άδεια -> αδεια)"""
-    replacements = {
-        'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
-        'Ά': 'Α', 'Έ': 'Ε', 'Ή': 'Η', 'Ί': 'Ι', 'Ό': 'Ο', 'Ύ': 'Υ', 'Ώ': 'Ω',
-        'ϊ': 'ι', 'ϋ': 'υ', 'ΐ': 'ι', 'ΰ': 'υ'
-    }
-    for char, replacement in replacements.items():
-        input_str = input_str.replace(char, replacement)
+    replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω','Ά':'Α','Έ':'Ε','Ή':'Η','Ί':'Ι','Ό':'Ο','Ύ':'Υ','Ώ':'Ω','ϊ':'ι','ϋ':'υ'}
+    for char, rep in replacements.items(): input_str = input_str.replace(char, rep)
     return input_str.lower()
 
 def guess_category_smart(title, summary, source_name):
-    # Ενωση κειμένου και καθαρισμός
+    # Καθαρισμός κειμένου
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
-
-    # --- ΒΗΜΑ 1: HARD RULES ΒΑΣΕΙ ΠΗΓΗΣ (Source Weighting) ---
-    # Κάποιες πηγές είναι μονοθεματικές. Τις εμπιστευόμαστε.
-    if "e-nomothesia" in source_clean:
-        return "📜 Νομοθεσία & ΦΕΚ"
-    if "greenagenda" in source_clean or "b2green" in source_clean:
-        # Εξαίρεση: Αν μιλάει για νόμο, πάει νομοθεσία, αλλιώς περιβάλλον
-        if any(w in full_text for w in ['φεκ', 'τροπολογια', 'νομοσχεδιο']):
-            return "📜 Νομοθεσία & ΦΕΚ"
-        return "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον"
-    if "energypress" in source_clean:
-        return "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον"
-    if "pomida" in source_clean:
-        return "🖋️ Συμβολαιογραφικά & Ακίνητα"
-
-    # --- ΒΗΜΑ 2: ΑΡΝΗΤΙΚΑ ΦΙΛΤΡΑ (SAFETY NET) ---
-    # Λέξεις που δείχνουν φυσική καταστροφή ή γενικά νέα (ΓΙΑ ΝΑ ΜΗΝ ΜΠΑΙΝΟΥΝ ΣΤΑ ΝΟΜΙΚΑ)
-    nature_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος', 'δελτιο τυπου', 'εκδηλωση', 'συνεδριο']
-    is_nature_event = any(w in full_text for w in nature_words)
-
-    # --- ΒΗΜΑ 3: ΛΕΞΕΙΣ ΚΛΕΙΔΙΑ ΜΕ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ---
-
-    # 1. ΝΟΜΟΘΕΣΙΑ (Απόλυτη Προτεραιότητα)
-    if any(w in full_text for w in ['φεκ', 'εγκυκλιος', 'κυα', 'προεδriko διαταγμα', 'νομοσχεδιο', 'ψηφιστηκε', 'τροπολογια']):
-        return "📜 Νομοθεσία & ΦΕΚ"
-
-    # 2. ΜΗΧΑΝΙΚΟΙ - ΠΟΛΕΟΔΟΜΙΑ
-    eng_keywords = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'κτηματολογιο', 'δασικ']
-    if any(w in full_text for w in eng_keywords):
-        return "📐 Μηχανικοί: Πολεοδομία"
-
-    # 3. ΜΗΧΑΝΙΚΟΙ - ΕΡΓΑ
-    erga_keywords = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ']
-    if any(w in full_text for w in erga_keywords):
-        return "✒️ Μηχανικοί: Έργα"
-
-    # 4. ΕΝΕΡΓΕΙΑ (Αν δεν το έπιασε το Source Rule)
-    energy_keywords = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση']
-    if any(w in full_text for w in energy_keywords):
-        return "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον"
-
-    # 5. ΣΥΜΒΟΛΑΙΟΓΡΑΦΙΚΑ & ΑΚΙΝΗΤΑ
-    prop_keywords = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'ε9']
-    if any(w in full_text for w in prop_keywords):
-        return "🖋️ Συμβολαιογραφικά & Ακίνητα"
-
-    # 6. ΝΟΜΙΚΑ (ΠΡΟΣΟΧΗ: Εδώ γινόταν το λάθος με το ηφαίστειο)
-    # Τώρα μπαίνει ΜΟΝΟ αν δεν είναι φυσική καταστροφή, ή αν έχει πολύ ισχυρούς νομικούς όρους
-    legal_keywords = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν']
-    strong_legal = ['αρεοπαγ', 'στε', 'εφετειο', 'δικαστικη αποφαση'] # Αυτά κερδίζουν ακόμα και το ηφαίστειο
     
-    has_legal_word = any(w in full_text for w in legal_keywords)
-    has_strong_legal = any(w in full_text for w in strong_legal)
+    # ΑΠΟΛΥΤΟΣ ΚΑΝΟΝΑΣ: ΝΟΜΟΘΕΣΙΑ (ΦΕΚ)
+    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση υπουργου']
+    if any(w in full_text for w in fek_keywords): return "📜 Νομοθεσία & ΦΕΚ"
+    if "e-nomothesia" in source_clean: return "📜 Νομοθεσία & ΦΕΚ"
 
-    if has_strong_legal: 
-        return "⚖️ Νομικά Θέματα"
-    if has_legal_word and not is_nature_event: 
-        return "⚖️ Νομικά Θέματα"
+    # Initialize Scores
+    scores = {
+        "eng_poleodomia": 0,
+        "eng_energy": 0,
+        "eng_projects": 0,
+        "law_realestate": 0,
+        "law_justice": 0,
+        "finance": 0,
+        "news_general": 0
+    }
 
-    # 7. ΟΙΚΟΝΟΜΙΚΑ / ΦΟΡΟΛΟΓΙΚΑ
-    if any(w in full_text for w in ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ']):
-        return "💼 Φορολογικά & Οικονομία"
+    # --- A. SOURCE BIAS (Μπόνους Πηγής) ---
+    if "b2green" in source_clean or "greenagenda" in source_clean or "energypress" in source_clean:
+        scores["eng_energy"] += 3
+    elif "ypodomes" in source_clean or "pedmede" in source_clean:
+        scores["eng_projects"] += 3
+    elif "pomida" in source_clean:
+        scores["law_realestate"] += 3
+    elif "lawspot" in source_clean or "dsa" in source_clean:
+        scores["law_justice"] += 3
+    elif "taxheaven" in source_clean or "capital" in source_clean:
+        scores["finance"] += 3
 
-    # 8. ΘΕΣΜΙΚΑ
-    if any(w in full_text for w in ['εκλογες', 'ψηφοφορια', 'παραταση', 'ανακοινωση']):
-        return "📢 Θεσμικά & Ανακοινώσεις"
+    # --- B. CONTENT ANALYSIS (Λέξεις Κλειδιά) ---
+    
+    # ΠΟΛΕΟΔΟΜΙΑ
+    poleodomia_words = ['αυθαιρετα', '4495', 'πολεοδομ', 'δομηση', 'κτιριοδομ', 'αδειες', 'οικοδομ', 'νοκ', 'τοπογραφικ', 'ταυτοτητα κτιριου', 'συντελεστης', 'υδομ']
+    for w in poleodomia_words: 
+        if w in full_text: scores["eng_poleodomia"] += 2
 
-    # DEFAULT (Αν είναι ηφαίστειο και δεν ταίριαξε πουθενά αλλού)
-    return "🌐 Γενική Ενημέρωση"
+    # ΕΝΕΡΓΕΙΑ
+    energy_words = ['εξοικονομω', 'φωτοβολταικ', 'ενεργεια', 'απε', 'ραε', 'υδρογονο', 'κλιματικ', 'περιβαλλον', 'ανακυκλωση', 'αποβλητα', 'net metering']
+    for w in energy_words: 
+        if w in full_text: scores["eng_energy"] += 2
 
-# --- 3. Η ΜΗΧΑΝΗ ΤΟΥ ΡΟΜΠΟΤ ---
+    # ΕΡΓΑ (Εδώ κερδίζει το B2Green αν μιλάει για έργα)
+    project_words = ['διαγωνισμ', 'δημοσια εργα', 'αναθεση', 'συμβαση', 'υποδομες', 'μετρο', 'οδικος', 'πεδμεδε', 'μειοδοτ', 'αναδοχος', 'εργοταξιο', 'κατασκευαστικ', 'γεφυρα', 'αυτοκινητοδρομος', 'σιδηροδρομ']
+    for w in project_words: 
+        if w in full_text: scores["eng_projects"] += 2
+
+    # ΑΚΙΝΗΤΑ & ΣΥΜΒΟΛΑΙΟΓΡΑΦΟΙ
+    estate_words = ['συμβολαιογραφ', 'μεταβιβαση', 'γονικη παροχη', 'κληρονομι', 'διαθηκη', 'αντικειμενικ', 'enfia', 'υποθηκοφυλακ', 'κτηματολογιο', 'ε9', 'ακινητ']
+    for w in estate_words: 
+        if w in full_text: scores["law_realestate"] += 2
+
+    # ΝΟΜΙΚΑ (Με προστασία από φυσικές καταστροφές)
+    disaster_words = ['ηφαιστειο', 'σεισμος', 'χιονια', 'κακοκαιρια', 'πυρκαγια', 'φωτια', 'πλημμυρα', 'καιρος']
+    is_disaster = any(w in full_text for w in disaster_words)
+    
+    justice_words = ['δικαστηρι', 'αρεοπαγ', 'στε', 'ποινικ', 'αστικ', 'δικη', 'αγωγη', 'δικηγορ', 'ολομελεια', 'παραβαση', 'κατηγορουμεν', 'εφετειο', 'νομικο συμβουλιο']
+    
+    found_justice_words = 0
+    for w in justice_words: 
+        if w in full_text: found_justice_words += 1
+    
+    if is_disaster and found_justice_words < 2:
+        scores["law_justice"] = -10 # Τιμωρία
+    else:
+        scores["law_justice"] += (found_justice_words * 2)
+
+    # ΟΙΚΟΝΟΜΙΚΑ
+    fin_words = ['φορολογ', 'ααδε', 'mydata', 'εφορια', 'φπα', 'μισθοδοσια', 'τραπεζ', 'δανει', 'εφκα', 'συνταξ', 'τεκμηρια', 'οφειλ']
+    for w in fin_words: 
+        if w in full_text: scores["finance"] += 2
+
+    # --- C. WINNER ---
+    best_category = max(scores, key=scores.get)
+    max_score = scores[best_category]
+
+    if max_score < 2:
+        if any(w in full_text for w in ['εκλογες', 'παραταση', 'ανακοινωση']):
+            return "📢 Θεσμικά & Ανακοινώσεις"
+        return "🌐 Γενική Ενημέρωση"
+
+    category_map = {
+        "eng_poleodomia": "📐 Μηχανικοί: Πολεοδομία",
+        "eng_energy": "🌱 Μηχανικοί: Ενέργεια & Περιβάλλον",
+        "eng_projects": "✒️ Μηχανικοί: Έργα",
+        "law_realestate": "🖋️ Συμβολαιογραφικά & Ακίνητα",
+        "law_justice": "⚖️ Νομικά Θέματα",
+        "finance": "💼 Φορολογικά & Οικονομία",
+        "news_general": "🌐 Γενική Ενημέρωση"
+    }
+    
+    return category_map[best_category]
+
+# --- 3. RUN LOOP ---
 def run():
     print(f"🤖 [NomoTechi AI] Σάρωση και Κατηγοριοποίηση ξεκίνησε...")
     
@@ -148,11 +164,9 @@ def run():
                 
             for entry in feed.entries[:5]: 
                 if entry.link not in existing_links:
-                    
                     title = entry.title
                     summary = entry.summary.replace("<p>", "").replace("</p>", "")[:250] + "..." if 'summary' in entry else ""
                     
-                    # ΚΑΛΟΥΜΕ ΤΟΝ ΕΞΥΠΝΟ CLASSIFIER ΜΕ ΤΟ ΟΝΟΜΑ ΤΗΣ ΠΗΓΗΣ
                     category = guess_category_smart(title, summary, source_name)
                     
                     new_row = [
