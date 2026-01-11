@@ -18,30 +18,25 @@ try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-pro')
         HAS_AI = True
-        print("✅ Gemini AI Connected! (Max Capacity Mode)")
+        print("✅ Gemini AI Connected! (Surgical Precision Mode)")
     else:
         print("⚠️ No API Key. Falling back to Safety Net.")
 except Exception as e:
     print(f"⚠️ AI Error: {e}")
 
-# --- 2. SOURCES ---
+# --- 2. SOURCES (CLEAN LIST) ---
 RSS_FEEDS = {
-    # --- ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ ---
     "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ Dikastiko Reportaz": "https://www.dikastikoreportaz.gr/feed/", 
     "⚖️ Lawspot": "https://www.lawspot.gr/rss",
     "⚖️ Syntagma Watch": "https://www.syntagmawatch.gr/feed/", 
     "⚖️ LawNet": "https://www.lawnet.gr/feed/",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
-    
-    # --- ΜΗΧΑΝΙΚΟΙ / ΑΚΙΝΗΤΑ ---
     "🏠 POMIDA": "https://www.pomida.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🌿 B2Green": "https://news.b2green.gr/feed",
     "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
     "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
-    
-    # --- ΟΙΚΟΝΟΜΙΑ & ΝΟΜΟΘΕΣΙΑ ---
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "💼 Taxheaven": "https://www.taxheaven.gr/rss",
     "💰 Capital": "https://www.capital.gr/rss/oikonomia",
@@ -85,7 +80,18 @@ def fetch_article_image(url):
     except: return ""
     return ""
 
-# --- 4. SAFETY NET ---
+# --- 4. SANITIZER (Safety Check) ---
+def sanitize_tags(tags_str):
+    if not tags_str or tags_str == "GENERAL": return tags_str
+    tag_list = [t.strip().upper() for t in tags_str.split(',')]
+    
+    # ΚΑΝΟΝΑΣ: Το "LEGAL" φεύγει ΜΟΝΟ αν υπάρχει Τεχνικό θέμα
+    if ("ENGINEERS" in tag_list or "REAL_ESTATE" in tag_list) and "LEGAL" in tag_list:
+        tag_list.remove("LEGAL")
+        
+    return ", ".join(tag_list)
+
+# --- 5. SAFETY NET ---
 def guess_category_classic(text):
     text = remove_accents(text)
     tags = []
@@ -96,9 +102,10 @@ def guess_category_classic(text):
     if any(w in text for w in ['ακινητ', 'ενοικι', 'airbn', 'αντικειμενικ', 'gold visa', 'ενφια', 'ααδε', 'μεταβιβαση']):
         tags.append("REAL_ESTATE")
     
-    is_legal = any(w in text for w in ['δικαστηρι', 'δικηγορ', 'στε', 'αρεοπαγ', 'αγωγη', 'ποινικ', 'συνταγμα', 'δικαιοσυνη', 'εισαγγελ'])
+    is_legal = any(w in text for w in ['δικαστηρι', 'δικηγορ', 'στε', 'αρεοπαγ', 'αγωγη', 'ποινικ', 'συνταγμα', 'δικαιοσυνη'])
     is_tech = "ENGINEERS" in tags or "REAL_ESTATE" in tags
-    if is_legal and not is_tech: tags.append("LEGAL")
+    if is_legal and not is_tech: 
+        tags.append("LEGAL")
 
     if any(w in text for w in ['φεκ', 'εγκυκλιος', 'υπουργικη αποφαση', 'νομος υπ αριθμ', 'τροπολογια']):
         tags.append("LEGISLATION")
@@ -109,45 +116,40 @@ def guess_category_classic(text):
     if not tags: return "GENERAL"
     return ", ".join(tags)
 
-# --- 5. AI ANALYST (GOVERNMENT GRADE) ---
+# --- 6. AI ANALYST (SURGICAL PROMPT) ---
 def analyze_article_with_ai(title, full_text):
     if not HAS_AI: return None, None
     
     prompt = f"""
-    You are a Senior Analyst for a Professional Portal (Engineers/Lawyers).
-    Analyze this article.
+    Act as a Senior Intelligence Analyst. Classify this article with extreme precision.
     TITLE: {title}
     TEXT: {full_text[:8000]}
     
-    --- 1. STRICT CATEGORIZATION ---
-    Assign tags based on the Target Audience:
+    --- CATEGORIZATION LOGIC ---
     
-    [ENGINEERS]:
-    - For: Civil Engineers, Contractors.
-    - Topics: Public Works, Ktimatologio, Arbitrary Buildings, Urban Planning, Energy Saving.
+    1. [ENGINEERS]:
+       - MUST contain Technical topics: Construction, Infrastructure, Public Works (Erga), Energy, Zoning, Ktimatologio.
+       - Even if it mentions "Contracts" or "Laws", if the SUBJECT is a Project -> Tag ENGINEERS.
+       
+    2. [LEGAL]:
+       - MUST contain Pure Legal topics: Criminal/Civil/Family Law, Court Procedure, Bar Association (DSA), Justice Reform.
+       - SAFETY CHECK: Does it mention Concrete, Buildings, or Roads? If YES -> DO NOT USE "LEGAL" (Use Engineers).
+       - Only use "LEGAL" for pure justice matters.
+
+    3. [REAL_ESTATE]:
+       - Property Tax, Rents, Buying/Selling.
+
+    4. [LEGISLATION]:
+       - Official Documents ONLY: FEK, Laws, Decisions.
+
+    5. [SOS]:
+       - Deadlines/Fines.
+
+    --- SUMMARY ---
+    - Greek Bullet Points (•). Precise Data.
     
-    [REAL_ESTATE]:
-    - For: Real Estate Agents, Property Owners.
-    - Topics: Property Taxes, Buying/Selling, Rents, Golden Visa.
-
-    [LEGAL]:
-    - For: Lawyers, Judges.
-    - Topics: Court Rulings (StE/Areopagos), Penal Code, Civil Code, DSA.
-    - EXCLUSION: If the article is about a Technical Project, DO NOT use "LEGAL".
-
-    [LEGISLATION]:
-    - STRICTLY for Official Documents: FEK, Circulars, Ministerial Decisions (YA).
-    - Not for general news.
-
-    [SOS]:
-    - For: Urgent Deadlines, Fines.
-
-    --- 2. SUMMARY (GREEK) ---
-    - Write a summary in Greek using Bullet Points (•).
-    - EXTRACT: Hard Data (Dates, Amounts €, Law Numbers).
-    
-    --- OUTPUT FORMAT ---
-    TAG1, TAG2 ||| • Bullet 1... • Bullet 2...
+    --- OUTPUT ---
+    TAG1, TAG2 ||| • Bullet 1...
     """
     try:
         response = model.generate_content(prompt)
@@ -163,9 +165,9 @@ def analyze_article_with_ai(title, full_text):
         print(f"AI Error: {e}")
         return None, None
 
-# --- 6. MAIN LOOP (HIGH CAPACITY) ---
+# --- 7. MAIN LOOP ---
 def run():
-    print(f"🤖 [NomoTechi MAX CAPACITY v10] Starting...")
+    print(f"🤖 [NomoTechi SURGICAL v13] Starting...")
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
 
@@ -190,7 +192,7 @@ def run():
             feed = feedparser.parse(url)
             if not feed.entries: continue
             
-            # --- Η ΜΕΓΑΛΗ ΑΛΛΑΓΗ: Ελέγχουμε τα 6 πρώτα αντί για 2 ---
+            # Έλεγχος στα 6 πρώτα για να μην χάνουμε ειδήσεις
             for entry in feed.entries[:6]: 
                 print(f"   🔎 Checking: {entry.title[:30]}...")
                 
@@ -202,29 +204,28 @@ def run():
                 if not tags or tags == "GENERAL" or len(tags) < 3:
                     tags = guess_category_classic(entry.title + " " + scraped_text)
                 if not ai_summary: ai_summary = entry.summary
+                
+                # Εφαρμογή του Καθαριστή
+                tags = sanitize_tags(tags)
 
                 real_image_url = fetch_article_image(entry.link)
 
                 if entry.link in link_map:
-                    # UPDATE EXISTING
                     row_num = link_map[entry.link]
-                    # Ενημερώνουμε μόνο αν χρειάζεται (π.χ. αν δεν είχε σωστά tags πριν)
                     sheet.update_cell(row_num, 4, ai_summary)
                     sheet.update_cell(row_num, 7, tags)
                     if real_image_url: sheet.update_cell(row_num, 8, real_image_url)
                     updated_items += 1
                 else:
-                    # NEW ENTRY
-                    print(f"      ✨ Adding New: {tags}")
+                    print(f"      ✨ Adding: {tags}")
                     new_row = [len(existing_data) + new_items + 1, source_name, entry.title, ai_summary, entry.link, datetime.now().strftime("%Y-%m-%d"), tags, real_image_url]
                     sheet.append_row(new_row)
                     new_items += 1
                 
-                # --- ΑΥΞΗΜΕΝΗ ΑΝΑΜΟΝΗ (για να μην "κρασάρει" το API λόγω πολλών αιτημάτων) ---
                 time.sleep(3.5) 
         except: pass
 
-    print(f"🏁 Update Complete. Added: {new_items}, Updated: {updated_items}")
+    print(f"🏁 Done. Added: {new_items}, Updated: {updated_items}")
 
 if __name__ == "__main__":
     run()
