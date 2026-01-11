@@ -30,7 +30,7 @@ st.markdown("""
     /* --- SIDEBAR HINT (ΤΟΠΟΘΕΤΗΣΗ ΔΙΠΛΑ ΣΤΟ ΒΕΛΟΣ) --- */
     .sidebar-hint {
         position: fixed;
-        top: 22px;        /* Στο ύψος του βέλους */
+        top: 24px;        /* Στο ύψος του βέλους */
         left: 80px;       /* Ακριβώς δίπλα του */
         z-index: 999999;
         font-size: 0.7rem;
@@ -59,7 +59,7 @@ st.markdown("""
 
     /* TICKER */
     .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
-    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 45s linear infinite; font-weight: 600; }
+    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 70s linear infinite; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
     /* LISTS & CARDS */
@@ -317,3 +317,4 @@ elif not df.empty:
             if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
             if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
             st.dataframe(df)
+
