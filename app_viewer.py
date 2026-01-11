@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="expanded"  # <--- ΑΝΟΙΚΤΗ ΑΠΟ ΠΡΟΕΠΙΛΟΓΗ
+    initial_sidebar_state="expanded"
 )
 
 # --- 2. CSS ---
@@ -24,32 +24,38 @@ st.markdown("""
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    /* --- AGGRESSIVE ARROW FIX (ΜΟΝΙΜΑ ΟΡΑΤΟ ΒΕΛΑΚΙ) --- */
-    
-    /* 1. Όταν η μπάρα είναι κλειστή (Το βελάκι πάνω αριστερά) */
+    /* --- SIDEBAR ARROW ALWAYS VISIBLE --- */
     [data-testid="collapsedControl"] {
         display: block !important;
         opacity: 1 !important;
         color: #000000 !important;
-        visibility: visible !important;
     }
-    
-    /* 2. Όταν η μπάρα είναι ανοιχτή (Το Χ ή βελάκι κλεισίματος μέσα στην μπάρα) */
-    section[data-testid="stSidebar"] button {
+    [data-testid="stSidebar"] button {
         opacity: 1 !important;
-        visibility: visible !important;
-        color: #000000 !important; /* Μαύρο χρώμα */
-        border: none !important;
+        color: #000000 !important;
     }
-    
-    /* 3. Γενική στόχευση για κουμπιά header (για σιγουριά) */
-    header[data-testid="stHeader"] {
-        background: transparent !important;
-        z-index: 1 !important;
+
+    /* --- TOP BRANDING (POWERED BY) --- */
+    .top-powered-brand {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #000000;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+        text-align: center;
+        padding-top: 10px;
     }
-    div[class*="stDecoration"] {
-        visibility: visible !important;
-        opacity: 1 !important;
+    .top-powered-brand a {
+        color: #000000 !important;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: 0.3s;
+    }
+    .top-powered-brand a:hover {
+        border-bottom: 1px solid #000000;
+        opacity: 0.7;
     }
 
     /* --- BRAND CARD STYLING --- */
@@ -88,14 +94,14 @@ st.markdown("""
     .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
     .badge-leg { background-color: #444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
 
-    .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; margin-top: 20px; }
-    .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
+    .header-container { background: white; padding: 10px 0 25px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; margin-top: 10px; }
+    .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; margin-top: 0px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
     
     .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-family: 'Montserrat', sans-serif;}
     .powered-footer a { color: #000000; text-decoration: none; font-weight: 700; }
     
-    /* DATE STYLE (CLEAN & SIMPLE) */
+    /* DATE STYLE */
     .article-date {
         font-size: 0.75rem;
         color: #999;
@@ -219,8 +225,7 @@ with st.sidebar:
         <a href="{nikas_url}" target="_blank" class="brand-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
-    # -----------------------------------------------
-
+    
     st.markdown("### ⏳ Προθεσμίες")
     st.info("⚠️ **31/12:** Λήξη Κτηματολογίου")
     st.info("⚠️ **31/01:** MyDATA Διαβίβαση")
@@ -239,7 +244,13 @@ with st.sidebar:
         else: st.error("Άκυρο email.")
 
 # --- 6. MAIN UI ---
-st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Intelligence Platform for Professionals</div></div>""", unsafe_allow_html=True)
+st.markdown("""
+<div class="header-container">
+    <div class="top-powered-brand"><a href="https://www.nikastechnical.gr" target="_blank">powered by Nikas Technical | @nikas.tech</a></div>
+    <div class="header-logo">🏛️ NomoTechi</div>
+    <div class="header-sub">Intelligence Platform for Professionals</div>
+</div>
+""", unsafe_allow_html=True)
 
 raw_data = load_data()
 if not raw_data:
@@ -373,7 +384,6 @@ elif not df.empty:
                                 with st.expander("📝 Ανάλυση AI (Bullet Points)"):
                                     st.markdown(row['content'])
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
-                                # --- CLEAN DATE (NO EMOJI) ---
                                 st.markdown(f"""
                                 <div class="article-date">
                                     {row['last_update']}
