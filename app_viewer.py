@@ -7,7 +7,6 @@ import time
 import hashlib
 import re
 import base64
-import os
 import streamlit.components.v1 as components
 
 # --- 1. SETUP ---
@@ -15,7 +14,7 @@ st.set_page_config(
     page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # --- 2. CSS (NIKAS TECHNICAL BRANDING) ---
@@ -25,25 +24,34 @@ st.markdown("""
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    /* --- BRAND CARD STYLING --- */
+    /* --- BRAND CARD STYLING (MATCHING LOGO) --- */
     .brand-card {
-        background: #ffffff;
-        border: 2px solid #000000;
-        border-radius: 4px; 
-        padding: 20px 15px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background: linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%); /* Απαλό μεταλλικό/γκρι όπως το logo */
+        border: 2px solid #000000; /* Απόλυτο Μαύρο */
+        border-radius: 0px; /* Αιχμηρές γωνίες για τεχνικό/μηχανικό στυλ */
+        padding: 25px 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         text-align: center;
     }
-    .brand-label { font-size: 0.65rem; color: #666; font-weight: 700; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+    
+    .brand-label { 
+        font-size: 0.65rem; 
+        color: #444; 
+        font-weight: 800; 
+        letter-spacing: 3px; 
+        margin-bottom: 15px; 
+        text-transform: uppercase; 
+        font-family: 'Montserrat', sans-serif; 
+    }
     
     .brand-btn { 
         display: block; width: 100%; text-align: center;
-        background-color: #000000;
-        color: #ffffff !important;
-        border: 2px solid #000000;
-        padding: 8px 0; 
-        border-radius: 4px; 
+        background-color: #000000; /* Μαύρο */
+        color: #ffffff !important; /* Λευκά γράμματα */
+        border: 1px solid #000000;
+        padding: 10px 0; 
+        border-radius: 0px; /* Τετράγωνο κουμπί */
         font-size: 0.85rem; font-weight: 700;
         text-decoration: none; transition: 0.3s;
         font-family: 'Montserrat', sans-serif;
@@ -51,8 +59,9 @@ st.markdown("""
         letter-spacing: 1px;
     }
     .brand-btn:hover { 
-        background-color: #ffffff; 
-        color: #000000 !important; 
+        background-color: #333333; /* Σκούρο γκρι στο hover */
+        border-color: #333333;
+        color: #ffffff !important; 
     }
 
     /* UTILS */
@@ -160,7 +169,7 @@ def reset_database():
         return True
     except: return False
 
-# --- 4. IMAGE LOADER FUNCTION ---
+# --- 4. IMAGE LOADER ---
 def get_image_as_base64(file_path):
     try:
         with open(file_path, "rb") as f:
@@ -169,32 +178,31 @@ def get_image_as_base64(file_path):
     except:
         return None
 
-# --- 5. SIDEBAR ME REAL LOGO ---
-st.markdown('<div class="sidebar-label">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+# --- 5. SIDEBAR ME REAL LOGO & CLEAN LAYOUT ---
 with st.sidebar:
     
-    # --- BRAND CARD (DYNAMIC LOADER) ---
+    # --- BRAND CARD ---
     nikas_url = "https://www.nikastechnical.gr"
     
-    # Προσπάθεια φόρτωσης του αρχείου logo.jpg ή logo.png
+    # Φόρτωση εικόνας
     logo_b64 = get_image_as_base64("logo.jpg")
     if not logo_b64: logo_b64 = get_image_as_base64("logo.png")
     
-    # Αν βρεθεί η εικόνα, την δείχνει. Αν όχι, δείχνει κείμενο.
+    # Εικόνα Λογότυπου
     img_html = f'<img src="data:image/jpeg;base64,{logo_b64}" style="width:100%; max-width:180px; margin:0 auto 15px auto; display:block;">' if logo_b64 else '<div style="font-size:2rem; margin-bottom:10px;">🏗️</div>'
 
     st.markdown(f"""
     <div class="brand-card">
         <div class="brand-label">POWERED BY</div>
         {img_html}
-        <div class="brand-sub">Construction Engineering</div>
+        <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: #000; margin-bottom: 15px;">Construction Engineering</div>
         <a href="{nikas_url}" target="_blank" class="brand-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
     # -----------------------------------------------
 
-    st.header("🧰 Εργαλειοθήκη")
-    st.markdown("---")
+    # ΑΦΑΙΡΕΘΗΚΕ Ο ΤΙΤΛΟΣ "ΕΡΓΑΛΕΙΟΘΗΚΗ"
+    
     st.markdown("### ⏳ Προθεσμίες")
     st.info("⚠️ **31/12:** Λήξη Κτηματολογίου")
     st.info("⚠️ **31/01:** MyDATA Διαβίβαση")
@@ -243,18 +251,12 @@ elif not df.empty:
 
     def get_filtered_df(tab_name):
         if tab_name == "HOME": return df 
-        
-        # ENGINEERS: Τεχνικά θέματα, Ακίνητα, ΚΑΙ Νόμοι που τα αφορούν
         if tab_name == "ENG": 
             return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
-        
-        # LAW: ΜΟΝΟ Αμιγώς Νομικά (Legal που ΔΕΝ είναι Engineers/Real Estate)
         if tab_name == "LAW": 
             legal_mask = df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)
             eng_mask = df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)
             return df[legal_mask & ~eng_mask]
-            
-        # FEK: ΜΟΝΟ Επίσημα Κείμενα (Legislation Tag Only)
         if tab_name == "FEK": 
             return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
         return df
