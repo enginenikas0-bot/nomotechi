@@ -41,7 +41,6 @@ st.markdown("""
         font-size: 0.85rem;
         font-weight: 700;
         color: #000000;
-        /* text-transform: uppercase;  <-- ΑΦΑΙΡΕΘΗΚΕ ΓΙΑ ΝΑ ΣΕΒΑΣΤΕΙ ΤΑ ΠΕΖΑ/ΚΕΦΑΛΑΙΑ */
         letter-spacing: 1px;
         margin-bottom: 5px;
         text-align: center;
@@ -246,7 +245,7 @@ with st.sidebar:
 # --- 6. MAIN UI ---
 st.markdown("""
 <div class="header-container">
-    <div class="top-powered-brand"><a href="https://www.nikastechnical.gr" target="_blank">Powered by Nikas Technical | @nikas.tech</a></div>
+    <div class="top-powered-brand"><a href="https://www.nikastechnical.gr" target="_blank">Powered by NiKAS Technical | @nikas.tech</a></div>
     <div class="header-logo">🏛️ NomoTechi</div>
     <div class="header-sub">Intelligence Platform for Professionals</div>
 </div>
