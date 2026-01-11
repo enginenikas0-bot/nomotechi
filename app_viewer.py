@@ -24,15 +24,32 @@ st.markdown("""
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    /* --- SIDEBAR ARROW ALWAYS VISIBLE --- */
+    /* --- AGGRESSIVE ARROW FIX (ΜΟΝΙΜΑ ΟΡΑΤΟ ΒΕΛΑΚΙ) --- */
+    
+    /* 1. Όταν η μπάρα είναι κλειστή (Το βελάκι πάνω αριστερά) */
     [data-testid="collapsedControl"] {
         display: block !important;
         opacity: 1 !important;
         color: #000000 !important;
+        visibility: visible !important;
     }
-    [data-testid="stSidebar"] button {
+    
+    /* 2. Όταν η μπάρα είναι ανοιχτή (Το Χ ή βελάκι κλεισίματος μέσα στην μπάρα) */
+    section[data-testid="stSidebar"] button {
         opacity: 1 !important;
-        color: #000000 !important;
+        visibility: visible !important;
+        color: #000000 !important; /* Μαύρο χρώμα */
+        border: none !important;
+    }
+    
+    /* 3. Γενική στόχευση για κουμπιά header (για σιγουριά) */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        z-index: 1 !important;
+    }
+    div[class*="stDecoration"] {
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 
     /* --- BRAND CARD STYLING --- */
@@ -78,7 +95,7 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-family: 'Montserrat', sans-serif;}
     .powered-footer a { color: #000000; text-decoration: none; font-weight: 700; }
     
-    /* DATE STYLE (CLEAN) */
+    /* DATE STYLE (CLEAN & SIMPLE) */
     .article-date {
         font-size: 0.75rem;
         color: #999;
@@ -356,13 +373,12 @@ elif not df.empty:
                                 with st.expander("📝 Ανάλυση AI (Bullet Points)"):
                                     st.markdown(row['content'])
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
-                                # --- CLEAN DATE ONLY ---
+                                # --- CLEAN DATE (NO EMOJI) ---
                                 st.markdown(f"""
                                 <div class="article-date">
                                     {row['last_update']}
                                 </div>
                                 """, unsafe_allow_html=True)
-                                # -----------------------
                                 st.markdown("---")
 
     with tabs[0]: render_tab_content("HOME")
