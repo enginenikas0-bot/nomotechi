@@ -27,66 +27,37 @@ st.markdown("""
         color: #111;
     }
 
-    /* --- SIDEBAR LABEL (Η ΤΑΜΠΕΛΑ ΠΟΥ ΖΗΤΗΣΕΣ) --- */
+    /* --- SIDEBAR LABEL --- */
     .sidebar-hint {
-        position: fixed;
-        top: 18px;
-        left: 60px;
-        z-index: 99999;
-        font-weight: 800;
-        font-size: 0.9rem;
-        color: #cc0000;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: 1px solid #cc0000;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        pointer-events: none; /* Να μην εμποδίζει το κλικ */
+        position: fixed; top: 18px; left: 60px; z-index: 99999;
+        font-weight: 800; font-size: 0.9rem; color: #cc0000;
+        background: rgba(255, 255, 255, 0.9); padding: 5px 10px;
+        border-radius: 4px; border: 1px solid #cc0000; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        pointer-events: none;
     }
 
     /* BADGES */
-    .badge-sos {
-        background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px;
-        font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle;
-    }
-    .badge-law {
-        background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px;
-        font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle;
-    }
+    .badge-sos { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
+    .badge-law { background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
 
     /* HEADER */
-    .header-container {
-        background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; margin-top: 20px;
-    }
+    .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; margin-top: 20px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
 
     /* TICKER */
-    .ticker-wrap {
-        width: 100%; background-color: #003366; color: white; height: 40px;
-        overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px;
-    }
-    .ticker-item {
-        display: inline-block; padding-left: 100%;
-        animation: ticker 40s linear infinite; font-weight: 600; font-size: 0.9rem;
-    }
+    .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 40px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
+    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 40s linear infinite; font-weight: 600; font-size: 0.9rem; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
     /* LISTS & CARDS */
-    .list-item {
-        background: white; padding: 20px; border-bottom: 1px solid #ddd; border-left: 4px solid transparent;
-        transition: 0.2s; margin-bottom: 5px;
-    }
+    .list-item { background: white; padding: 20px; border-bottom: 1px solid #ddd; border-left: 4px solid transparent; transition: 0.2s; margin-bottom: 5px; }
     .list-item:hover { border-left: 4px solid #cc0000; background-color: #fffdfd; }
     .list-title { font-family: 'Merriweather', serif; font-size: 1.15rem; font-weight: 700; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #cc0000 !important; }
     
-    .grid-card {
-        background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%;
-        display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s;
-    }
+    .grid-card { background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s; }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
     .grid-img { height: 170px; overflow: hidden; background: #eee; position: relative; }
     .grid-img img { width: 100%; height: 100%; object-fit: cover; }
@@ -101,14 +72,6 @@ st.markdown("""
     .hero-title { font-family: 'Merriweather', serif; color: white; font-size: 2.2rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; }
     .hero-title a { color: white !important; text-decoration: none; }
     
-    /* SLIDER BUTTONS */
-    .slider-btn { 
-        background-color: rgba(255,255,255,0.2); color: white; border: 1px solid white; 
-        font-size: 1.5rem; cursor: pointer; border-radius: 50%; width: 40px; height: 40px;
-        display: flex; justify-content: center; align-items: center; transition: 0.3s;
-    }
-    .slider-btn:hover { background-color: white; color: black; }
-
     /* SEARCH & TABS */
     .stTextInput input { border-radius: 0px; border: 1px solid #999; padding: 10px; }
     .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 10px; border-bottom: 2px solid #ddd; gap: 20px; }
@@ -156,9 +119,7 @@ def reset_database():
     except: return False
 
 # --- 4. SIDEBAR ---
-# Εδώ είναι η ετικέτα που θα εμφανιστεί δίπλα στο βελάκι
 st.markdown('<div class="sidebar-hint">⬅️ MENOY & ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
-
 with st.sidebar:
     st.markdown("### ⏳ Προθεσμίες (Timeline)")
     st.info("⚠️ **31/12:** Λήξη Κτηματολογίου (Δήλωση)")
@@ -181,29 +142,42 @@ st.markdown('</div>', unsafe_allow_html=True)
 if not df.empty and search_query:
     df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
 
-# Ticker
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
 
-# --- 6. ΚΑΤΗΓΟΡΙΕΣ & SLIDER RESTORED ---
+# --- 6. ΚΑΤΗΓΟΡΙΕΣ & LOGIC (STRICT SEPARATION) ---
 tabs = st.tabs(["🏠 ΚΟΡΥΦΑΙΑ", "🏗️ ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "⚙️ ADMIN"])
 
 if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
+    # --- ΑΥΣΤΗΡΟ ΦΙΛΤΡΑΡΙΣΜΑ ---
     def get_filtered_df(tab_name):
         if tab_name == "HOME": return df 
-        if tab_name == "ENG": return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
-        if tab_name == "LAW": return df[df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)]
-        if tab_name == "FEK": return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
+        
+        if tab_name == "ENG": 
+            # ΟΛΑ ΤΑ ΤΕΧΝΙΚΑ + REAL ESTATE
+            return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
+        
+        if tab_name == "LAW": 
+            # 1. Βρίσκουμε τα Νομικά
+            legal_mask = df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)
+            # 2. Βρίσκουμε τα Τεχνικά/Ακίνητα (για να τα διώξουμε)
+            eng_mask = df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)
+            # 3. ΕΠΙΣΤΡΕΦΟΥΜΕ ΝΟΜΙΚΑ ΠΟΥ ΔΕΝ ΕΙΝΑΙ ΤΕΧΝΙΚΑ (Αποκλεισμός)
+            return df[legal_mask & ~eng_mask]
+            
+        if tab_name == "FEK": 
+            return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
         return df
 
     def render_badges(category_str):
         badges_html = ""
         if "SOS" in category_str: badges_html += '<span class="badge-sos">🚨 SOS</span>'
-        if "JUDICIAL" in category_str or "LEGAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΟΛΟΓΙΑ</span>'
+        if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΣΤΗΡΙΑ</span>'
+        if "LEGAL" in category_str and "ENGINEERS" not in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
         if "REAL_ESTATE" in category_str: badges_html += '<span style="background:#28a745;color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:bold;margin-right:5px;">🏠 REAL ESTATE</span>'
         return badges_html
 
@@ -215,11 +189,9 @@ if not df.empty:
     def render_tab_content(tab_code):
         current_df = get_filtered_df(tab_code).reset_index(drop=True)
         if current_df.empty:
-            st.info("Δεν βρέθηκαν αποτελέσματα.")
+            st.info("Δεν βρέθηκαν καθαρά νομικά θέματα (χωρίς τεχνικό περιεχόμενο).")
             return
 
-        # --- SLIDER (ΕΔΩ ΕΙΝΑΙ ΠΑΛΙ!) ---
-        # Εμφανίζεται μόνο στην Αρχική και αν δεν ψάχνουμε
         if not search_query and tab_code == "HOME":
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
@@ -240,7 +212,6 @@ if not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # ΚΟΥΜΠΙΑ SLIDER (❮ ❯)
                 c1, c2, c3 = st.columns([0.1, 0.8, 0.1])
                 with c1: 
                     if st.button("❮", key="prev"): st.session_state.slider_idx -= 1; st.rerun()
@@ -260,7 +231,6 @@ if not df.empty:
                     """, unsafe_allow_html=True)
             st.markdown("---")
 
-        # GRID FOR ALL TABS
         st.subheader("📌 Ειδήσεις & Αποφάσεις")
         start_idx = 6 if (not search_query and tab_code=="HOME") else 0
         grid_df = current_df.iloc[start_idx:]
