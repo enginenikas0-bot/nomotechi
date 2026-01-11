@@ -24,9 +24,11 @@ try:
 except Exception as e:
     print(f"⚠️ AI Error: {e}")
 
+# ΟΙ ΠΗΓΕΣ ΜΑΣ
 RSS_FEEDS = {
-    # ΝΟΜΙΚΑ
+    # ΝΟΜΙΚΑ (HEAVY)
     "⚖️ Lawspot.gr": "https://www.lawspot.gr/rss",
+    "⚖️ Syntagma Watch": "https://www.syntagmawatch.gr/feed/", 
     "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ LawNet": "https://www.lawnet.gr/feed/",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
@@ -35,9 +37,11 @@ RSS_FEEDS = {
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🌿 B2Green": "https://news.b2green.gr/feed",
     "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
+    "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
     # ΓΕΝΙΚΑ / ΦΕΚ
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "💼 Taxheaven": "https://www.taxheaven.gr/rss",
+    "💰 Capital": "https://www.capital.gr/rss/oikonomia",
 }
 
 USER_AGENTS = [
@@ -56,36 +60,42 @@ def scrape_full_text(url):
             # Προσπάθεια εύρεσης κυρίως κειμένου (p tags)
             paragraphs = soup.find_all('p')
             full_text = " ".join([p.get_text() for p in paragraphs])
-            # Καθαρισμός πολύ μικρών κειμένων (διαφημίσεις κλπ)
+            
+            # Καθαρισμός
+            full_text = re.sub(r'\s+', ' ', full_text).strip()
+            
             if len(full_text) < 200: return "" 
-            return full_text[:4000] # Κόβουμε στους 4000 χαρακτήρες για να μην μπουκώσει το AI
+            return full_text[:8000] # Αυξήσαμε το όριο για να χωράει λεπτομέρειες
     except:
         return ""
     return ""
 
-# --- 3. AI ANALYST (UPDATED) ---
+# --- 3. AI ANALYST (STRICT CATEGORIES + BULLET POINTS) ---
 def analyze_article_with_ai(title, full_text):
     if not HAS_AI: return "GENERAL", "No AI Summary available."
     
     prompt = f"""
-    You are a Senior Legal & Technical Analyst.
+    Act as a Senior Legal & Technical Analyst for a Greek Professional Portal.
+    
     Article Title: {title}
-    Article Text: {full_text}
+    Article Text (snippet): {full_text[:7000]}
     
-    TASK 1: CATEGORIZATION (Return as first line, comma separated)
-    Rules:
-    - ENGINEERS: Construction, Public Works, Energy, Arbitrary Buildings, Zoning, Ktimatologio.
-    - REAL_ESTATE: Property prices, Rents, Golden Visa, Airbnb, Tax on property.
-    - LEGAL: Court decisions, Lawsuits, Criminal Law, Bar Association news.
-    - LEGISLATION: Any FEK, Law, Decision.
-    - SOS: If there is a deadline or penalty.
+    --- TASK 1: STRICT CATEGORIZATION ---
+    Return tags (comma separated) based on these rules:
+    1. ENGINEERS: Construction, Public Works, Energy, Arbitrary Buildings, Zoning, Ktimatologio (Technical).
+       - IF it is a Law/FEK about these, tag ENGINEERS + LEGISLATION (NOT LEGAL).
+    2. REAL_ESTATE: Property prices, Rents, Golden Visa, Buying/Selling, Airbnb, AADE Property Taxes.
+    3. LEGAL: Court decisions (Areopagos, StE), Lawsuits, Criminal Law, Bar Association (DSA).
+       - DO NOT tag as LEGAL if it is purely technical/construction.
+    4. LEGISLATION: Any FEK, Law, Ministerial Decision.
+    5. SOS: If there is a deadline, fine, or penalty.
+
+    --- TASK 2: DETAILED SUMMARY (GREEK) ---
+    - Write a summary in Greek using Bullet Points (•).
+    - Capture ALL dates, deadlines, amounts (€), and legal references.
+    - Do NOT be vague. Be precise.
     
-    TASK 2: COMPREHENSIVE SUMMARY (Greek)
-    - Write a detailed summary in Greek using Bullet Points (•).
-    - INCLUDE: Deadlines, Amounts, Specific Laws, Key Changes.
-    - Do NOT leave out important details.
-    
-    Output Format:
+    --- OUTPUT FORMAT ---
     TAGS: [Tags here]
     SUMMARY: [Summary here]
     """
@@ -93,7 +103,6 @@ def analyze_article_with_ai(title, full_text):
         response = model.generate_content(prompt)
         text = response.text
         
-        # Parsing response
         tags = "GENERAL"
         summary = "Δεν μπόρεσε να παραχθεί περίληψη."
         
@@ -102,7 +111,8 @@ def analyze_article_with_ai(title, full_text):
             tags = parts[0].replace("TAGS:", "").strip().upper()
             summary = parts[1].strip()
         else:
-            summary = text # Fallback
+            # Fallback αν το AI δεν ακολουθήσει το format
+            summary = text
             
         return tags, summary
     except Exception as e:
@@ -123,7 +133,7 @@ def fetch_article_image(url):
 
 # --- 5. MAIN LOOP ---
 def run():
-    print(f"🤖 [NomoTechi Deep-AI] Starting Scan...")
+    print(f"🤖 [NomoTechi Deep-AI v2] Starting Scan...")
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
 
@@ -147,20 +157,20 @@ def run():
             feed = feedparser.parse(url)
             if not feed.entries: continue
             
-            # ΠΑΙΡΝΟΥΜΕ ΜΟΝΟ ΤΑ 2 ΠΡΩΤΑ ΓΙΑ ΝΑ ΜΗΝ ΑΡΓΕΙ ΠΟΛΥ Η ΑΝΑΛΥΣΗ
+            # 2 Άρθρα ανά πηγή για να μην καθυστερεί πολύ το Deep Scraping
             for entry in feed.entries[:2]: 
                 if entry.link not in existing_links:
-                    print(f"   📖 Reading: {entry.title[:30]}...")
+                    print(f"   📖 Reading Deep: {entry.title[:30]}...")
                     
-                    # 1. Scrape Full Text
+                    # 1. Scrape Full Text (Μπαίνουμε μέσα στο site)
                     scraped_text = scrape_full_text(entry.link)
-                    if not scraped_text: scraped_text = entry.summary # Fallback if scraping fails
+                    if not scraped_text: scraped_text = entry.summary # Αν αποτύχει, παίρνουμε την απλή περίληψη
                     
-                    # 2. AI Analysis
+                    # 2. AI Analysis (Zητάμε Bullet Points)
                     tags, ai_summary = analyze_article_with_ai(entry.title, scraped_text)
                     
                     if not tags: tags = "GENERAL"
-                    if not ai_summary: ai_summary = entry.summary # Fallback
+                    if not ai_summary: ai_summary = entry.summary 
                     
                     print(f"      ✅ AI Tags: {tags}")
                     
@@ -170,7 +180,7 @@ def run():
                         len(existing_data) + new_items_count + 1,
                         source_name,
                         entry.title,
-                        ai_summary, # Εδώ μπαίνει η πλούσια περίληψη
+                        ai_summary, # Εδώ θα μπουν τα Bullet Points
                         entry.link,
                         datetime.now().strftime("%Y-%m-%d"),
                         tags, 
@@ -180,8 +190,7 @@ def run():
                     new_items_count += 1
                     existing_links.append(entry.link)
                     
-                    # Μικρή καθυστέρηση για να μην μας μπλοκάρουν
-                    time.sleep(2) 
+                    time.sleep(2) # Σεβασμός στον server
         except: pass
 
     print(f"🏁 Done. New articles: {new_items_count}")
