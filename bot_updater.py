@@ -77,37 +77,27 @@ def fetch_article_image(url):
     except: return ""
     return ""
 
-# --- 3. SAFETY NET (FALLBACK LOGIC) ---
-# Τρέχει αν το AI αποτύχει ή βγάλει "GENERAL"
+# --- 3. SAFETY NET ---
 def guess_category_classic(text):
     text = remove_accents(text)
     tags = []
-
     if any(w in text for w in ['μηχανικ', 'εργα', 'δομηση', 'αυθαιρετα', 'εξοικονομω', 'ενεργεια', 'πολεοδομ', 'κτηματολογ']):
         tags.append("ENGINEERS")
-    
     if any(w in text for w in ['ακινητ', 'ενοικι', 'airbn', 'αντικειμενικ', 'gold visa', 'ενφια', 'ααδε']):
         tags.append("REAL_ESTATE")
-
-    # Strict Legal Exclusion
     is_legal = any(w in text for w in ['δικαστηρι', 'δικηγορ', 'στε', 'αρεοπαγ', 'αγωγη', 'ποινικ', 'συνταγμα'])
     if is_legal and "ENGINEERS" not in tags:
         tags.append("LEGAL")
-
     if any(w in text for w in ['φεκ', 'εγκυκλιος', 'αποφαση', 'νομος', 'τροπολογια']):
         tags.append("LEGISLATION")
-
     if any(w in text for w in ['προθεσμια', 'προστιμ', 'παραταση', 'ληξη']):
         tags.append("SOS")
-
     if not tags: return "GENERAL"
     return ", ".join(tags)
 
-# --- 4. AI ANALYST (ROBUST) ---
+# --- 4. AI ANALYST ---
 def analyze_article_with_ai(title, full_text):
     if not HAS_AI: return None, None
-    
-    # Χρησιμοποιούμε το ||| ως διαχωριστικό
     prompt = f"""
     Analyze this Greek article.
     Title: {title}
@@ -129,22 +119,20 @@ def analyze_article_with_ai(title, full_text):
     try:
         response = model.generate_content(prompt)
         text = response.text
-        
         if "|||" in text:
             parts = text.split("|||")
             tags = parts[0].strip().upper()
             summary = parts[1].strip()
             return tags, summary
         else:
-            return None, text # AI failed tagging, return text as summary
-            
+            return None, text 
     except Exception as e:
         print(f"AI Error: {e}")
         return None, None
 
-# --- 5. MAIN LOOP ---
+# --- 5. MAIN LOOP (THE UPDATER) ---
 def run():
-    print(f"🤖 [NomoTechi Robust v5] Starting...")
+    print(f"🤖 [NomoTechi Updater] Starting...")
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
 
@@ -153,44 +141,66 @@ def run():
         gc = gspread.service_account_from_dict(creds_dict)
         sh = gc.open("laws_database")
         sheet = sh.sheet1
-        # Auto-fix headers
+        
+        # Ensure Headers
         header = ['id', 'source', 'title', 'content', 'link', 'last_update', 'category', 'image_url']
         if sheet.row_values(1) != header: sheet.update('A1:H1', [header])
-    except: return
-
-    try:
-        existing_data = sheet.get_all_records()
-        existing_links = [row['link'] for row in existing_data]
-    except: existing_data = []; existing_links = []
         
+        # Get existing Data & Map Links to Row Numbers
+        existing_data = sheet.get_all_records()
+        # Δημιουργούμε ένα λεξικό: Link -> Αριθμός Γραμμής (index + 2 γιατί το header είναι 1 και το index ξεκινάει από 0)
+        link_map = {row['link']: i + 2 for i, row in enumerate(existing_data)}
+        
+    except Exception as e:
+        print(f"DB Error: {e}")
+        return
+
     new_items_count = 0
+    updated_items_count = 0
     
     for source_name, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
             if not feed.entries: continue
             
-            for entry in feed.entries[:2]: 
-                if entry.link not in existing_links:
-                    print(f"   📖 Processing: {entry.title[:30]}...")
-                    
-                    scraped_text = scrape_full_text(entry.link)
-                    if not scraped_text: scraped_text = entry.summary
-                    
-                    # 1. AI Attempt
-                    tags, ai_summary = analyze_article_with_ai(entry.title, scraped_text)
-                    
-                    # 2. Safety Net Fallback
-                    if not tags or tags == "GENERAL" or len(tags) < 3:
-                        print("      ⚠️ Using Safety Net for Tags")
-                        tags = guess_category_classic(entry.title + " " + scraped_text)
-                    
-                    if not ai_summary: ai_summary = entry.summary
+            # Επεξεργασία των 3 πρώτων άρθρων από κάθε πηγή
+            for entry in feed.entries[:3]: 
+                
+                # --- PROCESSOR LOGIC ---
+                print(f"   🔎 Checking: {entry.title[:30]}...")
+                
+                # 1. Scrape & AI Analysis (Γίνεται ΠΑΝΤΑ αν το link είναι νέο ή αν θέλουμε να αναβαθμίσουμε)
+                scraped_text = scrape_full_text(entry.link)
+                if not scraped_text: scraped_text = entry.summary
+                
+                tags, ai_summary = analyze_article_with_ai(entry.title, scraped_text)
+                
+                # Safety Net
+                if not tags or tags == "GENERAL" or len(tags) < 3:
+                    tags = guess_category_classic(entry.title + " " + scraped_text)
+                if not ai_summary: ai_summary = entry.summary
 
-                    print(f"      🏷️ Final Tags: {tags}")
-                    
-                    real_image_url = fetch_article_image(entry.link)
+                real_image_url = fetch_article_image(entry.link)
 
+                # --- DECISION: NEW or UPDATE? ---
+                if entry.link in link_map:
+                    # ΥΠΑΡΧΕΙ ΗΔΗ -> ΑΝΑΒΑΘΜΙΣΗ (UPDATE)
+                    row_num = link_map[entry.link]
+                    
+                    # Παίρνουμε την παλιά κατηγορία για να δούμε αν αξίζει να το πειράξουμε
+                    # Αλλά επειδή θέλουμε σίγουρα Bullet Points, κάνουμε update
+                    print(f"      ♻️ Updating Row {row_num} with AI Data...")
+                    
+                    # Ενημέρωση κελιών: D=Content, G=Category, H=Image
+                    sheet.update_cell(row_num, 4, ai_summary)
+                    sheet.update_cell(row_num, 7, tags)
+                    if real_image_url: sheet.update_cell(row_num, 8, real_image_url)
+                    
+                    updated_items_count += 1
+                    
+                else:
+                    # ΔΕΝ ΥΠΑΡΧΕΙ -> ΝΕΑ ΕΓΓΡΑΦΗ (APPEND)
+                    print(f"      ✨ Adding New...")
                     new_row = [
                         len(existing_data) + new_items_count + 1,
                         source_name,
@@ -203,11 +213,14 @@ def run():
                     ]
                     sheet.append_row(new_row)
                     new_items_count += 1
-                    existing_links.append(entry.link)
-                    time.sleep(2)
-        except: pass
+                
+                time.sleep(1.5) # Ανάσα για το API
+                
+        except Exception as e:
+            print(f"Source Error: {e}")
+            pass
 
-    print(f"🏁 Done. New articles: {new_items_count}")
+    print(f"🏁 Done. Added: {new_items_count}, Updated: {updated_items_count}")
 
 if __name__ == "__main__":
     run()
