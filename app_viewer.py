@@ -30,7 +30,7 @@ st.markdown("""
     /* --- SIDEBAR HINT (ΤΟΠΟΘΕΤΗΣΗ ΔΙΠΛΑ ΣΤΟ ΒΕΛΟΣ) --- */
     .sidebar-hint {
         position: fixed;
-        top: 24px;        /* Στο ύψος του βέλους */
+        top: 28px;        /* Στο ύψος του βέλους */
         left: 80px;       /* Ακριβώς δίπλα του */
         z-index: 999999;
         font-size: 0.7rem;
@@ -317,4 +317,5 @@ elif not df.empty:
             if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
             if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
             st.dataframe(df)
+
 
