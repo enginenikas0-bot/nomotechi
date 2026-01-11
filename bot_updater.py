@@ -18,15 +18,15 @@ try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-pro')
         HAS_AI = True
-        print("✅ Gemini AI Connected! (Specialized Mode)")
+        print("✅ Gemini AI Connected! (Max Capacity Mode)")
     else:
         print("⚠️ No API Key. Falling back to Safety Net.")
 except Exception as e:
     print(f"⚠️ AI Error: {e}")
 
-# --- 2. THE CLEAN SOURCE LIST ---
+# --- 2. SOURCES ---
 RSS_FEEDS = {
-    # --- ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ (Αυτά που ζήτησες) ---
+    # --- ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ ---
     "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ Dikastiko Reportaz": "https://www.dikastikoreportaz.gr/feed/", 
     "⚖️ Lawspot": "https://www.lawspot.gr/rss",
@@ -34,14 +34,14 @@ RSS_FEEDS = {
     "⚖️ LawNet": "https://www.lawnet.gr/feed/",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
     
-    # --- ΜΗΧΑΝΙΚΟΙ / ΑΚΙΝΗΤΑ / ΚΑΤΑΣΚΕΥΕΣ ---
+    # --- ΜΗΧΑΝΙΚΟΙ / ΑΚΙΝΗΤΑ ---
     "🏠 POMIDA": "https://www.pomida.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🌿 B2Green": "https://news.b2green.gr/feed",
     "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
     "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
     
-    # --- ΟΙΚΟΝΟΜΙΑ & ΝΟΜΟΘΕΣΙΑ (Στοχευμένα) ---
+    # --- ΟΙΚΟΝΟΜΙΑ & ΝΟΜΟΘΕΣΙΑ ---
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "💼 Taxheaven": "https://www.taxheaven.gr/rss",
     "💰 Capital": "https://www.capital.gr/rss/oikonomia",
@@ -65,7 +65,6 @@ def scrape_full_text(url):
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            # Αφαίρεση περιττών
             for tag in soup(["script", "style", "nav", "footer", "aside"]): tag.extract()
             paragraphs = soup.find_all('p')
             full_text = " ".join([p.get_text() for p in paragraphs])
@@ -98,7 +97,6 @@ def guess_category_classic(text):
         tags.append("REAL_ESTATE")
     
     is_legal = any(w in text for w in ['δικαστηρι', 'δικηγορ', 'στε', 'αρεοπαγ', 'αγωγη', 'ποινικ', 'συνταγμα', 'δικαιοσυνη', 'εισαγγελ'])
-    # Αν είναι Τεχνικό, ΟΧΙ νομικό
     is_tech = "ENGINEERS" in tags or "REAL_ESTATE" in tags
     if is_legal and not is_tech: tags.append("LEGAL")
 
@@ -165,9 +163,9 @@ def analyze_article_with_ai(title, full_text):
         print(f"AI Error: {e}")
         return None, None
 
-# --- 6. MAIN LOOP (SMART UPDATER) ---
+# --- 6. MAIN LOOP (HIGH CAPACITY) ---
 def run():
-    print(f"🤖 [NomoTechi CLEAN SOURCES v9] Starting...")
+    print(f"🤖 [NomoTechi MAX CAPACITY v10] Starting...")
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
 
@@ -192,8 +190,8 @@ def run():
             feed = feedparser.parse(url)
             if not feed.entries: continue
             
-            # Τσεκάρουμε τα 2 πρώτα άρθρα
-            for entry in feed.entries[:2]: 
+            # --- Η ΜΕΓΑΛΗ ΑΛΛΑΓΗ: Ελέγχουμε τα 6 πρώτα αντί για 2 ---
+            for entry in feed.entries[:6]: 
                 print(f"   🔎 Checking: {entry.title[:30]}...")
                 
                 scraped_text = scrape_full_text(entry.link)
@@ -201,7 +199,6 @@ def run():
                 
                 tags, ai_summary = analyze_article_with_ai(entry.title, scraped_text)
                 
-                # Safety Net
                 if not tags or tags == "GENERAL" or len(tags) < 3:
                     tags = guess_category_classic(entry.title + " " + scraped_text)
                 if not ai_summary: ai_summary = entry.summary
@@ -211,7 +208,7 @@ def run():
                 if entry.link in link_map:
                     # UPDATE EXISTING
                     row_num = link_map[entry.link]
-                    print(f"      ♻️ Updating Row {row_num}: {tags}")
+                    # Ενημερώνουμε μόνο αν χρειάζεται (π.χ. αν δεν είχε σωστά tags πριν)
                     sheet.update_cell(row_num, 4, ai_summary)
                     sheet.update_cell(row_num, 7, tags)
                     if real_image_url: sheet.update_cell(row_num, 8, real_image_url)
@@ -223,10 +220,11 @@ def run():
                     sheet.append_row(new_row)
                     new_items += 1
                 
-                time.sleep(1)
+                # --- ΑΥΞΗΜΕΝΗ ΑΝΑΜΟΝΗ (για να μην "κρασάρει" το API λόγω πολλών αιτημάτων) ---
+                time.sleep(3.5) 
         except: pass
 
-    print(f"🏁 Clean Update Complete. Added: {new_items}, Updated: {updated_items}")
+    print(f"🏁 Update Complete. Added: {new_items}, Updated: {updated_items}")
 
 if __name__ == "__main__":
     run()
