@@ -8,10 +8,9 @@ import re
 import requests
 from bs4 import BeautifulSoup
 import random
-import google.generativeai as genai # Βιβλιοθήκη για το AI
+import google.generativeai as genai
 
-# --- 1. CONFIG & API SETUP ---
-# Προσπαθούμε να συνδεθούμε με το AI
+# --- 1. CONFIG & API ---
 HAS_AI = False
 try:
     api_key = os.environ.get("GOOGLE_API_KEY")
@@ -21,26 +20,30 @@ try:
         HAS_AI = True
         print("✅ Gemini AI Connected!")
     else:
-        print("⚠️ No Google API Key found. Switching to Keyword Mode.")
+        print("⚠️ No API Key. Using Keyword Mode.")
 except Exception as e:
-    print(f"⚠️ AI Init Error: {e}")
+    print(f"⚠️ AI Error: {e}")
 
+# ΕΝΙΣΧΥΜΕΝΕΣ ΠΗΓΕΣ ΓΙΑ ΔΙΚΗΓΟΡΟΥΣ & ΜΕΣΙΤΕΣ
 RSS_FEEDS = {
+    # ΝΟΜΙΚΑ / ΔΙΚΑΙΟΣΥΝΗ (Heavy)
+    "⚖️ LawNet (Νομολογία)": "https://www.lawnet.gr/feed/",
+    "⚖️ Dikastiko (Δικαστικά)": "https://www.dikastiko.gr/feed/",
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
-    "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
-    "⚖️ Lawspot": "https://www.lawspot.gr/nomika-nea/feed",
+    "⚖️ ΔΣΑ (Δικηγόροι)": "https://www.dsa.gr/rss.xml",
     "🎓 Dikaiologitika": "https://www.dikaiologitika.gr/feed", 
-    "💼 Taxheaven": "https://www.taxheaven.gr/rss",
-    "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
+    
+    # ΜΗΧΑΝΙΚΟΙ & REAL ESTATE (Μεσίτες)
+    "🏠 POMIDA (Ιδιοκτήτες)": "https://www.pomida.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🌿 B2Green": "https://news.b2green.gr/feed",
-    "⚡ EnergyPress": "https://energypress.gr/feed",
+    "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
     "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
-    "👷 Michanikos": "https://www.michanikos-online.gr/feed/",
-    "🌍 GreenAgenda": "https://greenagenda.gr/feed/",
-    "🏠 POMIDA": "https://www.pomida.gr/feed/",
-    "📐 Archetypes": "https://www.archetypes.gr/feed/",
-    "💰 Capital": "https://www.capital.gr/rss/oikonomia"
+    
+    # ΟΙΚΟΝΟΜΙΑ & ΓΕΝΙΚΑ
+    "💼 Taxheaven": "https://www.taxheaven.gr/rss",
+    "💰 Capital Real Estate": "https://www.capital.gr/rss/oikonomia", 
+    "⚡ EnergyPress": "https://energypress.gr/feed",
 }
 
 USER_AGENTS = [
@@ -48,23 +51,30 @@ USER_AGENTS = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
-# --- 2. AI BRAIN (Ο ΕΓΚΕΦΑΛΟΣ) ---
-def ask_gemini_categories(title, summary):
-    """Ρωτάει το AI σε ποιες κατηγορίες ανήκει το άρθρο"""
+# --- 2. AI BRAIN (UPDATED) ---
+def ask_gemini_smart_tags(title, summary):
+    """
+    Το AI αποφασίζει κατηγορία ΚΑΙ αν είναι SOS/Deadline.
+    """
     if not HAS_AI: return None
     
     prompt = f"""
-    Act as a professional editor for a Greek news portal for Engineers and Lawyers.
-    Analyze this article title and summary:
+    Analyze this news for a Greek Professional Portal.
     Title: {title}
     Summary: {summary}
     
-    Assign it to one or more of these categories based on relevance:
-    - ENGINEERS (if it's about construction, energy, urban planning, public works, real estate technicalities)
-    - LEGAL (if it's about court decisions, lawyers, laws, justice, tax laws)
-    - LEGISLATION (ONLY if it is a FEK, Law, Ministerial Decision, Circular)
-    
-    Return ONLY the categories separated by comma. Example: ENGINEERS, LEGISLATION
+    1. Categorize into:
+    - ENGINEERS (Construction, Energy, Public Works, Urban Planning)
+    - REAL_ESTATE (Property prices, Rents, Golden Visa, Land Registry/Ktimatologio, AirBnB) -> This is crucial for Brokers.
+    - LEGAL (Court decisions, Bar association news, Justice system, Lawsuits)
+    - LEGISLATION (ONLY if it is a FEK, Law, Circular, Decision)
+    - TAX (Taxation, AADE, MyData)
+
+    2. Check for URGENCY:
+    - If it mentions a deadline, fine, penalty, or expiry date -> Add tag "SOS"
+    - If it is a Supreme Court (Areopagos/StE) decision -> Add tag "JUDICIAL"
+
+    Return tags separated by comma. Example: REAL_ESTATE, SOS, LEGISLATION
     """
     try:
         response = model.generate_content(prompt)
@@ -76,27 +86,31 @@ def ask_gemini_categories(title, summary):
 def guess_category_classic(title, summary, source_name):
     full_text = remove_accents(title + " " + summary)
     source_clean = remove_accents(source_name)
-    categories = []
+    tags = []
 
-    # 1. Check for Legislation (ΦΕΚ)
-    fek_keywords = ['φεκ', 'εγκυκλιος', 'κυα', 'προεδρικο διαταγμα', 'νομοσχεδιο', 'τροπολογια', 'αποφαση']
-    if any(w in full_text for w in fek_keywords) or "e-nomothesia" in source_clean:
-        categories.append("LEGISLATION")
+    # Legislation
+    if any(w in full_text for w in ['φεκ', 'εγκυκλιος', 'αποφαση', 'νομος']) or "nomothesia" in source_clean:
+        tags.append("LEGISLATION")
 
-    # 2. Check for Engineers/Real Estate
-    eng_keywords = ['μηχανικ', 'εργα', 'ακινητ', 'δομηση', 'αυθαιρετα', 'ενεργεια', 'εξοικονομω', 'κτηματολογιο', 'πολεοδομ', 'κατασκευ', 'υποδομες']
-    if any(w in full_text for w in eng_keywords) or any(x in source_clean for x in ['b2green', 'ypodomes', 'tee', 'michanikos', 'pedmede', 'energy']):
-        categories.append("ENGINEERS")
-
-    # 3. Check for Legal
-    law_keywords = ['δικαστηρι', 'δικηγορ', 'συμβολαιογραφ', 'αρεοπαγ', 'στε', 'νομικ', 'δικαιοσυνη']
-    if any(w in full_text for w in law_keywords) or any(x in source_clean for x in ['dsa', 'lawspot', 'taxheaven']):
-        categories.append("LEGAL")
-
-    # Default
-    if not categories: categories.append("GENERAL")
+    # Real Estate (Broker Focus)
+    if any(w in full_text for w in ['ακινητ', 'ενοικι', 'airbn', 'κτηματολογι', 'αντικειμενικ', 'gold visa', 'πλειστηριασμ']):
+        tags.append("REAL_ESTATE")
     
-    return ", ".join(categories)
+    # Engineers
+    if any(w in full_text for w in ['μηχανικ', 'εργα', 'δομηση', 'αυθαιρετα', 'εξοικονομω', 'ενεργεια']):
+        tags.append("ENGINEERS")
+
+    # Legal
+    if any(w in full_text for w in ['δικαστηρι', 'δικηγορ', 'στε', 'αρεοπαγ', 'αγωγη', 'ποινικ']):
+        tags.append("LEGAL")
+        if "αποφαση" in full_text: tags.append("JUDICIAL")
+
+    # SOS Check
+    if any(w in full_text for w in ['προθεσμια', 'προστιμ', 'παραταση', 'ληξη', 'τελος χρονου']):
+        tags.append("SOS")
+
+    if not tags: tags.append("GENERAL")
+    return ", ".join(tags)
 
 # --- 4. HELPER FUNCTIONS ---
 def fetch_article_image(url):
@@ -121,7 +135,7 @@ def clean_summary(text):
 
 # --- 5. MAIN LOOP ---
 def run():
-    print(f"🤖 [NomoTechi AI] Starting Scan...")
+    print(f"🤖 [NomoTechi v2] Starting Smart Scan...")
     
     json_creds = os.environ.get("GCP_CREDENTIALS")
     if not json_creds: return
@@ -131,10 +145,7 @@ def run():
         gc = gspread.service_account_from_dict(creds_dict)
         sh = gc.open("laws_database")
         sheet = sh.sheet1
-        
-        # Check Header
         if sheet.acell('H1').value != 'image_url': sheet.update_cell(1, 8, 'image_url')
-
     except Exception as e:
         print(f"Connection Error: {e}")
         return
@@ -154,21 +165,18 @@ def run():
             feed = feedparser.parse(url, agent=feed_headers['User-Agent'])
             if not feed.entries: continue
             
-            for entry in feed.entries[:3]: 
+            for entry in feed.entries[:3]: # Top 3 per source
                 if entry.link not in existing_links:
                     title = entry.title
                     summary = clean_summary(entry.summary if 'summary' in entry else "")
                     
-                    # --- AI DECISION ---
+                    # --- AI BRAIN ---
                     print(f"   🧠 Analyzing: {title[:30]}...")
-                    category = ask_gemini_categories(title, summary)
-                    
-                    # Fallback to classic if AI fails or key is missing
+                    category = ask_gemini_smart_tags(title, summary)
                     if not category:
                         category = guess_category_classic(title, summary, source_name)
                     
                     print(f"      🏷️ Tags: {category}")
-
                     real_image_url = fetch_article_image(entry.link)
 
                     new_row = [
@@ -178,16 +186,13 @@ def run():
                         summary,
                         entry.link,
                         datetime.now().strftime("%Y-%m-%d"),
-                        category, # Multi-tag string (e.g. "ENGINEERS, LEGISLATION")
+                        category, 
                         real_image_url
                     ]
-                    
                     sheet.append_row(new_row)
                     new_items_count += 1
                     existing_links.append(entry.link)
-        except Exception as e:
-            print(f"Error on {source_name}: {e}")
-            pass
+        except: pass
 
     print(f"🏁 Done. New articles: {new_items_count}")
 
