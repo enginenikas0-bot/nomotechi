@@ -16,32 +16,63 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (NIKAS TECHNICAL BRANDING) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
+    /* ΕΙΣΑΓΩΓΗ ΓΡΑΜΜΑΤΟΣΕΙΡΑΣ MONTSERRAT ΓΙΑ ΤΟ BRAND */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
+    
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    /* SIDEBAR BRANDING CARD */
+    /* --- BRAND CARD STYLING --- */
     .brand-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f0f2f6 100%);
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 15px;
+        background: #ffffff;
+        border: 2px solid #000000; /* Αυστηρό Μαύρο Περίγραμμα */
+        border-radius: 4px; /* Πιο τετράγωνες γωνίες για τεχνικό look */
+        padding: 20px 15px;
         margin-bottom: 25px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        border-left: 4px solid #003366; /* Deep Blue Brand Color */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        text-align: center;
     }
-    .brand-label { font-size: 0.7rem; color: #888; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase; }
-    .brand-title { font-size: 1.1rem; font-weight: 800; color: #003366; margin: 0; font-family: 'Segoe UI', sans-serif; }
-    .brand-sub { font-size: 0.8rem; color: #555; margin-bottom: 12px; font-weight: 500;}
+    .brand-logo-img {
+        width: 60px;
+        margin-bottom: 10px;
+        filter: grayscale(100%) contrast(120%); /* Διασφάλιση απόλυτου μαύρου */
+    }
+    .brand-label { font-size: 0.65rem; color: #666; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+    .brand-title { 
+        font-size: 1.3rem; 
+        font-weight: 900; /* Πολύ έντονο για να ταιριάζει με το λογότυπο */
+        color: #000000; 
+        margin: 0; 
+        font-family: 'Montserrat', sans-serif;
+        letter-spacing: -0.5px;
+        text-transform: uppercase;
+    }
+    .brand-sub { 
+        font-size: 0.85rem; 
+        color: #000000; 
+        margin-bottom: 15px; 
+        font-weight: 400;
+        font-family: 'Montserrat', sans-serif;
+    }
     .brand-btn { 
         display: block; width: 100%; text-align: center;
-        background-color: white; color: #003366; border: 1px solid #003366;
-        padding: 6px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 600;
+        background-color: #000000; /* Μαύρο Κουμπί */
+        color: #ffffff !important; /* Λευκά Γράμματα */
+        border: 2px solid #000000;
+        padding: 8px 0; 
+        border-radius: 4px; 
+        font-size: 0.85rem; font-weight: 700;
         text-decoration: none; transition: 0.3s;
+        font-family: 'Montserrat', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    .brand-btn:hover { background-color: #003366; color: white; border-color: #003366; }
+    .brand-btn:hover { 
+        background-color: #ffffff; /* Αντιστροφή στο hover */
+        color: #000000 !important; 
+    }
 
     /* UTILS */
     .sidebar-label {
@@ -59,8 +90,8 @@ st.markdown("""
     .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
     
-    .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; }
-    .powered-footer a { color: #003366; text-decoration: none; font-weight: 600; }
+    .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-family: 'Montserrat', sans-serif;}
+    .powered-footer a { color: #000000; text-decoration: none; font-weight: 700; }
 
     .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 70s linear infinite; font-weight: 600; }
@@ -152,19 +183,21 @@ def reset_database():
 st.markdown('<div class="sidebar-label">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
 with st.sidebar:
     
-    # --- BRAND CARD ---
-    # !!! ΑΛΛΑΞΕ ΤΟ LINK ΜΕ ΤΟ ΔΙΚΟ ΣΟΥ !!!
+    # --- BRAND CARD (ΑΚΡΙΒΕΣ ΑΝΤΙΓΡΑΦΟ ΛΟΓΟΤΥΠΟΥ) ---
     nikas_url = "https://www.nikastechnical.gr" 
+    # Χρησιμοποιώ το εικονίδιο του κτιρίου από το λογότυπο (σε SVG μορφή για ποιότητα)
+    building_icon = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="60" height="60"><path d="M30 10 L30 90 L10 90 L10 30 L30 10 M50 5 L50 90 L35 90 L35 15 L50 5 M70 15 L70 90 L55 90 L55 25 L70 15 M90 25 L90 90 L75 90 L75 35 L90 25" fill="#000000"/></svg>"""
     
     st.markdown(f"""
     <div class="brand-card">
         <div class="brand-label">POWERED BY</div>
-        <div class="brand-title">🏗️ Nikas Technical</div>
-        <div class="brand-sub">Μελέτες • Κατασκευές • Real Estate</div>
-        <a href="{nikas_url}" target="_blank" class="brand-btn">Επισκεφθείτε μας ➜</a>
+        <div style="margin-bottom: 10px;">{building_icon}</div>
+        <div class="brand-title">NIKAS Technical</div>
+        <div class="brand-sub">Construction Engineering</div>
+        <a href="{nikas_url}" target="_blank" class="brand-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
-    # ------------------
+    # -----------------------------------------------
 
     st.header("🧰 Εργαλειοθήκη")
     st.markdown("---")
@@ -346,7 +379,7 @@ elif not df.empty:
         st.bar_chart(cat_counts)
         st.markdown(f"""
         <div class="powered-footer">
-            NomoTechi Platform © {datetime.now().year} • Powered by <a href="https://www.nikastechnical.gr" target="_blank">Nikas Technical</a>
+            NomoTechi Platform © {datetime.now().year} • Powered by <a href="{nikas_url}" target="_blank">NIKAS Technical</a>
         </div>
         """, unsafe_allow_html=True)
         st.header("Admin")
