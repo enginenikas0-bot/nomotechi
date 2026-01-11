@@ -27,26 +27,24 @@ st.markdown("""
         color: #111;
     }
 
-    /* --- ΤΑΜΠΕΛΑ ΕΡΓΑΛΕΙΩΝ (FIXED TOP LEFT) --- */
+    /* --- SIDEBAR HINT (ΔΙΟΡΘΩΜΕΝΟ) --- */
     .sidebar-hint {
         position: fixed;
-        top: 60px;  /* Τοποθέτηση δίπλα/κάτω από το βελάκι */
-        left: 20px;
+        top: 20px;       /* Στο ίδιο ύψος με το κουμπί του μενού */
+        left: 70px;      /* Δίπλα (δεξιά) από το κουμπί */
         z-index: 99999;
         font-size: 0.75rem;
         font-weight: 800;
         color: #555;
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 4px 8px;
-        border-radius: 4px;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 4px 10px;
+        border-radius: 20px;
         border: 1px solid #ccc;
-        pointer-events: none; /* Να μην εμποδίζει */
+        pointer-events: none;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    /* Βελάκι ένδειξης */
-    .sidebar-hint::before {
-        content: "⬆ MENOY & ΕΡΓΑΛΕΙΑ";
-        color: #cc0000;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
     /* BADGES */
@@ -55,13 +53,13 @@ st.markdown("""
     .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
 
     /* HEADER */
-    .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; margin-top: 10px; }
+    .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; margin-top: 10px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
 
-    /* TICKER */
-    .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 40px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
-    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 40s linear infinite; font-weight: 600; font-size: 0.9rem; }
+    /* TICKER (NEWS) */
+    .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
+    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 45s linear infinite; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
     /* LISTS & CARDS */
@@ -133,8 +131,8 @@ def reset_database():
     except: return False
 
 # --- 4. SIDEBAR ---
-# Η ΤΑΜΠΕΛΑ ΕΙΝΑΙ ΕΔΩ (Fixed)
-st.markdown('<div class="sidebar-hint"></div>', unsafe_allow_html=True)
+# Ετικέτα δίπλα στο βελάκι
+st.markdown('<div class="sidebar-hint">↖ MENOY & ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("🧰 Εργαλειοθήκη")
@@ -161,16 +159,15 @@ if not raw_data:
 
 df = pd.DataFrame(raw_data)
 
-# SEARCH LOGIC (FIXED)
+# SEARCH
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. 'Αυθαίρετα', 'Άρειος Πάγος')...")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Apply Search Filter
 if search_query:
     df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
 
-# Ticker (Αν υπάρχει data)
+# TICKER
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
@@ -178,7 +175,6 @@ if not df.empty:
 # --- 6. TABS & LOGIC ---
 tabs = st.tabs(["🏠 ΚΟΡΥΦΑΙΑ", "🏗️ ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "⚙️ ADMIN"])
 
-# Check if Search returned nothing
 if df.empty and search_query:
     st.warning(f"⚠️ Δεν βρέθηκαν αποτελέσματα για: **'{search_query}'**")
 elif not df.empty:
@@ -187,15 +183,12 @@ elif not df.empty:
 
     def get_filtered_df(tab_name):
         if tab_name == "HOME": return df 
-        if tab_name == "ENG": 
-            return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
+        if tab_name == "ENG": return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
         if tab_name == "LAW": 
-            # Strict Legal Filter
             legal_mask = df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)
             eng_mask = df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)
             return df[legal_mask & ~eng_mask]
-        if tab_name == "FEK": 
-            return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
+        if tab_name == "FEK": return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
         return df
 
     def render_badges(category_str):
@@ -207,20 +200,42 @@ elif not df.empty:
         return badges_html
 
     def get_display_image(row):
-        if 'image_url' in row and str(row['image_url']).startswith('http'):
-            return row['image_url']
+        if 'image_url' in row and str(row['image_url']).startswith('http'): return row['image_url']
         return get_stock_image(row['category'], row['title'])
 
     def render_tab_content(tab_code):
         current_df = get_filtered_df(tab_code).reset_index(drop=True)
         if current_df.empty:
-            if search_query:
-                st.info(f"Δεν βρέθηκαν αποτελέσματα στην κατηγορία '{tab_code}' για: {search_query}")
-            else:
-                st.info("Δεν υπάρχουν νέα σε αυτή την κατηγορία.")
+            st.info("Δεν υπάρχουν νέα σε αυτή την κατηγορία.")
             return
 
+        # HERO SECTION (ONLY ON HOME)
         if not search_query and tab_code == "HOME":
+            # --- MARKET WIDGET (ΧΡΗΜΑΤΙΣΤΗΡΙΟ) ---
+            st.markdown("", unsafe_allow_html=True)
+            components.html("""
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [
+                {"proName": "ATHEX:GD", "title": "Athens"},
+                {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+                {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"},
+                {"proName": "XETRA:DAX", "title": "DAX"}
+              ],
+              "showSymbolLogo": true,
+              "colorTheme": "light",
+              "isTransparent": false,
+              "displayMode": "compact",
+              "locale": "en"
+              }
+              </script>
+            </div>
+            """, height=45)
+            st.markdown("", unsafe_allow_html=True)
+            
+            # --- SLIDER ---
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
                 slider_len = min(5, len(current_df))
@@ -247,7 +262,7 @@ elif not df.empty:
                     if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
 
             with col_list:
-                st.markdown("### ⚡ Τελευταία Ροή")
+                st.markdown("### ⚡ Top Stories")
                 for idx, row in current_df.head(6).iterrows():
                     badges = render_badges(row['category'])
                     st.markdown(f"""
@@ -259,6 +274,7 @@ elif not df.empty:
                     """, unsafe_allow_html=True)
             st.markdown("---")
 
+        # GRID
         st.subheader("📌 Ειδήσεις & Αποφάσεις")
         start_idx = 6 if (not search_query and tab_code=="HOME") else 0
         grid_df = current_df.iloc[start_idx:]
