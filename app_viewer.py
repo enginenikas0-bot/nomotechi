@@ -13,35 +13,46 @@ st.set_page_config(
     page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed" # Κλειστό για να φανεί το βελάκι και η ταμπέλα
 )
 
-# --- 2. CSS (SLIDER, MENU LABEL & STYLING) ---
+# --- 2. CSS (STYLING & TOOLS LABEL) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Segoe UI', sans-serif;
-        background-color: #f4f4f4;
+        background-color: #f8f9fa;
         color: #111;
     }
 
-    /* --- SIDEBAR LABEL --- */
+    /* --- ΤΑΜΠΕΛΑ ΕΡΓΑΛΕΙΩΝ (TOP LEFT) --- */
     .sidebar-hint {
-        position: fixed; top: 18px; left: 60px; z-index: 99999;
-        font-weight: 800; font-size: 0.9rem; color: #cc0000;
-        background: rgba(255, 255, 255, 0.9); padding: 5px 10px;
-        border-radius: 4px; border: 1px solid #cc0000; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        pointer-events: none;
+        position: fixed;
+        top: 25px;
+        left: 50px; /* Δίπλα στο βελάκι */
+        z-index: 9999;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #003366;
+        background-color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        pointer-events: none; /* Να μην εμποδίζει τα κλικ */
+        opacity: 0.9;
+        transition: opacity 0.3s;
     }
 
     /* BADGES */
     .badge-sos { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
     .badge-law { background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
+    .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
 
     /* HEADER */
-    .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; margin-top: 20px; }
+    .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; margin-top: 10px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
 
@@ -119,14 +130,22 @@ def reset_database():
     except: return False
 
 # --- 4. SIDEBAR ---
-st.markdown('<div class="sidebar-hint">⬅️ MENOY & ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+# Εμφάνιση της ταμπέλας ΕΡΓΑΛΕΙΑ
+st.markdown('<div class="sidebar-hint">⬅️ ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+
 with st.sidebar:
-    st.markdown("### ⏳ Προθεσμίες (Timeline)")
-    st.info("⚠️ **31/12:** Λήξη Κτηματολογίου (Δήλωση)")
+    st.header("🧰 Εργαλειοθήκη")
+    st.markdown("---")
+    st.markdown("### ⏳ Προθεσμίες")
+    st.info("⚠️ **31/12:** Λήξη Κτηματολογίου")
     st.info("⚠️ **31/01:** MyDATA Διαβίβαση")
     st.markdown("---")
     st.markdown("### ☁️ Καιρός")
     components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=240)
+    st.markdown("---")
+    st.markdown("### 📬 Newsletter")
+    email = st.text_input("Email", placeholder="me@example.com")
+    if st.button("Εγγραφή"): st.success("Ολοκληρώθηκε!")
 
 # --- 5. MAIN UI ---
 st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Intelligence Platform for Professionals</div></div>""", unsafe_allow_html=True)
@@ -142,33 +161,27 @@ st.markdown('</div>', unsafe_allow_html=True)
 if not df.empty and search_query:
     df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
 
+# Ticker
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
 
-# --- 6. ΚΑΤΗΓΟΡΙΕΣ & LOGIC (STRICT SEPARATION) ---
+# --- 6. TABS & LOGIC ---
 tabs = st.tabs(["🏠 ΚΟΡΥΦΑΙΑ", "🏗️ ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "⚙️ ADMIN"])
 
 if not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
-    # --- ΑΥΣΤΗΡΟ ΦΙΛΤΡΑΡΙΣΜΑ ---
     def get_filtered_df(tab_name):
         if tab_name == "HOME": return df 
-        
         if tab_name == "ENG": 
-            # ΟΛΑ ΤΑ ΤΕΧΝΙΚΑ + REAL ESTATE
             return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
-        
         if tab_name == "LAW": 
-            # 1. Βρίσκουμε τα Νομικά
+            # Strict Legal Filter
             legal_mask = df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)
-            # 2. Βρίσκουμε τα Τεχνικά/Ακίνητα (για να τα διώξουμε)
             eng_mask = df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)
-            # 3. ΕΠΙΣΤΡΕΦΟΥΜΕ ΝΟΜΙΚΑ ΠΟΥ ΔΕΝ ΕΙΝΑΙ ΤΕΧΝΙΚΑ (Αποκλεισμός)
             return df[legal_mask & ~eng_mask]
-            
         if tab_name == "FEK": 
             return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
         return df
@@ -178,7 +191,7 @@ if not df.empty:
         if "SOS" in category_str: badges_html += '<span class="badge-sos">🚨 SOS</span>'
         if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΣΤΗΡΙΑ</span>'
         if "LEGAL" in category_str and "ENGINEERS" not in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
-        if "REAL_ESTATE" in category_str: badges_html += '<span style="background:#28a745;color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:bold;margin-right:5px;">🏠 REAL ESTATE</span>'
+        if "REAL_ESTATE" in category_str: badges_html += '<span class="badge-real">🏠 REAL ESTATE</span>'
         return badges_html
 
     def get_display_image(row):
@@ -214,9 +227,9 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns([0.1, 0.8, 0.1])
                 with c1: 
-                    if st.button("❮", key="prev"): st.session_state.slider_idx -= 1; st.rerun()
+                    if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
                 with c3: 
-                    if st.button("❯", key="next"): st.session_state.slider_idx += 1; st.rerun()
+                    if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
 
             with col_list:
                 st.markdown("### ⚡ Τελευταία Ροή")
@@ -255,24 +268,4 @@ if not df.empty:
                                         <div class="grid-title">{row['title']}</div>
                                         <div style="font-size:0.9rem; color:#555; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">{row['content']}</div>
                                     </div>
-                                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
-                                        <a href="{row['link']}" target="_blank" style="color:#cc0000; font-weight:bold; text-decoration:none;">Διαβάστε Περισσότερα &rarr;</a>
-                                    </div>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-
-    with tabs[0]: render_tab_content("HOME")
-    with tabs[1]: render_tab_content("ENG")
-    with tabs[2]: render_tab_content("LAW")
-    with tabs[3]: render_tab_content("FEK")
-    
-    with tabs[4]: 
-        st.header("Admin")
-        if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
-            if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
-            if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
-            st.dataframe(df)
-
-else:
-    st.warning("Φόρτωση δεδομένων... Παρακαλώ περιμένετε.")
+                                    <div style="margin-top:10px; padding-top
