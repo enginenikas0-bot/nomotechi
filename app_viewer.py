@@ -16,55 +16,37 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS (FINAL STYLING) ---
+# --- 2. CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    html, body, [class*="css"] {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f8f9fa;
-        color: #111;
-    }
-
-    /* --- ΕΤΙΚΕΤΑ ΕΡΓΑΛΕΙΑ (ΔΙΠΛΑ ΣΤΟ ΒΕΛΑΚΙ - ΧΩΡΙΣ ΠΛΑΙΣΙΟ) --- */
     .sidebar-label {
-        position: fixed;
-        top: 22px;        /* Ευθυγράμμιση με το βελάκι */
-        left: 60px;       /* Ακριβώς δίπλα του */
-        z-index: 999999;
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #555;      /* Γκρι σκούρο */
-        background: transparent;
-        pointer-events: none;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
+        position: fixed; top: 22px; left: 60px; z-index: 999999;
+        font-size: 0.85rem; font-weight: 700; color: #555;
+        background: transparent; pointer-events: none; letter-spacing: 0.5px; text-transform: uppercase;
     }
+    
+    .badge-sos { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
+    .badge-law { background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
+    .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
+    .badge-leg { background-color: #444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
 
-    /* BADGES */
-    .badge-sos { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
-    .badge-law { background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
-    .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
-    .badge-leg { background-color: #444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; vertical-align: middle; }
-
-    /* HEADER */
     .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; margin-top: 20px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
 
-    /* TICKER (SPEED: 70s) */
     .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 70s linear infinite; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* LISTS & CARDS */
     .list-item { background: white; padding: 20px; border-bottom: 1px solid #ddd; border-left: 4px solid transparent; transition: 0.2s; margin-bottom: 5px; }
     .list-item:hover { border-left: 4px solid #cc0000; background-color: #fffdfd; }
     .list-title { font-family: 'Merriweather', serif; font-size: 1.15rem; font-weight: 700; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #cc0000 !important; }
-    
+
     .grid-card { background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s; }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
     .grid-img { height: 170px; overflow: hidden; background: #eee; position: relative; }
@@ -72,15 +54,13 @@ st.markdown("""
     .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
     .grid-title { font-family: 'Merriweather', serif; font-size: 1.05rem; font-weight: 700; color: #000; margin-bottom: 8px; line-height: 1.35; }
 
-    /* HERO SLIDER */
     .hero-wrapper { position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-radius: 8px; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); transition: transform 6s ease; }
     .hero-image:hover { transform: scale(1.05); filter: brightness(0.8); }
     .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
     .hero-title { font-family: 'Merriweather', serif; color: white; font-size: 2.2rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; }
     .hero-title a { color: white !important; text-decoration: none; }
-    
-    /* SEARCH & TABS */
+
     .stTextInput input { border-radius: 0px; border: 1px solid #999; padding: 10px; }
     .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 10px; border-bottom: 2px solid #ddd; gap: 20px; }
     .stTabs [data-baseweb="tab"] { font-weight: 700 !important; font-size: 1rem !important; color: #444 !important; }
@@ -107,7 +87,6 @@ def get_stock_image(category, title):
     index = int(hash_obj.hexdigest(), 16) % len(pool)
     return pool[index]
 
-# --- DB CONNECTION & SUBSCRIBE LOGIC ---
 def get_db_client():
     try:
         credentials_dict = st.secrets["gcp_service_account"]
@@ -120,19 +99,14 @@ def get_db_client():
 def save_subscriber(email):
     sh = get_db_client()
     if not sh: return "DB_ERROR"
-    try:
-        worksheet = sh.worksheet("subscribers")
-    except:
-        # Αν δεν υπάρχει, επιστρέφει κωδικό για χειροκίνητη δημιουργία (πιο ασφαλές)
-        return "NO_SHEET"
-    
+    try: worksheet = sh.worksheet("subscribers")
+    except: return "NO_SHEET"
     try:
         emails = worksheet.col_values(1)
         if email in emails: return "EXISTS"
         worksheet.append_row([email, str(datetime.now().strftime("%Y-%m-%d %H:%M"))])
         return "OK"
-    except Exception as e:
-        return "WRITE_ERROR"
+    except Exception as e: return "WRITE_ERROR"
 
 def load_data():
     sh = get_db_client()
@@ -145,7 +119,6 @@ def reset_database():
     if not sh: return False
     try:
         sh.sheet1.batch_clear(["A2:H5000"])
-        # Επαναφορά Header για να μην χαλάσει το auto_bot
         sh.sheet1.append_row(['id', 'source', 'title', 'content', 'link', 'last_update', 'category', 'image_url'])
         return True
     except: return False
@@ -169,7 +142,7 @@ with st.sidebar:
             status = save_subscriber(email)
             if status == "OK": st.success("✅ Εγγραφήκατε!"); time.sleep(2); st.rerun()
             elif status == "EXISTS": st.warning("Είστε ήδη μέλος.")
-            elif status == "NO_SHEET": st.error("Παρακαλώ δημιουργήστε το φύλλο 'subscribers' στο Google Sheet.")
+            elif status == "NO_SHEET": st.error("Σφάλμα Βάσης: Λείπει το φύλλο subscribers.")
         else: st.error("Άκυρο email.")
 
 # --- 5. MAIN UI ---
@@ -203,13 +176,18 @@ elif not df.empty:
 
     def get_filtered_df(tab_name):
         if tab_name == "HOME": return df 
+        
+        # ENGINEERS: Τεχνικά θέματα, Ακίνητα, ΚΑΙ Νόμοι που τα αφορούν
         if tab_name == "ENG": 
             return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
+        
+        # LAW: ΜΟΝΟ Αμιγώς Νομικά (Legal που ΔΕΝ είναι Engineers/Real Estate)
         if tab_name == "LAW": 
-            # Strict Legal Filter
             legal_mask = df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)
             eng_mask = df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)
             return df[legal_mask & ~eng_mask]
+            
+        # FEK: ΜΟΝΟ Επίσημα Κείμενα (Legislation Tag Only)
         if tab_name == "FEK": 
             return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
         return df
@@ -301,15 +279,12 @@ elif not df.empty:
                         card_img = get_display_image(row)
                         badges = render_badges(row['category'])
                         with col:
-                            # EXPANDER ΓΙΑ AI ΠΕΡΙΛΗΨΗ
                             with st.container():
                                 st.image(card_img, use_column_width=True)
                                 st.markdown(f"**{row['title']}**")
                                 st.markdown(badges, unsafe_allow_html=True)
-                                
                                 with st.expander("📝 Ανάλυση AI (Bullet Points)"):
                                     st.markdown(row['content'])
-                                
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
                                 st.markdown("---")
 
