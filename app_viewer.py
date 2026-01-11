@@ -6,6 +6,8 @@ from datetime import datetime
 import time
 import hashlib
 import re
+import base64
+import os
 import streamlit.components.v1 as components
 
 # --- 1. SETUP ---
@@ -19,7 +21,6 @@ st.set_page_config(
 # --- 2. CSS (NIKAS TECHNICAL BRANDING) ---
 st.markdown("""
 <style>
-    /* ΕΙΣΑΓΩΓΗ ΓΡΑΜΜΑΤΟΣΕΙΡΑΣ MONTSERRAT ΓΙΑ ΤΟ BRAND */
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
@@ -27,39 +28,19 @@ st.markdown("""
     /* --- BRAND CARD STYLING --- */
     .brand-card {
         background: #ffffff;
-        border: 2px solid #000000; /* Αυστηρό Μαύρο Περίγραμμα */
-        border-radius: 4px; /* Πιο τετράγωνες γωνίες για τεχνικό look */
+        border: 2px solid #000000;
+        border-radius: 4px; 
         padding: 20px 15px;
         margin-bottom: 25px;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         text-align: center;
     }
-    .brand-logo-img {
-        width: 60px;
-        margin-bottom: 10px;
-        filter: grayscale(100%) contrast(120%); /* Διασφάλιση απόλυτου μαύρου */
-    }
-    .brand-label { font-size: 0.65rem; color: #666; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
-    .brand-title { 
-        font-size: 1.3rem; 
-        font-weight: 900; /* Πολύ έντονο για να ταιριάζει με το λογότυπο */
-        color: #000000; 
-        margin: 0; 
-        font-family: 'Montserrat', sans-serif;
-        letter-spacing: -0.5px;
-        text-transform: uppercase;
-    }
-    .brand-sub { 
-        font-size: 0.85rem; 
-        color: #000000; 
-        margin-bottom: 15px; 
-        font-weight: 400;
-        font-family: 'Montserrat', sans-serif;
-    }
+    .brand-label { font-size: 0.65rem; color: #666; font-weight: 700; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+    
     .brand-btn { 
         display: block; width: 100%; text-align: center;
-        background-color: #000000; /* Μαύρο Κουμπί */
-        color: #ffffff !important; /* Λευκά Γράμματα */
+        background-color: #000000;
+        color: #ffffff !important;
         border: 2px solid #000000;
         padding: 8px 0; 
         border-radius: 4px; 
@@ -70,7 +51,7 @@ st.markdown("""
         letter-spacing: 1px;
     }
     .brand-btn:hover { 
-        background-color: #ffffff; /* Αντιστροφή στο hover */
+        background-color: #ffffff; 
         color: #000000 !important; 
     }
 
@@ -179,20 +160,33 @@ def reset_database():
         return True
     except: return False
 
-# --- 4. SIDEBAR ME BRANDING ---
+# --- 4. IMAGE LOADER FUNCTION ---
+def get_image_as_base64(file_path):
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except:
+        return None
+
+# --- 5. SIDEBAR ME REAL LOGO ---
 st.markdown('<div class="sidebar-label">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
 with st.sidebar:
     
-    # --- BRAND CARD (ΑΚΡΙΒΕΣ ΑΝΤΙΓΡΑΦΟ ΛΟΓΟΤΥΠΟΥ) ---
-    nikas_url = "https://www.nikastechnical.gr" 
-    # Χρησιμοποιώ το εικονίδιο του κτιρίου από το λογότυπο (σε SVG μορφή για ποιότητα)
-    building_icon = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="60" height="60"><path d="M30 10 L30 90 L10 90 L10 30 L30 10 M50 5 L50 90 L35 90 L35 15 L50 5 M70 15 L70 90 L55 90 L55 25 L70 15 M90 25 L90 90 L75 90 L75 35 L90 25" fill="#000000"/></svg>"""
+    # --- BRAND CARD (DYNAMIC LOADER) ---
+    nikas_url = "https://www.nikastechnical.gr"
     
+    # Προσπάθεια φόρτωσης του αρχείου logo.jpg ή logo.png
+    logo_b64 = get_image_as_base64("logo.jpg")
+    if not logo_b64: logo_b64 = get_image_as_base64("logo.png")
+    
+    # Αν βρεθεί η εικόνα, την δείχνει. Αν όχι, δείχνει κείμενο.
+    img_html = f'<img src="data:image/jpeg;base64,{logo_b64}" style="width:100%; max-width:180px; margin:0 auto 15px auto; display:block;">' if logo_b64 else '<div style="font-size:2rem; margin-bottom:10px;">🏗️</div>'
+
     st.markdown(f"""
     <div class="brand-card">
         <div class="brand-label">POWERED BY</div>
-        <div style="margin-bottom: 10px;">{building_icon}</div>
-        <div class="brand-title">NIKAS Technical</div>
+        {img_html}
         <div class="brand-sub">Construction Engineering</div>
         <a href="{nikas_url}" target="_blank" class="brand-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
@@ -218,7 +212,7 @@ with st.sidebar:
             elif status == "NO_SHEET": st.error("Σφάλμα Βάσης: Λείπει το φύλλο subscribers.")
         else: st.error("Άκυρο email.")
 
-# --- 5. MAIN UI ---
+# --- 6. MAIN UI ---
 st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Intelligence Platform for Professionals</div></div>""", unsafe_allow_html=True)
 
 raw_data = load_data()
@@ -238,7 +232,7 @@ if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
 
-# --- 6. TABS ---
+# --- 7. TABS ---
 tabs = st.tabs(["🏠 ΚΟΡΥΦΑΙΑ", "🏗️ ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "📊 ΣΤΑΤΙΣΤΙΚΑ"])
 
 if df.empty and search_query:
