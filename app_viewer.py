@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS (STYLING & TOOLS LABEL) ---
+# --- 2. CSS (STYLING) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
@@ -27,22 +27,26 @@ st.markdown("""
         color: #111;
     }
 
-    /* --- SIDEBAR HINT --- */
+    /* --- ΤΑΜΠΕΛΑ ΕΡΓΑΛΕΙΩΝ (FIXED TOP LEFT) --- */
     .sidebar-hint {
         position: fixed;
-        top: 25px;
-        left: 50px;
-        z-index: 9999;
+        top: 60px;  /* Τοποθέτηση δίπλα/κάτω από το βελάκι */
+        left: 20px;
+        z-index: 99999;
         font-size: 0.75rem;
         font-weight: 800;
-        color: #003366;
-        background-color: white;
-        padding: 4px 10px;
-        border-radius: 20px;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        pointer-events: none;
-        opacity: 0.9;
+        color: #555;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        pointer-events: none; /* Να μην εμποδίζει */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Βελάκι ένδειξης */
+    .sidebar-hint::before {
+        content: "⬆ MENOY & ΕΡΓΑΛΕΙΑ";
+        color: #cc0000;
     }
 
     /* BADGES */
@@ -129,7 +133,8 @@ def reset_database():
     except: return False
 
 # --- 4. SIDEBAR ---
-st.markdown('<div class="sidebar-hint">⬅️ ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+# Η ΤΑΜΠΕΛΑ ΕΙΝΑΙ ΕΔΩ (Fixed)
+st.markdown('<div class="sidebar-hint"></div>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("🧰 Εργαλειοθήκη")
@@ -148,17 +153,24 @@ with st.sidebar:
 # --- 5. MAIN UI ---
 st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Intelligence Platform for Professionals</div></div>""", unsafe_allow_html=True)
 
-data = load_data()
-df = pd.DataFrame(data)
+# LOAD DATA
+raw_data = load_data()
+if not raw_data:
+    st.warning("⏳ Φόρτωση δεδομένων ή η βάση είναι κενή. Παρακαλώ περιμένετε...")
+    st.stop()
 
-# Search
+df = pd.DataFrame(raw_data)
+
+# SEARCH LOGIC (FIXED)
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. 'Αυθαίρετα', 'Άρειος Πάγος')...")
 st.markdown('</div>', unsafe_allow_html=True)
 
-if not df.empty and search_query:
+# Apply Search Filter
+if search_query:
     df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
 
+# Ticker (Αν υπάρχει data)
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
@@ -166,7 +178,10 @@ if not df.empty:
 # --- 6. TABS & LOGIC ---
 tabs = st.tabs(["🏠 ΚΟΡΥΦΑΙΑ", "🏗️ ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "⚙️ ADMIN"])
 
-if not df.empty:
+# Check if Search returned nothing
+if df.empty and search_query:
+    st.warning(f"⚠️ Δεν βρέθηκαν αποτελέσματα για: **'{search_query}'**")
+elif not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
@@ -199,7 +214,10 @@ if not df.empty:
     def render_tab_content(tab_code):
         current_df = get_filtered_df(tab_code).reset_index(drop=True)
         if current_df.empty:
-            st.info("Δεν βρέθηκαν καθαρά νομικά θέματα (χωρίς τεχνικό περιεχόμενο).")
+            if search_query:
+                st.info(f"Δεν βρέθηκαν αποτελέσματα στην κατηγορία '{tab_code}' για: {search_query}")
+            else:
+                st.info("Δεν υπάρχουν νέα σε αυτή την κατηγορία.")
             return
 
         if not search_query and tab_code == "HOME":
@@ -283,6 +301,3 @@ if not df.empty:
             if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
             if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
             st.dataframe(df)
-
-else:
-    st.warning("Φόρτωση δεδομένων... Παρακαλώ περιμένετε.")
