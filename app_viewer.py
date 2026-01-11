@@ -17,41 +17,44 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (NIKAS TECHNICAL BRANDING) ---
+# --- 2. CSS (NIKAS TECHNICAL BRANDING & UI FIXES) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    /* --- BRAND CARD STYLING (MATCHING LOGO) --- */
+    /* --- FIX SIDEBAR ARROW VISIBILITY --- */
+    /* Κάνει το κουμπί που ανοιγοκλείνει την sidebar ΜΟΝΙΜΑ ορατό */
+    [data-testid="collapsedControl"] {
+        display: block !important;
+        opacity: 1 !important;
+        color: #000000 !important; /* Μαύρο χρώμα */
+    }
+    /* Σιγουρεύουμε ότι και το κουμπί κλεισίματος είναι ορατό */
+    [data-testid="stSidebar"] button {
+        opacity: 1 !important;
+        color: #000000 !important;
+    }
+
+    /* --- BRAND CARD STYLING --- */
     .brand-card {
-        background: linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%); /* Απαλό μεταλλικό/γκρι όπως το logo */
-        border: 2px solid #000000; /* Απόλυτο Μαύρο */
-        border-radius: 0px; /* Αιχμηρές γωνίες για τεχνικό/μηχανικό στυλ */
+        background: linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%);
+        border: 2px solid #000000;
+        border-radius: 0px; 
         padding: 25px 15px;
         margin-bottom: 30px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         text-align: center;
     }
     
-    .brand-label { 
-        font-size: 0.65rem; 
-        color: #444; 
-        font-weight: 800; 
-        letter-spacing: 3px; 
-        margin-bottom: 15px; 
-        text-transform: uppercase; 
-        font-family: 'Montserrat', sans-serif; 
-    }
-    
     .brand-btn { 
         display: block; width: 100%; text-align: center;
-        background-color: #000000; /* Μαύρο */
-        color: #ffffff !important; /* Λευκά γράμματα */
+        background-color: #000000;
+        color: #ffffff !important;
         border: 1px solid #000000;
         padding: 10px 0; 
-        border-radius: 0px; /* Τετράγωνο κουμπί */
+        border-radius: 0px; 
         font-size: 0.85rem; font-weight: 700;
         text-decoration: none; transition: 0.3s;
         font-family: 'Montserrat', sans-serif;
@@ -59,18 +62,12 @@ st.markdown("""
         letter-spacing: 1px;
     }
     .brand-btn:hover { 
-        background-color: #333333; /* Σκούρο γκρι στο hover */
+        background-color: #333333; 
         border-color: #333333;
         color: #ffffff !important; 
     }
 
     /* UTILS */
-    .sidebar-label {
-        position: fixed; top: 22px; left: 60px; z-index: 999999;
-        font-size: 0.85rem; font-weight: 700; color: #555;
-        background: transparent; pointer-events: none; letter-spacing: 0.5px; text-transform: uppercase;
-    }
-    
     .badge-sos { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
     .badge-law { background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
     .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
@@ -82,6 +79,17 @@ st.markdown("""
     
     .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-family: 'Montserrat', sans-serif;}
     .powered-footer a { color: #000000; text-decoration: none; font-weight: 700; }
+    
+    /* DATE FOOTER STYLE */
+    .article-date {
+        font-size: 0.75rem;
+        color: #888;
+        text-align: right;
+        margin-top: 8px;
+        font-style: italic;
+        border-top: 1px solid #eee;
+        padding-top: 5px;
+    }
 
     .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 70s linear infinite; font-weight: 600; }
@@ -178,17 +186,14 @@ def get_image_as_base64(file_path):
     except:
         return None
 
-# --- 5. SIDEBAR ME REAL LOGO & CLEAN LAYOUT ---
+# --- 5. SIDEBAR ME REAL LOGO ---
 with st.sidebar:
     
     # --- BRAND CARD ---
     nikas_url = "https://www.nikastechnical.gr"
-    
-    # Φόρτωση εικόνας
     logo_b64 = get_image_as_base64("logo.jpg")
     if not logo_b64: logo_b64 = get_image_as_base64("logo.png")
     
-    # Εικόνα Λογότυπου
     img_html = f'<img src="data:image/jpeg;base64,{logo_b64}" style="width:100%; max-width:180px; margin:0 auto 15px auto; display:block;">' if logo_b64 else '<div style="font-size:2rem; margin-bottom:10px;">🏗️</div>'
 
     st.markdown(f"""
@@ -201,8 +206,6 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     # -----------------------------------------------
 
-    # ΑΦΑΙΡΕΘΗΚΕ Ο ΤΙΤΛΟΣ "ΕΡΓΑΛΕΙΟΘΗΚΗ"
-    
     st.markdown("### ⏳ Προθεσμίες")
     st.info("⚠️ **31/12:** Λήξη Κτηματολογίου")
     st.info("⚠️ **31/01:** MyDATA Διαβίβαση")
@@ -355,6 +358,12 @@ elif not df.empty:
                                 with st.expander("📝 Ανάλυση AI (Bullet Points)"):
                                     st.markdown(row['content'])
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
+                                # ΝΕΟ: Footer με ημερομηνία
+                                st.markdown(f"""
+                                <div class="article-date">
+                                     {row['last_update']}
+                                </div>
+                                """, unsafe_allow_html=True)
                                 st.markdown("---")
 
     with tabs[0]: render_tab_content("HOME")
