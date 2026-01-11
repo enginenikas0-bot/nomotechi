@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="collapsed" # Κλειστό για να φανεί το βελάκι και η ταμπέλα
+    initial_sidebar_state="collapsed"
 )
 
 # --- 2. CSS (STYLING & TOOLS LABEL) ---
@@ -27,11 +27,11 @@ st.markdown("""
         color: #111;
     }
 
-    /* --- ΤΑΜΠΕΛΑ ΕΡΓΑΛΕΙΩΝ (TOP LEFT) --- */
+    /* --- SIDEBAR HINT --- */
     .sidebar-hint {
         position: fixed;
         top: 25px;
-        left: 50px; /* Δίπλα στο βελάκι */
+        left: 50px;
         z-index: 9999;
         font-size: 0.75rem;
         font-weight: 800;
@@ -41,9 +41,8 @@ st.markdown("""
         border-radius: 20px;
         border: 1px solid #e0e0e0;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        pointer-events: none; /* Να μην εμποδίζει τα κλικ */
+        pointer-events: none;
         opacity: 0.9;
-        transition: opacity 0.3s;
     }
 
     /* BADGES */
@@ -130,7 +129,6 @@ def reset_database():
     except: return False
 
 # --- 4. SIDEBAR ---
-# Εμφάνιση της ταμπέλας ΕΡΓΑΛΕΙΑ
 st.markdown('<div class="sidebar-hint">⬅️ ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
 
 with st.sidebar:
@@ -161,7 +159,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 if not df.empty and search_query:
     df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
 
-# Ticker
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
@@ -268,4 +265,24 @@ if not df.empty:
                                         <div class="grid-title">{row['title']}</div>
                                         <div style="font-size:0.9rem; color:#555; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">{row['content']}</div>
                                     </div>
-                                    <div style="margin-top:10px; padding-top
+                                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+                                        <a href="{row['link']}" target="_blank" style="color:#cc0000; font-weight:bold; text-decoration:none;">Διαβάστε Περισσότερα &rarr;</a>
+                                    </div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+    with tabs[0]: render_tab_content("HOME")
+    with tabs[1]: render_tab_content("ENG")
+    with tabs[2]: render_tab_content("LAW")
+    with tabs[3]: render_tab_content("FEK")
+    
+    with tabs[4]: 
+        st.header("Admin")
+        if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
+            if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
+            if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
+            st.dataframe(df)
+
+else:
+    st.warning("Φόρτωση δεδομένων... Παρακαλώ περιμένετε.")
