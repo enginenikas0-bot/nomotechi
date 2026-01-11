@@ -22,6 +22,28 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
+    /* SIDEBAR BRANDING CARD */
+    .brand-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f0f2f6 100%);
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-left: 4px solid #003366; /* Deep Blue Brand Color */
+    }
+    .brand-label { font-size: 0.7rem; color: #888; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase; }
+    .brand-title { font-size: 1.1rem; font-weight: 800; color: #003366; margin: 0; font-family: 'Segoe UI', sans-serif; }
+    .brand-sub { font-size: 0.8rem; color: #555; margin-bottom: 12px; font-weight: 500;}
+    .brand-btn { 
+        display: block; width: 100%; text-align: center;
+        background-color: white; color: #003366; border: 1px solid #003366;
+        padding: 6px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 600;
+        text-decoration: none; transition: 0.3s;
+    }
+    .brand-btn:hover { background-color: #003366; color: white; border-color: #003366; }
+
+    /* UTILS */
     .sidebar-label {
         position: fixed; top: 22px; left: 60px; z-index: 999999;
         font-size: 0.85rem; font-weight: 700; color: #555;
@@ -36,6 +58,9 @@ st.markdown("""
     .header-container { background: white; padding: 20px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; margin-top: 20px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
+    
+    .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; }
+    .powered-footer a { color: #003366; text-decoration: none; font-weight: 600; }
 
     .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 70s linear infinite; font-weight: 600; }
@@ -123,9 +148,24 @@ def reset_database():
         return True
     except: return False
 
-# --- 4. SIDEBAR ---
+# --- 4. SIDEBAR ME BRANDING ---
 st.markdown('<div class="sidebar-label">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
 with st.sidebar:
+    
+    # --- BRAND CARD ---
+    # !!! ΑΛΛΑΞΕ ΤΟ LINK ΜΕ ΤΟ ΔΙΚΟ ΣΟΥ !!!
+    nikas_url = "https://www.nikastechnical.gr" 
+    
+    st.markdown(f"""
+    <div class="brand-card">
+        <div class="brand-label">POWERED BY</div>
+        <div class="brand-title">🏗️ Nikas Technical</div>
+        <div class="brand-sub">Μελέτες • Κατασκευές • Real Estate</div>
+        <a href="{nikas_url}" target="_blank" class="brand-btn">Επισκεφθείτε μας ➜</a>
+    </div>
+    """, unsafe_allow_html=True)
+    # ------------------
+
     st.header("🧰 Εργαλειοθήκη")
     st.markdown("---")
     st.markdown("### ⏳ Προθεσμίες")
@@ -304,6 +344,11 @@ elif not df.empty:
         st.markdown("### 📈 Κατανομή ανά Κατηγορία")
         cat_counts = df['category'].value_counts().head(10)
         st.bar_chart(cat_counts)
+        st.markdown(f"""
+        <div class="powered-footer">
+            NomoTechi Platform © {datetime.now().year} • Powered by <a href="https://www.nikastechnical.gr" target="_blank">Nikas Technical</a>
+        </div>
+        """, unsafe_allow_html=True)
         st.header("Admin")
         if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
             if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
