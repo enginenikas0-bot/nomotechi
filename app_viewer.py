@@ -14,24 +14,22 @@ st.set_page_config(
     page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded"  # <--- ΑΝΟΙΚΤΗ ΑΠΟ ΠΡΟΕΠΙΛΟΓΗ
 )
 
-# --- 2. CSS (NIKAS TECHNICAL BRANDING & UI FIXES) ---
+# --- 2. CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
     
-    /* --- FIX SIDEBAR ARROW VISIBILITY --- */
-    /* Κάνει το κουμπί που ανοιγοκλείνει την sidebar ΜΟΝΙΜΑ ορατό */
+    /* --- SIDEBAR ARROW ALWAYS VISIBLE --- */
     [data-testid="collapsedControl"] {
         display: block !important;
         opacity: 1 !important;
-        color: #000000 !important; /* Μαύρο χρώμα */
+        color: #000000 !important;
     }
-    /* Σιγουρεύουμε ότι και το κουμπί κλεισίματος είναι ορατό */
     [data-testid="stSidebar"] button {
         opacity: 1 !important;
         color: #000000 !important;
@@ -80,15 +78,15 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-family: 'Montserrat', sans-serif;}
     .powered-footer a { color: #000000; text-decoration: none; font-weight: 700; }
     
-    /* DATE FOOTER STYLE */
+    /* DATE STYLE (CLEAN) */
     .article-date {
         font-size: 0.75rem;
-        color: #888;
+        color: #999;
         text-align: right;
         margin-top: 8px;
-        font-style: italic;
         border-top: 1px solid #eee;
         padding-top: 5px;
+        font-family: 'Segoe UI', sans-serif;
     }
 
     .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
@@ -186,7 +184,7 @@ def get_image_as_base64(file_path):
     except:
         return None
 
-# --- 5. SIDEBAR ME REAL LOGO ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
     
     # --- BRAND CARD ---
@@ -358,12 +356,13 @@ elif not df.empty:
                                 with st.expander("📝 Ανάλυση AI (Bullet Points)"):
                                     st.markdown(row['content'])
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
-                                # ΝΕΟ: Footer με ημερομηνία
+                                # --- CLEAN DATE ONLY ---
                                 st.markdown(f"""
                                 <div class="article-date">
-                                     {row['last_update']}
+                                    {row['last_update']}
                                 </div>
                                 """, unsafe_allow_html=True)
+                                # -----------------------
                                 st.markdown("---")
 
     with tabs[0]: render_tab_content("HOME")
