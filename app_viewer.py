@@ -46,13 +46,9 @@ st.markdown("""
     .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #cc0000 !important; }
 
-    .grid-card { background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s; }
-    .grid-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-    .grid-img { height: 170px; overflow: hidden; background: #eee; position: relative; }
-    .grid-img img { width: 100%; height: 100%; object-fit: cover; }
-    .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .grid-title { font-family: 'Merriweather', serif; font-size: 1.05rem; font-weight: 700; color: #000; margin-bottom: 8px; line-height: 1.35; }
-
+    /* CARD STYLING FOR STREAMLIT CONTAINERS */
+    .stCard { background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: 100%; }
+    
     .hero-wrapper { position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-radius: 8px; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); transition: transform 6s ease; }
     .hero-image:hover { transform: scale(1.05); filter: brightness(0.8); }
@@ -86,22 +82,39 @@ def get_stock_image(category, title):
     index = int(hash_obj.hexdigest(), 16) % len(pool)
     return pool[index]
 
-def get_db_connection():
+def get_db_client():
     try:
         credentials_dict = st.secrets["gcp_service_account"]
         gc = gspread.service_account_from_dict(credentials_dict)
-        return gc.open("laws_database").sheet1
+        return gc.open("laws_database")
     except: return None
 
+def save_subscriber(email):
+    sh = get_db_client()
+    if not sh: return False
+    try:
+        worksheet = sh.worksheet("subscribers")
+    except:
+        worksheet = sh.add_worksheet(title="subscribers", rows=1000, cols=2)
+        worksheet.append_row(["Email", "Date Joined"])
+    
+    emails = worksheet.col_values(1)
+    if email in emails: return "EXISTS"
+    worksheet.append_row([email, str(datetime.now().strftime("%Y-%m-%d %H:%M"))])
+    return "OK"
+
 def load_data():
-    sheet = get_db_connection()
-    return sheet.get_all_records() if sheet else []
+    sh = get_db_client()
+    if not sh: return []
+    return sh.sheet1.get_all_records()
 
 def reset_database():
-    sheet = get_db_connection()
-    if not sheet: return False
+    sh = get_db_client()
+    if not sh: return False
     try:
-        sheet.batch_clear(["A2:H5000"])
+        sh.sheet1.batch_clear(["A2:H5000"])
+        # Επαναφορά Header για να μην χαλάσει
+        sh.sheet1.append_row(['id', 'source', 'title', 'content', 'link', 'last_update', 'category', 'image_url'])
         return True
     except: return False
 
@@ -119,14 +132,19 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 📬 Newsletter")
     email = st.text_input("Email", placeholder="me@example.com")
-    if st.button("Εγγραφή"): st.success("Ολοκληρώθηκε!")
+    if st.button("Εγγραφή"):
+        if "@" in email and "." in email:
+            status = save_subscriber(email)
+            if status == "OK": st.success("✅ Εγγραφήκατε!"); time.sleep(2)
+            elif status == "EXISTS": st.warning("Είστε ήδη μέλος.")
+        else: st.error("Άκυρο email.")
 
 # --- 5. MAIN UI ---
 st.markdown("""<div class="header-container"><div class="header-logo">🏛️ NomoTechi</div><div class="header-sub">Intelligence Platform for Professionals</div></div>""", unsafe_allow_html=True)
 
 raw_data = load_data()
 if not raw_data:
-    st.warning("⏳ Φόρτωση δεδομένων ή η βάση είναι κενή. Παρακαλώ περιμένετε...")
+    st.warning("⏳ Φόρτωση δεδομένων ή η βάση είναι κενή...")
     st.stop()
 df = pd.DataFrame(raw_data)
 
@@ -245,29 +263,28 @@ elif not df.empty:
                         row = grid_df.iloc[idx]
                         card_img = get_display_image(row)
                         badges = render_badges(row['category'])
+                        
+                        # --- Η ΑΛΛΑΓΗ ΓΙΑ ΤΟ "READ MORE" ---
                         with col:
-                            st.markdown(f"""
-                            <div class="grid-card">
-                                <div class="grid-img"><img src="{card_img}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';"></div>
-                                <div class="grid-content">
-                                    <div>
-                                        <div>{badges}</div>
-                                        <div class="grid-title">{row['title']}</div>
-                                        <div style="font-size:0.9rem; color:#555; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden;">{row['content']}</div>
-                                    </div>
-                                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
-                                        <a href="{row['link']}" target="_blank" style="color:#cc0000; font-weight:bold; text-decoration:none;">Διαβάστε Περισσότερα &rarr;</a>
-                                    </div>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            # Χρησιμοποιούμε st.container για να μοιάζει με κάρτα
+                            with st.container():
+                                st.image(card_img, use_column_width=True)
+                                st.markdown(f"**{row['title']}**")
+                                st.markdown(badges, unsafe_allow_html=True)
+                                
+                                # ΕΔΩ ΕΙΝΑΙ ΤΟ EXPANDER (ΑΝΤΙ ΓΙΑ LINK)
+                                with st.expander("📝 Ανάλυση AI (Bullet Points)"):
+                                    st.markdown(row['content']) # Η περίληψη εμφανίζεται ΕΔΩ
+                                
+                                st.markdown(f"[🔗 Διαβάστε την πηγή]({row['link']})")
+                                st.markdown("---")
 
     with tabs[0]: render_tab_content("HOME")
     with tabs[1]: render_tab_content("ENG")
     with tabs[2]: render_tab_content("LAW")
     with tabs[3]: render_tab_content("FEK")
     
-    with tabs[4]: # ΣΤΑΤΙΣΤΙΚΑ DASHBOARD
+    with tabs[4]: 
         st.header("📊 Market Intelligence")
         col1, col2, col3 = st.columns(3)
         col1.metric("Σύνολο Άρθρων", len(df))
@@ -275,11 +292,9 @@ elif not df.empty:
         col2.metric("🚨 SOS / Προθεσμίες", sos_count)
         law_count = len(df[df['category'].str.contains("LEGISLATION", na=False)])
         col3.metric("📜 Νέα Νομοθεσία", law_count)
-        
         st.markdown("### 📈 Κατανομή ανά Κατηγορία")
         cat_counts = df['category'].value_counts().head(10)
         st.bar_chart(cat_counts)
-        
         st.header("Admin")
         if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
             if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
