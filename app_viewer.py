@@ -30,10 +30,10 @@ st.markdown("""
 
     /* --- TOP BRANDING (MINIMAL) --- */
     .top-powered-brand {
-        font-family: 'Segoe UI', sans-serif; /* Πιο καθαρή γραμματοσειρά */
-        font-size: 0.75rem; /* Πιο διακριτικό μέγεθος */
-        font-weight: 400; /* Όχι bold, πιο elegant */
-        color: #666; /* Σκούρο γκρι, όχι μαύρο */
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: #666;
         letter-spacing: 0.5px;
         margin-bottom: 2px;
         text-align: center;
@@ -50,10 +50,40 @@ st.markdown("""
         border-bottom: 1px solid #000;
     }
 
+    /* --- TICKER STYLE (MINIMAL) --- */
+    .ticker-wrap {
+        width: 100%;
+        background-color: #ffffff;
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        height: 32px;
+        overflow: hidden;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        margin-top: 10px;
+    }
+    .ticker-item {
+        display: inline-block;
+        padding-left: 100%;
+        animation: ticker 80s linear infinite; /* Αργή, ήρεμη κίνηση */
+        font-size: 0.8rem;
+        color: #333;
+        font-family: 'Segoe UI', sans-serif;
+        font-weight: 500;
+    }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+    .ticker-label {
+        position: absolute; left: 0; background: white; z-index: 10;
+        padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000;
+        border-right: 1px solid #eee; height: 30px; line-height: 22px;
+    }
+
     /* --- BRAND CARD STYLING --- */
     .brand-card {
         background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid #333; /* Λίγο πιο λεπτό περίγραμμα */
+        border: 1px solid #333;
         border-radius: 0px; 
         padding: 25px 15px;
         margin-bottom: 30px;
@@ -99,7 +129,7 @@ st.markdown("""
         border-top: 1px solid #f0f0f0; padding-top: 5px; font-family: 'Segoe UI', sans-serif;
     }
 
-    /* TABS CLEANUP (NO EMOJIS) */
+    /* TABS CLEANUP */
     .stTabs [data-baseweb="tab-list"] { gap: 25px; }
     .stTabs [data-baseweb="tab"] { font-weight: 600 !important; font-size: 0.95rem !important; color: #555 !important; }
     .stTabs [aria-selected="true"] { color: #003366 !important; border-bottom: 2px solid #003366 !important; }
@@ -189,17 +219,16 @@ def get_image_as_base64(file_path):
     except:
         return None
 
-# --- SMART SEARCH HELPER (ΑΦΑΙΡΕΣΗ ΤΟΝΩΝ) ---
+# --- SMART SEARCH HELPER ---
 def normalize_greek(text):
     if not isinstance(text, str): return ""
-    # Χάρτης αντικατάστασης τόνων
     replacements = {
         'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
         'Ά': 'Α', 'Έ': 'Ε', 'Ή': 'Η', 'Ί': 'Ι', 'Ό': 'Ο', 'Ύ': 'Υ', 'Ώ': 'Ω',
         'ϊ': 'ι', 'ϋ': 'υ', 'ΐ': 'ι', 'ΰ': 'υ'
     }
     text = text.translate(str.maketrans(replacements))
-    return text.lower() # Επιστρέφει μικρά χωρίς τόνους
+    return text.lower()
 
 # --- 5. SIDEBAR ---
 with st.sidebar:
@@ -249,29 +278,29 @@ if not raw_data:
     st.stop()
 df = pd.DataFrame(raw_data)
 
-# --- SMART SEARCH LOGIC ---
+# --- SMART SEARCH ---
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. Αυθαίρετα, Άρειος Πάγος)...")
 st.markdown('</div>', unsafe_allow_html=True)
 
 if search_query:
-    # Καθαρίζουμε την αναζήτηση του χρήστη (μικρά, χωρίς τόνους)
     clean_query = normalize_greek(search_query)
-    
-    # Φιλτράρισμα: Ψάχνουμε σε Τίτλο, Κείμενο και Κατηγορία
-    # Μετατρέπουμε και τα δεδομένα της βάσης σε "καθαρή" μορφή για τη σύγκριση
     mask = df.apply(lambda row: 
                     clean_query in normalize_greek(str(row['title'])) or 
                     clean_query in normalize_greek(str(row['content'])) or 
                     clean_query in normalize_greek(str(row['category'])), axis=1)
     df = df[mask]
 
-# --- DISPLAY LOGIC ---
+# --- TICKER (RESTORED) ---
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
-    st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="ticker-wrap">
+        <div class="ticker-label">LATEST</div>
+        <div class="ticker-item">{latest_titles}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Tabs χωρίς Emojis (Minimal)
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
 if df.empty and search_query:
@@ -312,6 +341,21 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
+            # --- TRADINGVIEW (RESTORED - MINIMAL) ---
+            st.markdown("", unsafe_allow_html=True)
+            components.html("""
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
+            </div>
+            """, height=70)
+            st.markdown("", unsafe_allow_html=True)
+            
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
                 slider_len = min(5, len(current_df))
@@ -369,7 +413,6 @@ elif not df.empty:
                                 st.image(card_img, use_column_width=True)
                                 st.markdown(f"**{row['title']}**")
                                 st.markdown(badges, unsafe_allow_html=True)
-                                # Minimal Expander (No Emojis)
                                 with st.expander("Ανάλυση & Σύνοψη"):
                                     st.markdown(row['content'])
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
