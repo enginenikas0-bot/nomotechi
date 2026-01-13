@@ -17,13 +17,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (FULL & DETAILED) ---
+# --- 2. CSS (FULL & DETAILED THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (CLEAN & MINIMAL) === 
+       === GLOBAL RESET & LIGHT MODE === 
        ========================================= */
     html, body, [class*="css"] { 
         font-family: 'Segoe UI', sans-serif; 
@@ -31,7 +31,7 @@ st.markdown("""
         color: #222; 
     }
     
-    /* --- SEARCH BAR (Dark Blue Background + White Text) --- */
+    /* --- SEARCH BAR --- */
     div[data-baseweb="input"] {
         background-color: #003366 !important; 
         border: 1px solid #004080 !important;
@@ -46,7 +46,7 @@ st.markdown("""
         color: #b3cce6 !important;
     }
 
-    /* --- SIDEBAR & ARROW --- */
+    /* --- SIDEBAR --- */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -84,11 +84,12 @@ st.markdown("""
         box-shadow: none !important; margin-bottom: 15px; 
     }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
+    .header-sub { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-top:5px;}
     
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    /* --- CARDS (NO BORDERS) --- */
+    /* --- CARDS --- */
     .list-item { 
         background: white; padding: 20px; 
         border: none !important; 
@@ -96,7 +97,8 @@ st.markdown("""
         transition: 0.2s; margin-bottom: 5px; 
     }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366 !important; }
-    .list-title a { color: #111 !important; text-decoration: none; font-weight: 600; font-size: 1.1rem; }
+    .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
+    .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #003366 !important; }
 
     .grid-card { 
@@ -117,104 +119,104 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* --- HERO SLIDER (THE MSN LOOK) --- */
+    /* --- HERO SLIDER (MSN STYLE) --- */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; margin-bottom: 0px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
-        z-index: 1; /* Base Layer */
+        z-index: 1; 
     }
-    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
-    .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
+    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 0.5s ease; }
+    .hero-image:hover { transform: scale(1.02); filter: brightness(0.75); }
     
     .hero-overlay { 
         position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; 
         background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); 
-        pointer-events: none; /* Επιτρέπει τα κλικ να περνάνε */
-        z-index: 2; /* Layer πάνω από την εικόνα */
+        pointer-events: none; 
+        z-index: 2;
     }
     .hero-title { 
         font-family: 'Merriweather', serif; color: white !important; 
         font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer;
-        pointer-events: auto; /* Ενεργοποιεί το κλικ στον τίτλο */
+        pointer-events: auto; 
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* --- MSN DOTS (INDICATORS) --- */
+    /* --- MSN DOTS (Discrete) --- */
     .msn-dots-container {
         position: absolute;
         bottom: 15px;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        gap: 8px;
-        z-index: 5;
+        gap: 6px;
+        z-index: 10;
     }
     .msn-dot {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background-color: rgba(255,255,255,0.4);
+        background-color: rgba(255,255,255,0.3);
         transition: 0.3s;
     }
     .msn-dot.active {
         background-color: #fff;
-        transform: scale(1.2);
-        box-shadow: 0 0 5px rgba(255,255,255,0.5);
+        transform: scale(1.3);
+        box-shadow: 0 0 4px rgba(255,255,255,0.6);
     }
 
-    /* --- MSN ARROWS (THE FINAL FIX) --- */
-    /* Target the buttons that are placed AFTER the image and pull them UP */
+    /* --- MSN ARROWS (THE OVERLAY FIX) --- */
+    /* This targets the container holding the buttons which we place BELOW the image */
+    /* We use negative margin to pull it UP into the center of the image */
     
-    /* Ξεκλειδώνουμε τα containers για να επιτρέψουμε την επικάλυψη */
-    div[data-testid="stVerticalBlock"], div[data-testid="stHorizontalBlock"], div[data-testid="column"] {
+    /* 1. Unlock containers */
+    div[data-testid="stHorizontalBlock"], div[data-testid="column"] {
         overflow: visible !important;
     }
 
-    /* Target buttons in the navigation row specifically */
-    .msn-nav-row button {
-        /* ΤΑ ΤΡΑΒΑΜΕ ΠΡΟΣ ΤΑ ΠΑΝΩ (Negative Margin) */
-        margin-top: -270px !important; 
+    /* 2. Target the specific row we tag with class 'msn-controls' */
+    .msn-controls button {
+        margin-top: -260px !important; /* The Magic Lift */
         position: relative !important;
-        z-index: 99999 !important; /* Πάνω από όλα */
+        z-index: 99999 !important;
         
-        /* MSN Style Look */
-        background-color: rgba(255, 255, 255, 0.2) !important; /* Glass Effect */
-        backdrop-filter: blur(5px);
-        color: #fff !important; /* Λευκά βέλη αρχικά */
-        border: 1px solid rgba(255,255,255,0.3) !important;
-        border-radius: 6px !important; /* Rounded Square */
+        /* Glass Style */
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        backdrop-filter: blur(4px);
+        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        border-radius: 4px !important; /* Soft Square */
         width: 40px !important;
         height: 40px !important;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-        transition: all 0.2s ease-in-out !important;
-        padding: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+        transition: all 0.2s ease !important;
+        padding: 0 !important;
     }
 
-    .msn-nav-row button:hover {
-        background-color: rgba(255, 255, 255, 0.9) !important; /* Solid White on Hover */
-        color: #000 !important; /* Μαύρο βέλος στο hover */
+    .msn-controls button:hover {
+        background-color: #fff !important;
+        color: #000 !important;
         transform: scale(1.1);
     }
     
-    /* Ρύθμιση μεγέθους εικονιδίου βέλους */
-    .msn-nav-row button p {
-        font-size: 22px !important;
-        margin-top: -4px !important;
+    /* Fix Icon Size inside button */
+    .msn-controls button p {
+        font-size: 20px !important;
         line-height: 1 !important;
+        margin-top: -2px !important;
     }
 
-    /* --- BADGES --- */
+    /* Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
     .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
     .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
 
     /* =========================================
-       === DARK MODE (AUTOMATIC OVERRIDES) === 
+       === DARK MODE OVERRIDES === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
@@ -222,7 +224,6 @@ st.markdown("""
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
 
-        /* Widget Swap Logic */
         .tv-light-container { display: none !important; }
         .tv-dark-container { display: block !important; }
 
@@ -257,13 +258,11 @@ st.markdown("""
         .powered-footer a { color: #bbb !important; }
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
-
-        /* TradingView Fix: No filters needed because we load the native Dark Widget */
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC & HELPERS ---
+# --- 3. LOGIC & DATA ---
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -334,6 +333,16 @@ def normalize_greek(text):
     }
     text = text.translate(str.maketrans(replacements))
     return text.lower()
+
+# --- 4. AUTO-PLAY LOGIC ---
+if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
+if 'last_slide_time' not in st.session_state: st.session_state.last_slide_time = time.time()
+
+# 6 Second Auto Timer
+if time.time() - st.session_state.last_slide_time > 6:
+    st.session_state.slider_idx += 1
+    st.session_state.last_slide_time = time.time()
+    st.rerun()
 
 # --- 5. SIDEBAR ---
 with st.sidebar:
@@ -411,7 +420,6 @@ if df.empty and search_query:
     st.warning(f"⚠️ Δεν βρέθηκαν αποτελέσματα για: **'{search_query}'**")
 elif not df.empty:
     df = df.iloc[::-1].reset_index(drop=True)
-    if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 
     def get_filtered_df(tab_name):
         if tab_name == "HOME": return df 
@@ -445,9 +453,7 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (UNIFIED SINGLE COMPONENT) ---
-            # This HTML contains BOTH widgets but shows only one based on internal CSS media query.
-            # NO double widgets ever.
+            # --- TRADINGVIEW (SINGLE COMPONENT - UNIFIED) ---
             st.markdown("", unsafe_allow_html=True)
             components.html("""
             <style>
@@ -472,13 +478,14 @@ elif not df.empty:
                 hero_img = get_display_image(hero_article)
                 hero_badges = render_badges(hero_article['category'])
                 
-                # --- HERO SLIDER OVERLAY (MSN DOTS + TITLE) ---
-                # Generate Dots
+                # --- HERO SLIDER OVERLAY ---
+                # 1. Dots generation
                 dots_html = ""
                 for i in range(slider_len):
                     active_cls = "active" if i == current_slide else ""
                     dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
+                # 2. Hero Image + Overlay + Dots
                 st.markdown(f"""
                 <div class="hero-wrapper">
                     <img src="{hero_img}" class="hero-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
@@ -495,19 +502,25 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (REVERSE PULL) ---
-                # We place the buttons AFTER the image but use CSS to pull them UP.
+                # 3. MSN STYLE BUTTONS (THE REVERSE PULL)
+                # We place the buttons AFTER the image, but CSS pulls them UP (-260px) onto the image.
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # Apply the container class
+                # We inject the specific class wrapper
                 with c_left: 
-                    st.markdown('<div class="msn-nav-row">', unsafe_allow_html=True)
-                    if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
+                    st.markdown('<div class="msn-controls">', unsafe_allow_html=True)
+                    if st.button("❮", key=f"prev_{tab_code}"): 
+                        st.session_state.slider_idx -= 1
+                        st.session_state.last_slide_time = time.time() # Reset Timer
+                        st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 
                 with c_right: 
-                    st.markdown('<div class="msn-nav-row">', unsafe_allow_html=True)
-                    if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
+                    st.markdown('<div class="msn-controls">', unsafe_allow_html=True)
+                    if st.button("❯", key=f"next_{tab_code}"): 
+                        st.session_state.slider_idx += 1
+                        st.session_state.last_slide_time = time.time() # Reset Timer
+                        st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
             with col_list:
@@ -523,7 +536,7 @@ elif not df.empty:
                     """, unsafe_allow_html=True)
             st.markdown("---")
 
-        st.subheader("Ειδήσεις & Αποφάσεις")
+        st.subheader("Ειδήσεις & Αποφάσεις") # Removed Emoji
         start_idx = 6 if (not search_query and tab_code=="HOME") else 0
         grid_df = current_df.iloc[start_idx:]
         
