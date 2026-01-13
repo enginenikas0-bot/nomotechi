@@ -17,13 +17,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL FIX) ---
+# --- 2. CSS (THE NUCLEAR FIX v21) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (ABSOLUTE MINIMALISM) === 
+       === LIGHT MODE (FORCE MINIMAL) === 
        ========================================= */
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
     
@@ -39,14 +39,15 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (NO BORDERS) */
+    /* Brand Card (NO BORDERS - FORCED) */
     .brand-card {
         background: #ffffff;
-        border: none !important; /* ΚΑΝΕΝΑ ΠΕΡΙΓΡΑΜΜΑ */
+        border: 0px solid transparent !important;
+        outline: none !important;
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06); /* ΜΟΝΟ ΣΚΙΑ */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Only Shadow */
         text-align: center;
     }
     .brand-btn { 
@@ -59,7 +60,7 @@ st.markdown("""
     }
     .brand-btn:hover { background-color: #444; color: #fff !important; }
 
-    /* Header (NO SHADOW/BORDER) */
+    /* Header */
     .header-container { 
         background: white; padding: 0 0 25px 0; 
         border-bottom: 2px solid #003366; text-align: center; 
@@ -71,19 +72,25 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    /* Cards (NO BORDERS) */
-    .list-item { background: white; padding: 20px; border-bottom: 1px solid #f5f5f5; transition: 0.2s; margin-bottom: 5px; border-left: none; border-right: none; border-top: none; }
-    .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366; }
+    /* Cards (NO BORDERS - FORCED) */
+    .list-item { 
+        background: white; padding: 20px; 
+        border: none !important; /* Force remove border */
+        border-bottom: 1px solid #f5f5f5 !important; /* Only bottom line */
+        transition: 0.2s; margin-bottom: 5px; 
+    }
+    .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366 !important; }
     .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #003366 !important; }
 
     .grid-card { 
         background: white; 
-        border: none !important; /* ΚΑΝΕΝΑ ΠΕΡΙΓΡΑΜΜΑ */
+        border: 0px solid transparent !important; /* Force remove border */
+        outline: none !important;
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* ΑΠΑΛΗ ΣΚΙΑ */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Only Shadow */
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -96,7 +103,7 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Micro-Badges (Smaller) */
+    /* Micro-Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -105,7 +112,7 @@ st.markdown("""
     .stTextInput input { border-radius: 2px; border: 1px solid #e0e0e0; padding: 10px; background-color: #fff; }
 
     /* =========================================
-       === DARK MODE (INVERTED & FIXED) === 
+       === DARK MODE (FIXED & INVERTED) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
@@ -127,12 +134,12 @@ st.markdown("""
         .ticker-item { color: #eee !important; }
         .ticker-label { background: #262730 !important; color: #ff4b4b !important; border-right: 1px solid #444 !important; }
 
-        /* Brand Card Dark (No Border) */
+        /* Brand Card Dark */
         .brand-card { background: #262730 !important; border: none !important; box-shadow: none !important; }
         .brand-sub { color: #ddd !important; }
         .brand-btn { background-color: #eee !important; color: #000 !important; }
 
-        /* Cards Dark (No Border) */
+        /* Cards Dark */
         .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
         .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff; }
         .list-title, .list-title a { color: #fff !important; }
@@ -145,11 +152,11 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* --- TRADINGVIEW DARK MODE FIX (MAGIC FILTER) --- */
-        /* Αυτό κάνει τα γράμματα ΛΕΥΚΑ στο Dark Mode */
-        .tradingview-widget-container { 
+        /* --- TRADINGVIEW DARK MODE FIX (NUCLEAR) --- */
+        /* Αυτό στοχεύει ΟΛΑ τα iframes στο Dark Mode και αντιστρέφει τα χρώματα */
+        /* Έτσι το μαύρο κείμενο του TradingView γίνεται αναγκαστικά λευκό */
+        iframe { 
             filter: invert(1) hue-rotate(180deg) !important;
-            mix-blend-mode: hard-light; /* Εξτρα φωτεινότητα στα γράμματα */
         } 
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
@@ -338,6 +345,7 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
+            # --- TRADINGVIEW ---
             st.markdown("", unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
