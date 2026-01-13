@@ -2,19 +2,11 @@ name: Daily News Scraper
 
 on:
   schedule:
-    # ΠΡΟΣΟΧΗ: Το GitHub χρησιμοποιεί ώρα UTC (2 ώρες πίσω από Ελλάδα τον χειμώνα)
-    # 06:00 UTC -> 08:00 GR (Πρωινό ξεκίνημα)
-    # 08:00 UTC -> 10:00 GR
-    # 11:00 UTC -> 13:00 GR (Μεσημεριανή ροή)
-    # 13:00 UTC -> 15:00 GR
-    # 16:00 UTC -> 18:00 GR (Απόγευμα)
-    # 19:00 UTC -> 21:00 GR (Βράδυ)
-    # 21:30 UTC -> 23:30 GR (Τελικό κλείσιμο/ΦΕΚ)
-    
+    # Ώρες UTC (06:00 UTC = 08:00 GR, κλπ)
     - cron: '0 6,8,11,13,16,19 * * *'
     - cron: '30 21 * * *'
-
-  # Αυτό σου επιτρέπει να πατήσεις το κουμπί "Run Workflow" χειροκίνητα αν θες
+  
+  # Κουμπί για να το τρέχεις χειροκίνητα όποτε θες
   workflow_dispatch:
 
 jobs:
@@ -22,30 +14,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Κατεβάζει τον κώδικα
+    # 1. Κατέβασε τον κώδικα του site
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # 2. Ετοιμάζει την Python
+    # 2. Ετοίμασε την Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
 
-    # 3. Εγκαθιστά τις βιβλιοθήκες (από το requirements.txt)
+    # 3. Εγκατάσταση βιβλιοθηκών (Απαραίτητο για να μην βγάζει error)
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 4. Τρέχει το Bot (v17) με τους κωδικούς από τα Secrets
-    - name: Run Scraper v17
+    # 4. Τρέξε το Bot (ΣΩΣΤΟ ΟΝΟΜΑ ΑΡΧΕΙΟΥ)
+    - name: Run Scraper
       env:
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-      run: python autobot.py
-
-      - name: Run Bot Script
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-        run: python auto_bot.py
+      run: python auto_bot.py
