@@ -17,18 +17,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL STABLE THEME) ---
+# --- 2. CSS (THE FIX FOR BORDERS & WIDGETS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (CLEAN & NO BLACK BORDERS) === 
+       === LIGHT MODE (DEFAULT) === 
        ========================================= */
-    html, body, [class*="css"] { 
-        font-family: 'Segoe UI', sans-serif; 
-        background-color: #f8f9fa; 
-        color: #222; 
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
+    
+    /* CLEAN INPUTS (REMOVES BLACK BORDERS) */
+    div[data-baseweb="input"] {
+        border: 1px solid #eee !important;
+        background-color: #f8f9fa !important;
+        border-radius: 4px !important;
+    }
+    div[data-baseweb="base-input"] {
+        background-color: transparent !important;
     }
     
     /* Sidebar Arrow Fix */
@@ -43,14 +49,14 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (PURE WHITE, NO BORDER LINE) */
+    /* Brand Card (NO BORDERS) */
     .brand-card {
         background: #ffffff;
-        border: 1px solid transparent !important; /* TRICK ΓΙΑ ΝΑ ΦΥΓΕΙ ΤΟ ΜΑΥΡΟ */
+        border: 1px solid #f0f0f0 !important; 
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* ΜΟΝΟ ΣΚΙΑ */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         text-align: center;
     }
     .brand-btn { 
@@ -89,10 +95,10 @@ st.markdown("""
 
     .grid-card { 
         background: white; 
-        border: 1px solid transparent !important; /* FORCE TRANSPARENT */
+        border: 1px solid #f5f5f5 !important; /* Πολύ απαλό γκρι, όχι μαύρο */
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -129,14 +135,20 @@ st.markdown("""
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
 
-    .stTextInput input { border-radius: 2px; border: 1px solid #e0e0e0; padding: 10px; background-color: #fff; }
+    /* --- TRADINGVIEW TOGGLE LOGIC --- */
+    /* Default (Light Mode): Show Light Widget, Hide Dark */
+    .tv-light-container { display: block; }
+    .tv-dark-container { display: none; }
 
     /* =========================================
-       === DARK MODE (INVERTED & FIXED) === 
+       === DARK MODE (AUTOMATIC) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
+        /* CLEAN INPUTS DARK */
+        div[data-baseweb="input"] { border: 1px solid #333 !important; background-color: #262730 !important; }
+
         /* Arrow & Logo Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
         .brand-card img { filter: invert(1); } 
@@ -172,17 +184,15 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* --- TRADINGVIEW DARK MODE FIX (NUCLEAR) --- */
-        iframe[title="3rd party frame"] { 
-            filter: invert(1) hue-rotate(180deg) !important;
-        } 
-        
-        .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
+        /* --- TRADINGVIEW DARK MODE TOGGLE --- */
+        /* In Dark Mode: Hide Light Widget, Show Dark */
+        .tv-light-container { display: none !important; }
+        .tv-dark-container { display: block !important; }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC & HELPERS (OPTIMIZED WITH CACHE) ---
+# --- 3. LOGIC & HELPERS ---
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -235,7 +245,6 @@ def reset_database():
         return True
     except: return False
 
-# --- OPTIMIZED IMAGE LOADER (PREVENTS 502 ERROR) ---
 @st.cache_data
 def get_image_as_base64(file_path):
     try:
@@ -365,8 +374,9 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW ---
-            st.markdown("", unsafe_allow_html=True)
+            # --- TRADINGVIEW (DOUBLE WIDGET TRICK) ---
+            # 1. LIGHT MODE WIDGET (Hidden in Dark Mode)
+            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
@@ -378,7 +388,22 @@ elif not df.empty:
               </script>
             </div>
             """, height=70)
-            st.markdown("", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # 2. DARK MODE WIDGET (Hidden in Light Mode)
+            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
+            components.html("""
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
+            </div>
+            """, height=70)
+            st.markdown('</div>', unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
