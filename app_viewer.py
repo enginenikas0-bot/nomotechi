@@ -17,17 +17,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL FIX v22) ---
+# --- 2. CSS (THE FINAL STABLE THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (DEFAULT) === 
+       === LIGHT MODE (CLEAN & NO BLACK BORDERS) === 
        ========================================= */
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
+    html, body, [class*="css"] { 
+        font-family: 'Segoe UI', sans-serif; 
+        background-color: #f8f9fa; 
+        color: #222; 
+    }
     
-    /* Arrow Fix */
+    /* Sidebar Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -39,15 +43,14 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (NO BORDERS) */
+    /* Brand Card (PURE WHITE, NO BORDER LINE) */
     .brand-card {
         background: #ffffff;
-        border: none !important; 
-        outline: none !important;
+        border: 1px solid transparent !important; /* TRICK ΓΙΑ ΝΑ ΦΥΓΕΙ ΤΟ ΜΑΥΡΟ */
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* ΜΟΝΟ ΣΚΙΑ */
         text-align: center;
     }
     .brand-btn { 
@@ -86,11 +89,10 @@ st.markdown("""
 
     .grid-card { 
         background: white; 
-        border: none !important; 
-        outline: none !important;
+        border: 1px solid transparent !important; /* FORCE TRANSPARENT */
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -103,7 +105,7 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Hero Slider Overlay Styling (Restored) */
+    /* Hero Slider Overlay Styling */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
@@ -170,7 +172,7 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* --- TRADINGVIEW DARK MODE FIX (ONLY IN DARK MODE) --- */
+        /* --- TRADINGVIEW DARK MODE FIX (NUCLEAR) --- */
         iframe[title="3rd party frame"] { 
             filter: invert(1) hue-rotate(180deg) !important;
         } 
@@ -180,7 +182,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC & HELPERS ---
+# --- 3. LOGIC & HELPERS (OPTIMIZED WITH CACHE) ---
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -233,6 +235,8 @@ def reset_database():
         return True
     except: return False
 
+# --- OPTIMIZED IMAGE LOADER (PREVENTS 502 ERROR) ---
+@st.cache_data
 def get_image_as_base64(file_path):
     try:
         with open(file_path, "rb") as f:
@@ -384,7 +388,7 @@ elif not df.empty:
                 hero_img = get_display_image(hero_article)
                 hero_badges = render_badges(hero_article['category'])
                 
-                # --- HERO SLIDER OVERLAY (RESTORED) ---
+                # --- HERO SLIDER OVERLAY ---
                 st.markdown(f"""
                 <div class="hero-wrapper">
                     <img src="{hero_img}" class="hero-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
