@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (STRICT SEPARATION LIGHT/DARK) ---
+# --- 2. CSS (THE FIX) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -25,35 +25,27 @@ st.markdown("""
     /* =========================================
        === LIGHT MODE (DEFAULT) === 
        ========================================= */
-    html, body, [class*="css"] { 
-        font-family: 'Segoe UI', sans-serif; 
-        background-color: #ffffff; 
-        color: #222; 
-    }
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
     
-    /* --- SEARCH BAR LIGHT MODE (WHITE TEXT REQUEST) --- */
-    /* Για να φαίνονται τα λευκά γράμματα, κάνουμε το φόντο Σκούρο Μπλε */
+    /* --- SEARCH BAR (BRAND BLUE + WHITE TEXT) --- */
+    /* Το φόντο της μπάρας γίνεται Σκούρο Μπλε για να φαίνονται τα λευκά γράμματα */
     div[data-baseweb="input"] {
-        background-color: #003366 !important; /* Brand Blue Background */
+        background-color: #003366 !important; 
         border: none !important;
         border-radius: 4px !important;
     }
-    /* Το ίδιο το κείμενο που γράφεις */
+    /* Τα γράμματα που γράφεις */
     div[data-baseweb="input"] input {
-        color: #ffffff !important; /* ΛΕΥΚΑ ΓΡΑΜΜΑΤΑ */
-        -webkit-text-fill-color: #ffffff !important;
+        color: #ffffff !important;
+        caret-color: #ffffff !important; /* Ο κέρσορας λευκός */
         font-weight: 500 !important;
     }
-    /* Placeholder (το κείμενο "Αναζήτηση...") */
+    /* Το κείμενο "Αναζήτηση..." */
     div[data-baseweb="input"] input::placeholder {
-        color: #cccccc !important; /* Ανοιχτό γκρι για να ξεχωρίζει */
+        color: #cccccc !important;
     }
 
-    /* --- TRADINGVIEW LIGHT (SHOW TOP ONLY) --- */
-    .tv-light-container { display: block !important; }
-    .tv-dark-container { display: none !important; }
-
-    /* Arrow Fix */
+    /* Sidebar Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -72,7 +64,7 @@ st.markdown("""
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* Only Shadow */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         text-align: center;
     }
     .brand-btn { 
@@ -114,7 +106,7 @@ st.markdown("""
         border: none !important; 
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -157,13 +149,9 @@ st.markdown("""
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
-        /* --- SEARCH BAR DARK MODE (Standard Dark) --- */
+        /* Search Bar Dark */
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
-
-        /* --- TRADINGVIEW DARK (SHOW BOTTOM ONLY) --- */
-        .tv-light-container { display: none !important; }
-        .tv-dark-container { display: block !important; }
 
         /* Arrow & Logo Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
@@ -199,6 +187,13 @@ st.markdown("""
         .article-date { color: #777 !important; border-top: 1px solid #444 !important; }
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
+
+        /* --- TRADINGVIEW DARK MODE FIX (MAGIC FILTER) --- */
+        /* Αυτό αντιστρέφει τα χρώματα του widget ΜΟΝΟ στο Dark Mode */
+        /* Τα μαύρα γράμματα γίνονται λευκά */
+        iframe[title="3rd party frame"] { 
+            filter: invert(1) hue-rotate(180deg) !important;
+        } 
     }
 </style>
 """, unsafe_allow_html=True)
@@ -385,9 +380,10 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (STRICT MODE SEPARATION) ---
-            # 1. LIGHT MODE WIDGET (Top Row) - Hidden in Dark Mode via CSS
-            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
+            # --- TRADINGVIEW (SINGLE COMPONENT) ---
+            # Χρησιμοποιούμε μόνο ΕΝΑ widget (Light). 
+            # Η αλλαγή σε Dark γίνεται ΜΟΝΟ μέσω CSS (filter invert).
+            st.markdown("", unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
@@ -399,22 +395,7 @@ elif not df.empty:
               </script>
             </div>
             """, height=70)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            # 2. DARK MODE WIDGET (Bottom Row) - Hidden in Light Mode via CSS
-            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
-            components.html("""
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-              {
-              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
-              }
-              </script>
-            </div>
-            """, height=70)
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("", unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
