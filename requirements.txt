@@ -1,9 +1,9 @@
 streamlit
-gspread
-oauth2client
 pandas
+gspread
 feedparser
-requests
 beautifulsoup4
 google-generativeai
-shcedule
+requests
+oauth2client
+schedule
