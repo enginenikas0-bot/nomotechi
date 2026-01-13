@@ -17,70 +17,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (SMART HYBRID THEME) ---
+# --- 2. CSS (FINAL POLISHED THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    /* === BASE (LIGHT MODE - CLEAN & ORIGINAL) === */
+    /* =========================================
+       === LIGHT MODE (CLEAN & ELEGANT) === 
+       ========================================= */
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
     
-    /* Sidebar Arrow Fix */
+    /* Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000 !important; }
 
     /* Top Branding */
     .top-powered-brand {
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 0.75rem;
-        font-weight: 400;
-        color: #666;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
-        text-align: center;
-        padding-top: 15px;
+        font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; font-weight: 400; color: #666;
+        letter-spacing: 0.5px; margin-bottom: 2px; text-align: center; padding-top: 15px;
     }
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Ticker Light */
-    .ticker-wrap {
-        width: 100%;
-        background-color: #ffffff;
-        border-top: 1px solid #eee;
-        border-bottom: 1px solid #eee;
-        height: 32px;
-        overflow: hidden;
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-        margin-top: 10px;
-    }
-    .ticker-item {
-        display: inline-block;
-        padding-left: 100%;
-        animation: ticker 80s linear infinite;
-        font-size: 0.8rem;
-        color: #333;
-        font-family: 'Segoe UI', sans-serif;
-        font-weight: 600;
-    }
-    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-    .ticker-label {
-        position: absolute; left: 0; background: white; z-index: 10;
-        padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000;
-        border-right: 1px solid #eee; height: 30px; line-height: 22px;
-    }
-
-    /* Brand Card Light (Clean Gray Border) */
+    /* Brand Card (Light Mode: Clean, Soft Shadow, Light Border) */
     .brand-card {
         background: #ffffff;
-        border: 1px solid #ddd; /* Light Gray Border (Not Black) */
+        border: 1px solid #e5e5e5; /* ΠΟΛΥ ΑΠΑΛΟ ΓΚΡΙ */
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Απαλή σκιά */
         text-align: center;
     }
     .brand-btn { 
@@ -93,55 +59,58 @@ st.markdown("""
     }
     .brand-btn:hover { background-color: #444; border-color: #444; color: #fff !important; }
 
-    /* Header Light */
+    /* Header */
     .header-container { 
         background: white; padding: 0 0 25px 0; 
         border-bottom: 3px solid #003366; text-align: center; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 15px; margin-top: 0px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 15px; 
     }
-    .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; margin-top: 0px; }
+    .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-top:5px;}
     
-    .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; font-family: 'Segoe UI', sans-serif;}
+    .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
-    
-    .article-date {
-        font-size: 0.75rem; color: #aaa; text-align: right; margin-top: 10px;
-        border-top: 1px solid #f0f0f0; padding-top: 5px; font-family: 'Segoe UI', sans-serif;
-    }
 
-    /* Tabs & Cards Light */
-    .stTabs [data-baseweb="tab-list"] { gap: 25px; }
-    .stTabs [data-baseweb="tab"] { font-weight: 600 !important; font-size: 0.95rem !important; color: #555 !important; }
-    .stTabs [aria-selected="true"] { color: #003366 !important; border-bottom: 2px solid #003366 !important; }
-
+    /* Cards (Light Mode: No Black Borders) */
     .list-item { background: white; padding: 20px; border-bottom: 1px solid #eee; transition: 0.2s; margin-bottom: 5px; }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366; }
     .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #003366 !important; }
 
-    .grid-card { background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
-    .grid-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
-    .grid-img { height: 170px; overflow: hidden; background: #f4f4f4; position: relative; }
+    .grid-card { 
+        background: white; 
+        border: 1px solid #e5e5e5; /* Απαλό Γκρι */
+        border-radius: 4px; 
+        overflow: hidden; height: 100%; display: flex; flex-direction: column; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Απαλή Σκιά */
+        transition: transform 0.2s; 
+    }
+    .grid-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
+    .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f0f0f0; padding-top: 5px; }
 
-    /* Badges Restored (Colorful) */
-    .badge-sos { background-color: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px; }
-    .badge-law { background-color: #003366; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
-    .badge-real { background-color: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
-    .badge-leg { background-color: #444; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
+    /* Micro-Badges (Smaller & Discreet) */
+    .badge-sos { background-color: #dc3545; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle; letter-spacing: 0.5px; }
+    .badge-law { background-color: #003366; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle; letter-spacing: 0.5px; }
+    .badge-real { background-color: #28a745; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle; letter-spacing: 0.5px; }
+    .badge-leg { background-color: #444; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; vertical-align: middle; letter-spacing: 0.5px; }
 
-    .stTextInput input { border-radius: 2px; border: 1px solid #ccc; padding: 10px; }
+    /* Ticker Light */
+    .ticker-wrap { background-color: #ffffff; border-top: 1px solid #eee; border-bottom: 1px solid #eee; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
+    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
+    .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
     /* =========================================
-       === DARK MODE INTELLIGENCE (THE FIX) === 
+       === DARK MODE (NO BORDERS, WHITE TEXT) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
-        /* Arrow Invert */
+        /* Arrow & Logo Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
+        .brand-card img { filter: invert(1); } 
 
         /* Header Dark */
         .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; box-shadow: none; }
@@ -156,19 +125,17 @@ st.markdown("""
         .ticker-item { color: #eee !important; }
         .ticker-label { background: #262730 !important; color: #ff4b4b !important; border-right: 1px solid #444 !important; }
 
-        /* Brand Card Dark */
-        .brand-card { background: #262730 !important; border: 1px solid #555 !important; }
-        .brand-card img { filter: invert(1); } /* Invert Logo */
+        /* Brand Card Dark (No Border) */
+        .brand-card { background: #262730 !important; border: none !important; }
         .brand-sub { color: #ddd !important; }
         .brand-btn { background-color: #eee !important; color: #000 !important; }
 
-        /* Lists & Grids Dark */
-        .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
+        /* Cards Dark (No Border) */
+        .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; border-left: none; }
         .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff; }
-        .list-title { color: #fff !important; }
-        .list-title a { color: #fff !important; }
+        .list-title, .list-title a { color: #fff !important; }
         
-        .grid-card { background: #262730 !important; border: 1px solid #444 !important; }
+        .grid-card { background: #262730 !important; border: none !important; box-shadow: none !important; }
         .grid-title { color: #fff !important; }
         .grid-img { background: #333 !important; }
         
@@ -176,12 +143,11 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* --- MAGIC FIX FOR TRADINGVIEW TEXT --- */
-        /* Αντιστρέφει τα χρώματα του widget ΜΟΝΟ στο dark mode. 
-           Το μαύρο κείμενο γίνεται λευκό, το λευκό φόντο γίνεται μαύρο. */
+        /* --- TRADINGVIEW DARK MODE FIX --- */
+        /* Αυξάνουμε το contrast και τη φωτεινότητα μετά την αντιστροφή για να γίνουν τα γράμματα λευκά */
         .tradingview-widget-container { 
-            filter: invert(1) hue-rotate(180deg) !important; 
-            opacity: 0.9;
+            filter: invert(1) hue-rotate(180deg) brightness(1.5) contrast(1.2) !important; 
+            opacity: 1 !important;
         } 
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
@@ -370,6 +336,7 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
+            # --- TRADINGVIEW (CLASS FOR DARK MODE FIX) ---
             st.markdown("", unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
