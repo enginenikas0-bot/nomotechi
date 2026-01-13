@@ -6,7 +6,7 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 import requests
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import os
 
@@ -22,7 +22,7 @@ USER_AGENTS = [
 
 # --- 2. ΠΛΗΡΗΣ ΛΙΣΤΑ ΠΗΓΩΝ ---
 RSS_FEEDS = {
-    # --- ΜΗΧΑΝΙΚΟΙ / ΚΑΤΑΣΚΕΥΕΣ / ΑΚΙΝΗΤΑ ---
+    # --- ΜΗΧΑΝΙΚΟΙ / ΚΑΤΑΣΚΕΥΕΣ ---
     "Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
     "TEE": "https://web.tee.gr/feed/",
     "Ypodomes": "https://ypodomes.com/feed/",
@@ -82,14 +82,14 @@ def clean_html(html_text):
 def scrape_full_text(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "aside", "header"]): 
                 tag.extract()
             paragraphs = soup.find_all('p')
             full_text = " ".join([p.get_text() for p in paragraphs])
-            return full_text.strip()[:8000]
+            return full_text.strip()[:6000]
     except: 
         return ""
     return ""
@@ -97,7 +97,7 @@ def scrape_full_text(url):
 def fetch_article_image(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             og_image = soup.find("meta", property="og:image")
@@ -111,78 +111,49 @@ def get_ai_summary(model, title, content):
     if not model: return "AI unavailable."
     try:
         prompt = f"""
-        Είσαι ειδικός αναλυτής (NomoTech Bot). 
-        Γράψε μια πολύ σύντομη περίληψη (max 25-30 λέξεις) στα Ελληνικά.
-        Εστίασε στην ουσία: Τι αλλάζει, ποια είναι η προθεσμία, ποιον αφορά.
-        
+        Γράψε περίληψη (max 30 λέξεις) στα Ελληνικά. 
         Τίτλος: {title}
-        Κείμενο: {content[:2000]}
+        Κείμενο: {content[:1500]}
         """
         response = model.generate_content(prompt)
         return response.text.strip()
     except:
-        return "Η περίληψη δεν είναι διαθέσιμη."
+        return "Περίληψη μη διαθέσιμη."
 
-# --- 5. CLEANUP FUNCTION (NEW) ---
-def cleanup_database(worksheet):
-    """Διαγράφει οριστικά άρθρα παλιότερα των 30 ημερών από το Sheet."""
-    print("🧹 Cleaning up old articles...")
+# --- 5. SAFE CLEANUP ---
+def cleanup_database_safe(worksheet):
+    print("🧹 Checking database size...")
     try:
-        # 1. Φέρνουμε όλα τα δεδομένα
         all_values = worksheet.get_all_values()
-        if not all_values: return
-
-        header = all_values[0]
-        rows = all_values[1:]
-
-        # 2. Ορίζουμε το όριο (30 μέρες πριν)
-        cutoff_date = datetime.now() - timedelta(days=30)
-        kept_rows = []
-
-        # 3. Φιλτράρισμα
-        for row in rows:
-            try:
-                # Η ημερομηνία είναι στη στήλη 6 (index 5)
-                row_date_str = row[5]
-                row_date = datetime.strptime(row_date_str, "%Y-%m-%d %H:%M:%S")
-                
-                # Κρατάμε μόνο τα φρέσκα
-                if row_date > cutoff_date:
-                    kept_rows.append(row)
-            except:
-                # Αν δεν μπορεί να διαβάσει ημερομηνία, το κρατάμε για ασφάλεια (ή το σβήνουμε)
-                # Εδώ επιλέγουμε να το κρατήσουμε μήπως είναι κάτι άλλο
-                kept_rows.append(row)
-
-        # 4. Αν υπάρχουν διαγραφές, ξαναγράφουμε το Sheet
-        if len(kept_rows) < len(rows):
-            deleted_count = len(rows) - len(kept_rows)
-            print(f"🗑️ Deleting {deleted_count} old articles...")
-            
-            # Καθαρισμός και Επανεγγραφή (Πιο ασφαλές από delete_rows σε loop)
+        total_rows = len(all_values)
+        MAX_ROWS = 600
+        KEEP_ROWS = 500
+        
+        if total_rows > MAX_ROWS:
+            print(f"⚠️ Database too big ({total_rows}). Trimming...")
+            header = all_values[0]
+            data_to_keep = all_values[-KEEP_ROWS:]
             worksheet.clear()
             worksheet.append_row(header)
-            if kept_rows:
-                worksheet.append_rows(kept_rows)
-            print("✨ Database optimized.")
+            worksheet.append_rows(data_to_keep)
+            print("✨ Trimmed.")
         else:
-            print("✨ No old articles to delete.")
-
+            print("✅ Database OK.")
     except Exception as e:
-        print(f"⚠️ Cleanup Error: {e}")
+        print(f"⚠️ Cleanup Warning: {e}")
 
 # --- 6. MAIN JOB ---
 def run_scraper():
-    print(f"🔄 Starting Scraping Cycle: {datetime.now().strftime('%H:%M:%S')}")
+    # Καταγραφή ώρας έναρξης για το Log
+    print(f"🔄 Cycle Start: {datetime.now().strftime('%H:%M:%S')}")
     
     model = setup_ai()
     worksheet = setup_db()
     
     if not worksheet:
-        print("❌ Database connection failed.")
+        print("❌ DB Connection Fail.")
         return
 
-    # Φόρτωσε τα ήδη υπάρχοντα links
     try:
         existing_links = set(worksheet.col_values(5)) 
     except:
@@ -196,7 +167,6 @@ def run_scraper():
             feed = feedparser.parse(feed_url)
             count = 0
             
-            # Έλεγχος 10 άρθρων ανά πηγή
             for entry in feed.entries[:10]:
                 link = entry.get('link', '')
                 
@@ -204,48 +174,52 @@ def run_scraper():
                     continue 
                 
                 title = entry.get('title', 'No Title')
-                full_text = scrape_full_text(link)
-                if len(full_text) < 50: 
-                    full_text = clean_html(entry.get('summary', '') or entry.get('description', ''))
                 
-                real_image_url = fetch_article_image(link)
-                ai_summary = get_ai_summary(model, title, full_text)
+                try:
+                    full_text = scrape_full_text(link)
+                    if len(full_text) < 50: 
+                        full_text = clean_html(entry.get('summary', '') or entry.get('description', ''))
+                    
+                    real_image_url = fetch_article_image(link)
+                    ai_summary = get_ai_summary(model, title, full_text)
+                    
+                    # ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ:
+                    # Καταγράφουμε την ώρα ΤΩΡΑ για κάθε άρθρο ξεχωριστά
+                    # Το βάζουμε ως string για να μην το πειράξει το Excel
+                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    new_row = [
+                        str(hash(link)),
+                        source_name,
+                        title,
+                        ai_summary,
+                        link,
+                        now_str, # Αποθήκευση πλήρους ημερομηνίας ΚΑΙ ώρας
+                        source_name, 
+                        real_image_url
+                    ]
+                    
+                    new_rows.append(new_row)
+                    existing_links.add(link)
+                    count += 1
+                except Exception:
+                    continue
                 
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
-                new_row = [
-                    str(hash(link)),
-                    source_name,
-                    title,
-                    ai_summary,
-                    link,
-                    now_str,
-                    source_name, # Category placeholder
-                    real_image_url
-                ]
-                
-                new_rows.append(new_row)
-                existing_links.add(link)
-                count += 1
-                time.sleep(1)
-                
-            print(f"✅ Found {count}")
+            print(f"✅ ({count})")
                 
         except Exception as e:
             print(f"❌ Error: {e}")
 
-    # Αποθήκευση νέων
     if new_rows:
         try:
             worksheet.append_rows(new_rows)
             print(f"💾 Saved {len(new_rows)} new articles.")
         except Exception as e:
-            print(f"❌ Error saving to DB: {e}")
+            print(f"❌ Save Error: {e}")
     else:
-        print("💤 No new articles.")
+        print("💤 No new content.")
 
-    # --- ΤΡΕΧΟΥΜΕ ΤΟΝ ΚΑΘΑΡΙΣΜΟ ΣΤΟ ΤΕΛΟΣ ΚΑΘΕ ΚΥΚΛΟΥ ---
-    cleanup_database(worksheet)
+    cleanup_database_safe(worksheet)
 
 # --- 7. SCHEDULER ---
 schedule.every().day.at("08:00").do(run_scraper)
@@ -257,7 +231,7 @@ schedule.every().day.at("21:00").do(run_scraper)
 schedule.every().day.at("23:30").do(run_scraper)
 
 if __name__ == "__main__":
-    print("🤖 NomoTech Autobot v13 (Auto-Cleanup) Started...")
+    print("🤖 NomoTech Autobot v15 (Time Fix) Started...")
     run_scraper()
     while True:
         schedule.run_pending()
