@@ -1,13 +1,11 @@
 import streamlit as st
 import pandas as pd
 import gspread
-import feedparser
-from datetime import datetime
 import time
 import hashlib
-import re
 import base64
 import streamlit.components.v1 as components
+from datetime import datetime
 
 # --- 1. SETUP ---
 st.set_page_config(
@@ -17,40 +15,34 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL THEME) ---
+# --- 2. CSS (CLEAN & INVISIBLE ZONES) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    /* GLOBAL RESET */
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
     
-    /* SEARCH BAR */
-    div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080 !important; border-radius: 4px; }
+    /* Search Bar */
+    div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; border-radius: 4px; }
     div[data-baseweb="input"] input { color: white !important; caret-color: white; font-weight: 500; }
     div[data-baseweb="input"] input::placeholder { color: #b3cce6 !important; }
-
-    /* SIDEBAR */
+    
+    /* Sidebar */
     [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #000 !important; }
 
-    /* BRANDING & HEADER */
+    /* Branding */
     .brand-card { background: #ffffff; border: 1px solid #f0f0f0; border-radius: 4px; padding: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .brand-btn { display: block; width: 100%; background: #111; color: #fff !important; padding: 10px; text-decoration: none; font-weight: 600; font-size: 0.8rem; border-radius: 2px; transition: 0.3s; }
     .brand-btn:hover { background: #444; }
 
+    /* Header */
     .header-container { background: white; padding: 0 0 20px 0; border-bottom: 2px solid #003366; text-align: center; margin-bottom: 20px; }
-    .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     
-    /* --- TICKER --- */
-    .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
-    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
-    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-    /* --- HERO SLIDER (MSN STYLE) --- */
+    /* --- HERO SLIDER --- */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; 
         border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        z-index: 1; 
+        z-index: 1;
     }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { 
@@ -62,65 +54,58 @@ st.markdown("""
         font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto;
     }
+
+    /* --- INVISIBLE CLICK ZONES (THE MAGIC) --- */
+    /* This container sits ON TOP of the image */
+    .click-zone-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 450px;
+        z-index: 999;
+        pointer-events: none; /* Middle lets clicks pass */
+    }
     
-    /* --- DOTS (TINY) --- */
+    /* The Invisible Buttons */
+    .click-zone-container button {
+        pointer-events: auto !important;
+        background-color: transparent !important; /* Invisible */
+        color: transparent !important; /* Hide any text/icon */
+        border: none !important;
+        height: 450px !important; /* Full Height */
+        width: 100% !important;
+        transition: background-color 0.2s;
+    }
+    
+    /* Subtle Hover Effect (User knows it's clickable) */
+    .click-zone-container button:hover {
+        background-color: rgba(255,255,255,0.05) !important; 
+        cursor: pointer;
+    }
+
+    /* --- DOTS (SMALLER) --- */
     .msn-dots-container {
-        position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-        display: flex; gap: 6px; z-index: 10;
+        position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; pointer-events: none;
     }
     .msn-dot {
-        width: 6px; height: 6px; border-radius: 50%;
-        background-color: rgba(255,255,255,0.4); transition: 0.3s;
+        width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.4); transition: 0.3s;
     }
-    .msn-dot.active {
-        background-color: #fff; transform: scale(1.3); box-shadow: 0 0 4px rgba(255,255,255,0.8);
-    }
+    .msn-dot.active { background: #fff; transform: scale(1.4); box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 
-    /* --- FLOATING ARROWS (ZERO HEIGHT GHOST CONTAINER) --- */
-    /* This container sits BEFORE the image but takes 0 height */
-    /* The buttons inside are pushed down (top: 200px) to float over the image */
-    .floating-arrows {
-        position: absolute;
-        width: 100%;
-        height: 0px !important; 
-        z-index: 999;
-        pointer-events: none; 
-    }
-    
-    .floating-arrows button {
-        pointer-events: auto !important;
-        position: relative;
-        top: 200px; /* Push down to middle of image */
-        
-        /* Glass Style */
-        background-color: rgba(255, 255, 255, 0.25) !important;
-        backdrop-filter: blur(4px);
-        color: white !important;
-        border: 1px solid rgba(255,255,255,0.3) !important;
-        border-radius: 4px !important; /* Soft Square */
-        width: 40px !important; height: 40px !important;
-        display: flex; align-items: center; justify-content: center;
-        transition: 0.3s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .floating-arrows button:hover {
-        background-color: white !important;
-        color: black !important;
-        transform: scale(1.1);
-    }
-    .floating-arrows button p { font-size: 20px !important; line-height: 1; margin-bottom: 2px; }
+    /* --- TICKER --- */
+    .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
+    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* --- LIST ITEMS --- */
-    .list-item { background: white; padding: 15px; border-bottom: 1px solid #f0f0f0; margin-bottom: 5px; transition: 0.2s; }
+    /* Standard Elements */
+    .list-item { padding: 15px; border-bottom: 1px solid #eee; margin-bottom: 5px; transition: 0.2s; }
     .list-item:hover { border-left: 3px solid #003366; background: #fafafa; }
     .list-title a { color: #111 !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
     
-    /* --- BADGES --- */
+    /* Badges */
     .badge-sos { background: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
     .badge-law { background: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
     .badge-real { background: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
 
-    /* --- DARK MODE --- */
+    /* Dark Mode */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         div[data-baseweb="input"] { background: #262730 !important; border: 1px solid #444 !important; }
@@ -134,13 +119,21 @@ st.markdown("""
         .brand-card { background: #262730 !important; border: none !important; }
         .brand-card img { filter: invert(1); }
         .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
-        .header-logo { color: white !important; }
         iframe[title="3rd party frame"] { filter: invert(1) hue-rotate(180deg) brightness(1.2); }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. HELPERS & DATA ---
+# --- 3. LOGIC & DATA ---
+if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
+if 'last_run' not in st.session_state: st.session_state.last_run = time.time()
+
+# 6 Second Auto Timer
+if time.time() - st.session_state.last_run > 6:
+    st.session_state.slider_idx += 1
+    st.session_state.last_run = time.time()
+    st.rerun()
+
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -166,30 +159,34 @@ def get_db_client():
         return gc.open("laws_database")
     except Exception as e: return None
 
-def save_subscriber(email):
-    sh = get_db_client()
-    if not sh: return "DB_ERROR"
-    try: worksheet = sh.worksheet("subscribers")
-    except: return "NO_SHEET"
-    try:
-        emails = worksheet.col_values(1)
-        if email in emails: return "EXISTS"
-        worksheet.append_row([email, str(datetime.now().strftime("%Y-%m-%d %H:%M"))])
-        return "OK"
-    except Exception as e: return "WRITE_ERROR"
-
 def load_data():
     sh = get_db_client()
     if not sh: return []
     try: 
-        raw_data = sh.sheet1.get_all_records()
-        # --- DATA CLEANING ---
-        df_temp = pd.DataFrame(raw_data)
-        # 1. Remove rows where title is 'title' (header garbage)
+        raw = sh.sheet1.get_all_records()
+        df_temp = pd.DataFrame(raw)
+        # Cleaning
         df_temp = df_temp[df_temp['title'].str.lower() != 'title']
-        # 2. Sort to show newest first (assuming append order)
-        return df_temp.iloc[::-1].to_dict('records')
+        return df_temp.iloc[::-1].to_dict('records') # Newest first
     except: return []
+
+def get_image(row):
+    return row.get('image_url') if str(row.get('image_url')).startswith('http') else get_stock_image(row['category'], row['title'])
+
+def render_badges(category_str):
+    badges_html = ""
+    if "SOS" in category_str: badges_html += '<span class="badge-sos">🚨 SOS</span>'
+    if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΣΤΗΡΙΑ</span>'
+    if "LEGAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
+    if "REAL_ESTATE" in category_str: badges_html += '<span class="badge-real">🏠 REAL ESTATE</span>'
+    if "LEGISLATION" in category_str: badges_html += '<span class="badge-sos">📜 ΝΟΜΟΘΕΣΙΑ</span>'
+    return badges_html
+
+def save_subscriber(email):
+    sh = get_db_client()
+    if not sh: return "DB_ERROR"
+    try: sh.worksheet("subscribers").append_row([email, str(datetime.now())]); return "OK"
+    except: return "WRITE_ERROR"
 
 def reset_database():
     sh = get_db_client()
@@ -209,24 +206,9 @@ def get_image_as_base64(file_path):
 
 def normalize_greek(text):
     if not isinstance(text, str): return ""
-    replacements = {'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω'}
-    text = text.translate(str.maketrans(replacements))
     return text.lower()
 
-def render_badges(category_str):
-    badges_html = ""
-    if "SOS" in category_str: badges_html += '<span class="badge-sos">🚨 SOS</span>'
-    if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΣΤΗΡΙΑ</span>'
-    if "LEGAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
-    if "REAL_ESTATE" in category_str: badges_html += '<span class="badge-real">🏠 REAL ESTATE</span>'
-    if "LEGISLATION" in category_str: badges_html += '<span class="badge-sos">📜 ΝΟΜΟΘΕΣΙΑ</span>'
-    return badges_html
-
-def get_display_image(row):
-    if 'image_url' in row and str(row['image_url']).startswith('http'): return row['image_url']
-    return get_stock_image(row['category'], row['title'])
-
-# --- 4. SIDEBAR ---
+# --- 4. LAYOUT ---
 with st.sidebar:
     nikas_url = "https://www.nikastechnical.gr"
     logo_b64 = get_image_as_base64("logo.jpg")
@@ -240,195 +222,118 @@ with st.sidebar:
         <a href="{nikas_url}" target="_blank" class="brand-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
-    
     st.markdown("### ⏳ Προθεσμίες")
     st.info("⚠️ **31/12:** Λήξη Κτηματολογίου")
-    st.info("⚠️ **31/01:** MyDATA Διαβίβαση")
-    st.markdown("---")
-    st.markdown("### ☁️ Καιρός")
-    components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=240)
-    st.markdown("---")
     st.markdown("### 📬 Newsletter")
     email = st.text_input("Email", placeholder="me@example.com")
-    if st.button("Εγγραφή"):
-        if "@" in email and "." in email:
-            status = save_subscriber(email)
-            if status == "OK": st.success("✅ Εγγραφήκατε!"); time.sleep(2); st.rerun()
-            elif status == "EXISTS": st.warning("Είστε ήδη μέλος.")
-            elif status == "NO_SHEET": st.error("Σφάλμα Βάσης.")
-        else: st.error("Άκυρο email.")
+    if st.button("Εγγραφή"): save_subscriber(email)
 
-# --- 5. MAIN UI ---
+# Header
 st.markdown("""
 <div class="header-container">
     <div style="font-size:0.75rem; color:#666; margin-bottom:5px;">Intelligence Platform</div>
-    <div class="header-logo">🏛️ NomoTechi</div>
+    <div style="font-size:3rem; font-weight:900; color:#003366; font-family:'Merriweather', serif;">🏛️ NomoTechi</div>
     <div style="font-size:0.8rem; color:#888;">Powered by NiKAS Technical</div>
 </div>
 """, unsafe_allow_html=True)
 
 raw_data = load_data()
-if not raw_data:
-    st.warning("⏳ Φόρτωση δεδομένων ή η βάση είναι κενή...")
-    st.stop()
+if not raw_data: st.warning("⏳ Φόρτωση..."); st.stop()
 df = pd.DataFrame(raw_data)
 
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. Αυθαίρετα, Άρειος Πάγος)...")
+search_query = st.text_input("", placeholder="🔍 Αναζήτηση...")
 st.markdown('</div>', unsafe_allow_html=True)
 
-if search_query:
-    clean_query = normalize_greek(search_query)
-    mask = df.apply(lambda row: 
-                    clean_query in normalize_greek(str(row['title'])) or 
-                    clean_query in normalize_greek(str(row['content'])) or 
-                    clean_query in normalize_greek(str(row['category'])), axis=1)
-    df = df[mask]
-
-# --- TICKER ---
+# Ticker
 if not df.empty:
-    latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
-    st.markdown(f'<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>', unsafe_allow_html=True)
+    titles = "   +++   ".join([f"{r['title']}" for i, r in df.head(10).iterrows()])
+    st.markdown(f'<div class="ticker-wrap"><div class="ticker-item">{titles}</div></div>', unsafe_allow_html=True)
 
-tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
+tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ", "ΝΟΜΙΚΑ", "ΦΕΚ", "STATS"])
 
-# --- FILTER LOGIC ---
-def get_filtered_df(tab_name):
-    if tab_name == "HOME": return df 
-    if tab_name == "ENG": return df[df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)]
-    if tab_name == "LAW": 
-        legal_mask = df['category'].str.contains("LEGAL|JUDICIAL|Νομικ|Δικαιοσύνη", case=False, na=False)
-        eng_mask = df['category'].str.contains("ENGINEERS|REAL_ESTATE|Μηχανικ|Ακίνητα", case=False, na=False)
-        return df[legal_mask & ~eng_mask]
-    if tab_name == "FEK": return df[df['category'].str.contains("LEGISLATION|Νομοθεσία|ΦΕΚ", case=False, na=False)]
-    return df
-
-# --- AUTOPLAY SLIDER FRAGMENT (THE FIX) ---
-# This special function runs independently and refreshes every 6 seconds!
+# --- THE SLIDER FRAGMENT (AUTOPLAY + INVISIBLE ZONES) ---
 @st.fragment(run_every=6)
-def show_hero_slider(current_df):
-    if current_df.empty: return
-
-    # Init State in this fragment
-    if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
+def show_hero_slider(curr_df):
+    if curr_df.empty: return
     
-    # Auto-increment happens because this function re-runs every 6s
-    # We increment unless a manual interaction just happened (we can check time, or just simple increment)
-    # Simple auto-increment for now:
+    # Auto increment
     st.session_state.slider_idx += 1
     
-    slider_len = min(5, len(current_df))
-    idx = st.session_state.slider_idx % slider_len
-    row = current_df.iloc[idx]
-    hero_img = get_display_image(row)
+    slide_len = min(5, len(curr_df))
+    idx = st.session_state.slider_idx % slide_len
+    row = curr_df.iloc[idx]
     hero_badges = render_badges(row['category'])
 
-    # --- ARROWS (THE GHOST OVERLAY - Zero Height) ---
-    # We render buttons FIRST. They will be pushed down by CSS.
-    st.markdown('<div class="floating-arrows">', unsafe_allow_html=True)
-    b_col1, b_col2, b_col3 = st.columns([1, 10, 1])
-    with b_col1:
-        if st.button("❮", key="prev"):
-            st.session_state.slider_idx -= 2 # Subtract 2 because the auto-run adds 1
+    # --- INVISIBLE CLICK ZONES ---
+    # We put this BEFORE the image. The CSS makes it float ON TOP.
+    st.markdown('<div class="click-zone-container">', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 6, 1]) # Left 15%, Middle 70%, Right 15%
+    with c1:
+        if st.button(" ", key="inv_prev"): 
+            st.session_state.slider_idx -= 2 
             st.rerun()
-    with b_col3:
-        if st.button("❯", key="next"):
-            # Index auto-increments, so we just let it be, or force +1 if needed immediately
+    with c3:
+        if st.button(" ", key="inv_next"): 
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- HERO IMAGE & DOTS ---
-    dots_html = ""
-    for i in range(slider_len):
-        active_cls = "active" if i == idx else ""
-        dots_html += f'<div class="msn-dot {active_cls}"></div>'
-
+    # --- IMAGE & DOTS ---
+    dots = "".join([f'<div class="msn-dot {"active" if i==idx else ""}"></div>' for i in range(slide_len)])
     st.markdown(f"""
     <div class="hero-wrapper">
-        <img src="{hero_img}" class="hero-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
+        <img src="{get_image(row)}" class="hero-image">
         <div class="hero-overlay">
-            <div>{hero_badges}</div>
+            <div style="margin-bottom:5px;">{hero_badges}</div>
             <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
             <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{row['last_update']}</div>
         </div>
-        <div class="msn-dots-container">{dots_html}</div>
+        <div class="msn-dots-container">{dots}</div>
     </div>
     """, unsafe_allow_html=True)
 
-def render_tab_content(tab_code):
-    current_df = get_filtered_df(tab_code).reset_index(drop=True)
-    if current_df.empty:
-        st.info("Δεν υπάρχουν νέα σε αυτή την κατηγορία.")
-        return
+def render_tab(tab_name):
+    if tab_name == "HOME": curr = df
+    else: curr = df[df['category'].str.contains(tab_name, case=False, na=False)]
+    
+    if curr.empty: st.info("No articles."); return
 
-    if not search_query and tab_code == "HOME":
-        # --- TRADINGVIEW ---
-        st.markdown("", unsafe_allow_html=True)
+    if tab_name == "HOME" and not search_query:
+        # Widget
         components.html("""
         <style> body{margin:0; overflow:hidden;} .light{display:block;} .dark{display:none;} @media(prefers-color-scheme:dark){.light{display:none;} .dark{display:block;}} </style>
         <div class="light"><div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],"colorTheme":"light","isTransparent":true,"displayMode":"compact","locale":"el"}</script></div></div>
         <div class="dark"><div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],"colorTheme":"dark","isTransparent":true,"displayMode":"compact","locale":"el"}</script></div></div>
         """, height=70)
-        st.markdown("", unsafe_allow_html=True)
 
         c_hero, c_list = st.columns([1.8, 1.2])
-        
         with c_hero:
-            # CALL THE FRAGMENT FUNCTION HERE
-            show_hero_slider(current_df)
-
+            show_hero_slider(curr) # Fragment call
+        
         with c_list:
             st.markdown("### Top Stories")
-            for i, r in current_df.head(5).iterrows():
-                st.markdown(f"""
-                <div class="list-item">
-                    <div class="list-title"><a href="{r['link']}" target="_blank">{r['title']}</a></div>
-                    <div style="font-size:0.75rem; color:#888;">{r['last_update']}</div>
-                </div>""", unsafe_allow_html=True)
+            for i, r in curr.head(5).iterrows():
+                st.markdown(f"""<div class="list-item"><div class="list-title"><a href="{r['link']}" target="_blank">{r['title']}</a></div><div style="font-size:0.75rem; color:#888;">{r['last_update']}</div></div>""", unsafe_allow_html=True)
         st.markdown("---")
 
     st.subheader("Ειδήσεις & Αποφάσεις")
-    
-    # Grid Logic
-    grid_df = current_df.iloc[5:] if (tab_code == "HOME" and not search_query) else current_df
-    if not grid_df.empty:
-        rows = len(grid_df) // 3 + 1
-        for i in range(rows):
-            cols = st.columns(3)
-            for j, col in enumerate(cols):
-                idx = i * 3 + j
-                if idx < len(grid_df):
-                    row = grid_df.iloc[idx]
-                    img = get_display_image(row)
-                    badges = render_badges(row['category'])
-                    with col:
-                        # Card Container
-                        st.markdown(f"""
-                        <div class="grid-card">
-                            <img src="{img}" style="width:100%; height:180px; object-fit:cover;">
-                            <div style="padding:15px;">
-                                <div style="font-weight:700; margin-bottom:5px; font-size:1.05rem;">{row['title']}</div>
-                                <div style="margin-bottom:10px;">{badges}</div>
-                                <div style="font-size:0.8rem; color:#666; margin-bottom:10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{row['content'][:150]}...</div>
-                                <a href="{row['link']}" target="_blank" style="text-decoration:none; color:#003366; font-weight:600; font-size:0.85rem;">Διαβάστε περισσότερα →</a>
-                                <div class="article-date">{row['last_update']}</div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        st.markdown("") # Spacer
+    cols = st.columns(3)
+    start = 5 if (tab_name == "HOME" and not search_query) else 0
+    for i, r in enumerate(curr.iloc[start:].head(9).itertuples()):
+        with cols[i%3]:
+            # Card
+            st.image(get_image(r._asdict()), use_column_width=True)
+            st.markdown(f"**{r.title}**")
+            st.caption(r.last_update)
+            st.markdown(f"[Διαβάστε περισσότερα]({r.link})")
+            st.markdown("---")
 
-with tabs[0]: render_tab_content("HOME")
-with tabs[1]: render_tab_content("ENG")
-with tabs[2]: render_tab_content("LAW")
-with tabs[3]: render_tab_content("FEK")
+with tabs[0]: render_tab("HOME")
+with tabs[1]: render_tab("ENGINEERS")
+with tabs[2]: render_tab("LEGAL")
+with tabs[3]: render_tab("FEK")
 with tabs[4]: 
-    st.header("📊 Market Intelligence")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Σύνολο Άρθρων", len(df))
-    col2.metric("SOS", len(df[df['category'].str.contains("SOS", na=False)]))
-    col3.metric("Νομοθεσία", len(df[df['category'].str.contains("LEGISLATION", na=False)]))
-    
-    st.markdown("### Admin")
+    st.metric("Total", len(df))
     if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
         if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
         if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
