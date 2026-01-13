@@ -14,77 +14,70 @@ st.set_page_config(
     page_title="NomoTechi | Intelligence Platform",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="expanded"  # <--- ΑΝΟΙΚΤΗ ΑΠΟ ΠΡΟΕΠΙΛΟΓΗ
+    initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (MINIMAL & CLASSY) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Merriweather:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #111; }
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
     
     /* --- SIDEBAR ARROW ALWAYS VISIBLE --- */
-    [data-testid="collapsedControl"] {
-        display: block !important;
-        opacity: 1 !important;
-        color: #000000 !important;
-    }
-    [data-testid="stSidebar"] button {
-        opacity: 1 !important;
-        color: #000000 !important;
-    }
+    [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000 !important; }
+    [data-testid="stSidebar"] button { opacity: 1 !important; color: #000 !important; }
 
-    /* --- TOP BRANDING (POWERED BY) --- */
+    /* --- TOP BRANDING (MINIMAL) --- */
     .top-powered-brand {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #000000;
-        letter-spacing: 1px;
-        margin-bottom: 5px;
+        font-family: 'Segoe UI', sans-serif; /* Πιο καθαρή γραμματοσειρά */
+        font-size: 0.75rem; /* Πιο διακριτικό μέγεθος */
+        font-weight: 400; /* Όχι bold, πιο elegant */
+        color: #666; /* Σκούρο γκρι, όχι μαύρο */
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
         text-align: center;
-        padding-top: 10px;
+        padding-top: 15px;
     }
     .top-powered-brand a {
-        color: #000000 !important;
+        color: #444 !important;
         text-decoration: none;
         border-bottom: 1px solid transparent;
         transition: 0.3s;
     }
     .top-powered-brand a:hover {
-        border-bottom: 1px solid #000000;
-        opacity: 0.7;
+        color: #000 !important;
+        border-bottom: 1px solid #000;
     }
 
     /* --- BRAND CARD STYLING --- */
     .brand-card {
-        background: linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%);
-        border: 2px solid #000000;
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid #333; /* Λίγο πιο λεπτό περίγραμμα */
         border-radius: 0px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         text-align: center;
     }
     
     .brand-btn { 
         display: block; width: 100%; text-align: center;
-        background-color: #000000;
-        color: #ffffff !important;
-        border: 1px solid #000000;
+        background-color: #111;
+        color: #fff !important;
+        border: 1px solid #111;
         padding: 10px 0; 
         border-radius: 0px; 
-        font-size: 0.85rem; font-weight: 700;
+        font-size: 0.8rem; font-weight: 600;
         text-decoration: none; transition: 0.3s;
-        font-family: 'Montserrat', sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
     .brand-btn:hover { 
-        background-color: #333333; 
-        border-color: #333333;
-        color: #ffffff !important; 
+        background-color: #444; 
+        border-color: #444;
+        color: #fff !important; 
     }
 
     /* UTILS */
@@ -93,56 +86,49 @@ st.markdown("""
     .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
     .badge-leg { background-color: #444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
 
-    .header-container { background: white; padding: 10px 0 25px 0; border-bottom: 5px solid #003366; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; margin-top: 10px; }
-    .header-logo { font-family: 'Merriweather', serif; font-size: 3.5rem; font-weight: 900; color: #003366; letter-spacing: -1px; margin-top: 0px; }
-    .header-sub { color: #555; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top:5px;}
+    .header-container { background: white; padding: 0 0 25px 0; border-bottom: 3px solid #003366; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 15px; margin-top: 0px; }
+    .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; margin-top: 0px; }
+    .header-sub { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-top:5px;}
     
-    .powered-footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-family: 'Montserrat', sans-serif;}
-    .powered-footer a { color: #000000; text-decoration: none; font-weight: 700; }
+    .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; font-family: 'Segoe UI', sans-serif;}
+    .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
     
     /* DATE STYLE */
     .article-date {
-        font-size: 0.75rem;
-        color: #999;
-        text-align: right;
-        margin-top: 8px;
-        border-top: 1px solid #eee;
-        padding-top: 5px;
-        font-family: 'Segoe UI', sans-serif;
+        font-size: 0.75rem; color: #aaa; text-align: right; margin-top: 10px;
+        border-top: 1px solid #f0f0f0; padding-top: 5px; font-family: 'Segoe UI', sans-serif;
     }
 
-    .ticker-wrap { width: 100%; background-color: #003366; color: white; height: 35px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; font-size: 0.85rem;}
-    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 70s linear infinite; font-weight: 600; }
-    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+    /* TABS CLEANUP (NO EMOJIS) */
+    .stTabs [data-baseweb="tab-list"] { gap: 25px; }
+    .stTabs [data-baseweb="tab"] { font-weight: 600 !important; font-size: 0.95rem !important; color: #555 !important; }
+    .stTabs [aria-selected="true"] { color: #003366 !important; border-bottom: 2px solid #003366 !important; }
 
-    .list-item { background: white; padding: 20px; border-bottom: 1px solid #ddd; border-left: 4px solid transparent; transition: 0.2s; margin-bottom: 5px; }
-    .list-item:hover { border-left: 4px solid #cc0000; background-color: #fffdfd; }
-    .list-title { font-family: 'Merriweather', serif; font-size: 1.15rem; font-weight: 700; color: #111; margin-bottom: 5px; line-height: 1.4; }
+    .list-item { background: white; padding: 20px; border-bottom: 1px solid #eee; transition: 0.2s; margin-bottom: 5px; }
+    .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366; }
+    .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
-    .list-title a:hover { color: #cc0000 !important; }
+    .list-title a:hover { color: #003366 !important; }
 
-    .grid-card { background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s; }
-    .grid-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-    .grid-img { height: 170px; overflow: hidden; background: #eee; position: relative; }
+    .grid-card { background: white; border: 1px solid #eee; border-radius: 2px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
+    .grid-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+    .grid-img { height: 170px; overflow: hidden; background: #f4f4f4; position: relative; }
     .grid-img img { width: 100%; height: 100%; object-fit: cover; }
     .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .grid-title { font-family: 'Merriweather', serif; font-size: 1.05rem; font-weight: 700; color: #000; margin-bottom: 8px; line-height: 1.35; }
+    .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
 
-    .hero-wrapper { position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-radius: 8px; }
-    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); transition: transform 6s ease; }
-    .hero-image:hover { transform: scale(1.05); filter: brightness(0.8); }
-    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
+    .hero-wrapper { position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; }
+    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
+    .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
+    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
     .hero-title { font-family: 'Merriweather', serif; color: white; font-size: 2.2rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; }
     .hero-title a { color: white !important; text-decoration: none; }
 
-    .stTextInput input { border-radius: 0px; border: 1px solid #999; padding: 10px; }
-    .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 10px; border-bottom: 2px solid #ddd; gap: 20px; }
-    .stTabs [data-baseweb="tab"] { font-weight: 700 !important; font-size: 1rem !important; color: #444 !important; }
-    .stTabs [aria-selected="true"] { color: #003366 !important; border-bottom: 3px solid #003366 !important; background: transparent !important;}
+    .stTextInput input { border-radius: 2px; border: 1px solid #ccc; padding: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC ---
+# --- 3. LOGIC & HELPERS ---
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -166,9 +152,7 @@ def get_db_client():
         credentials_dict = st.secrets["gcp_service_account"]
         gc = gspread.service_account_from_dict(credentials_dict)
         return gc.open("laws_database")
-    except Exception as e: 
-        st.error(f"DB Error: {e}")
-        return None
+    except Exception as e: return None
 
 def save_subscriber(email):
     sh = get_db_client()
@@ -197,7 +181,6 @@ def reset_database():
         return True
     except: return False
 
-# --- 4. IMAGE LOADER ---
 def get_image_as_base64(file_path):
     try:
         with open(file_path, "rb") as f:
@@ -206,14 +189,23 @@ def get_image_as_base64(file_path):
     except:
         return None
 
+# --- SMART SEARCH HELPER (ΑΦΑΙΡΕΣΗ ΤΟΝΩΝ) ---
+def normalize_greek(text):
+    if not isinstance(text, str): return ""
+    # Χάρτης αντικατάστασης τόνων
+    replacements = {
+        'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
+        'Ά': 'Α', 'Έ': 'Ε', 'Ή': 'Η', 'Ί': 'Ι', 'Ό': 'Ο', 'Ύ': 'Υ', 'Ώ': 'Ω',
+        'ϊ': 'ι', 'ϋ': 'υ', 'ΐ': 'ι', 'ΰ': 'υ'
+    }
+    text = text.translate(str.maketrans(replacements))
+    return text.lower() # Επιστρέφει μικρά χωρίς τόνους
+
 # --- 5. SIDEBAR ---
 with st.sidebar:
-    
-    # --- BRAND CARD ---
     nikas_url = "https://www.nikastechnical.gr"
     logo_b64 = get_image_as_base64("logo.jpg")
     if not logo_b64: logo_b64 = get_image_as_base64("logo.png")
-    
     img_html = f'<img src="data:image/jpeg;base64,{logo_b64}" style="width:100%; max-width:180px; margin:0 auto 15px auto; display:block;">' if logo_b64 else '<div style="font-size:2rem; margin-bottom:10px;">🏗️</div>'
 
     st.markdown(f"""
@@ -257,19 +249,30 @@ if not raw_data:
     st.stop()
 df = pd.DataFrame(raw_data)
 
+# --- SMART SEARCH LOGIC ---
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. 'Αυθαίρετα', 'Άρειος Πάγος')...")
+search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. Αυθαίρετα, Άρειος Πάγος)...")
 st.markdown('</div>', unsafe_allow_html=True)
 
 if search_query:
-    df = df[df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)]
+    # Καθαρίζουμε την αναζήτηση του χρήστη (μικρά, χωρίς τόνους)
+    clean_query = normalize_greek(search_query)
+    
+    # Φιλτράρισμα: Ψάχνουμε σε Τίτλο, Κείμενο και Κατηγορία
+    # Μετατρέπουμε και τα δεδομένα της βάσης σε "καθαρή" μορφή για τη σύγκριση
+    mask = df.apply(lambda row: 
+                    clean_query in normalize_greek(str(row['title'])) or 
+                    clean_query in normalize_greek(str(row['content'])) or 
+                    clean_query in normalize_greek(str(row['category'])), axis=1)
+    df = df[mask]
 
+# --- DISPLAY LOGIC ---
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>""", unsafe_allow_html=True)
 
-# --- 7. TABS ---
-tabs = st.tabs(["🏠 ΚΟΡΥΦΑΙΑ", "🏗️ ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "⚖️ ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "📜 ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "📊 ΣΤΑΤΙΣΤΙΚΑ"])
+# Tabs χωρίς Emojis (Minimal)
+tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
 if df.empty and search_query:
     st.warning(f"⚠️ Δεν βρέθηκαν αποτελέσματα για: **'{search_query}'**")
@@ -309,20 +312,6 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            st.markdown("", unsafe_allow_html=True)
-            components.html("""
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-              {
-              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-              "showSymbolLogo": true, "colorTheme": "light", "isTransparent": false, "displayMode": "compact", "locale": "el"
-              }
-              </script>
-            </div>
-            """, height=75)
-            st.markdown("", unsafe_allow_html=True)
-            
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
                 slider_len = min(5, len(current_df))
@@ -380,14 +369,11 @@ elif not df.empty:
                                 st.image(card_img, use_column_width=True)
                                 st.markdown(f"**{row['title']}**")
                                 st.markdown(badges, unsafe_allow_html=True)
-                                with st.expander("📝 Ανάλυση AI (Bullet Points)"):
+                                # Minimal Expander (No Emojis)
+                                with st.expander("Ανάλυση & Σύνοψη"):
                                     st.markdown(row['content'])
                                 st.markdown(f"[🔗 Πηγή]({row['link']})")
-                                st.markdown(f"""
-                                <div class="article-date">
-                                    {row['last_update']}
-                                </div>
-                                """, unsafe_allow_html=True)
+                                st.markdown(f"""<div class="article-date">{row['last_update']}</div>""", unsafe_allow_html=True)
                                 st.markdown("---")
 
     with tabs[0]: render_tab_content("HOME")
@@ -408,7 +394,7 @@ elif not df.empty:
         st.bar_chart(cat_counts)
         st.markdown(f"""
         <div class="powered-footer">
-            NomoTechi Platform © {datetime.now().year} • Powered by <a href="{nikas_url}" target="_blank">NIKAS Technical</a>
+            NomoTechi Platform © {datetime.now().year} • Powered by <a href="{nikas_url}" target="_blank">NiKAS Technical</a>
         </div>
         """, unsafe_allow_html=True)
         st.header("Admin")
