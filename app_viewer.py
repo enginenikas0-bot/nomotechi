@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL FIX v33) ---
+# --- 2. CSS (GLOBAL THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -58,7 +58,7 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* --- CLEAN CARDS (NO BORDERS) --- */
+    /* --- CLEAN CARDS --- */
     .brand-card {
         background: #ffffff;
         border: 1px solid #f0f0f0 !important; 
@@ -135,36 +135,6 @@ st.markdown("""
         pointer-events: auto; 
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
-
-    /* --- MSN STYLE BUTTONS (THE FORCE FIX) --- */
-    /* Target buttons within the slider column area */
-    div[data-testid="column"] button.msn-btn-target {
-        /* MSN Style */
-        background-color: rgba(255, 255, 255, 0.75) !important;
-        border: none !important;
-        color: #000 !important;
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 6px !important; /* Rounded Corners */
-        padding: 0 !important;
-        line-height: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
-        transition: 0.2s ease-in-out !important;
-        
-        /* THE LIFT */
-        position: relative !important;
-        transform: translateY(-280px) !important; /* FORCED LIFT */
-        z-index: 99999 !important; /* ALWAYS ON TOP */
-    }
-    div[data-testid="column"] button.msn-btn-target:hover {
-        background-color: #fff !important;
-        transform: translateY(-280px) scale(1.1) !important; /* Keep lift on hover */
-    }
-    /* Hide container background */
-    div[data-testid="column"] { background: transparent !important; }
 
     /* Micro-Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -399,43 +369,18 @@ elif not df.empty:
 
         if not search_query and tab_code == "HOME":
             # --- TRADINGVIEW (SINGLE COMPONENT - UNIFIED HTML) ---
-            # This solves the "Double Widget" issue permanently.
-            # We render both HTML divs inside ONE Streamlit Component and use internal CSS to toggle.
             components.html("""
             <style>
                 body { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
                 .tv-widget-light { display: block; }
                 .tv-widget-dark { display: none; }
-                
                 @media (prefers-color-scheme: dark) {
                     .tv-widget-light { display: none; }
                     .tv-widget-dark { display: block; }
                 }
             </style>
-            
-            <div class="tv-widget-light">
-                <div class="tradingview-widget-container">
-                  <div class="tradingview-widget-container__widget"></div>
-                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-                  {
-                  "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-                  "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
-                  }
-                  </script>
-                </div>
-            </div>
-
-            <div class="tv-widget-dark">
-                <div class="tradingview-widget-container">
-                  <div class="tradingview-widget-container__widget"></div>
-                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-                  {
-                  "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-                  "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
-                  }
-                  </script>
-                </div>
-            </div>
+            <div class="tv-widget-light"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],"showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"}</script></div></div>
+            <div class="tv-widget-dark"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],"showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"}</script></div></div>
             """, height=70)
             
             col_hero, col_list = st.columns([1.8, 1.2])
@@ -460,63 +405,51 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (FIXED OVERLAY) ---
-                # We target specific elements under the hero image
+                # --- MSN STYLE BUTTONS (THE FORCE FIX v34) ---
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # CSS Class Injection for these specific buttons
+                # FORCEFUL CSS INJECTION
                 st.markdown("""
                 <style>
-                    /* Target buttons in the small columns directly below the hero image */
-                    /* Using transform: translateY to lift them UP onto the image */
+                    /* Target buttons in these specific columns */
                     div[data-testid="column"] button.msn-btn-target {
-                        transform: translateY(-280px) !important;
+                        position: relative !important;
+                        top: -260px !important; /* Move UP onto the image */
+                        z-index: 99999 !important; /* Always on top */
+                        margin-bottom: -40px !important; /* Collapse space below */
+
+                        /* MSN Style */
                         background-color: rgba(255, 255, 255, 0.75) !important;
-                        color: #000 !important;
                         border: none !important;
-                        border-radius: 6px !important; /* MSN Rounded Square */
+                        color: #000 !important;
                         width: 36px !important;
                         height: 36px !important;
+                        border-radius: 6px !important; /* Rounded Corners */
+                        padding: 0 !important;
                         display: flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        padding: 0 !important;
-                        z-index: 99999 !important; /* Ensure on top */
                         box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
                         transition: all 0.2s ease-in-out !important;
                     }
                     div[data-testid="column"] button.msn-btn-target:hover {
                         background-color: #fff !important;
-                        transform: translateY(-280px) scale(1.1) !important;
+                        transform: scale(1.1) !important;
                     }
-                    div[data-testid="column"] button.msn-btn-target p {
-                        font-size: 18px !important;
-                        margin-top: -2px !important;
-                    }
+                    /* Ensure container doesn't clip */
+                    div[data-testid="column"] { overflow: visible !important; }
                 </style>
                 <script>
-                    // Add class to buttons via JS if CSS selector is tricky (Backup plan)
-                    const buttons = window.parent.document.querySelectorAll('div[data-testid="column"] button');
-                    buttons.forEach(btn => {
-                        if(btn.innerText === "❮" || btn.innerText === "❯") {
-                            btn.classList.add("msn-btn-target");
-                        }
-                    });
+                    // Auto-add class to these specific buttons as a backup
+                    const btns = window.parent.document.querySelectorAll('div[data-testid="column"] button');
+                    btns.forEach(b => { if(b.innerText === "❮" || b.innerText === "❯") b.classList.add("msn-btn-target"); });
                 </script>
                 """, unsafe_allow_html=True)
 
-                # Render Buttons
-                # Note: We rely on the CSS selector `div[data-testid="column"] button` defined above
-                # which targets buttons in this specific grid context.
                 with c_left: 
                     if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
                 with c_right: 
                     if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
-                
-                # Apply class manually via JS is hard in Streamlit, so we rely on the specific
-                # CSS injection above targeting the surrounding columns.
-                # To make sure the CSS hits, we scope it to the buttons we just created.
-                # The `key` ensures they have unique IDs but CSS targeting `div[data-testid="column"]` works.
 
             with col_list:
                 st.markdown("### Top Stories")
@@ -531,7 +464,7 @@ elif not df.empty:
                     """, unsafe_allow_html=True)
             st.markdown("---")
 
-        st.subheader("📌 Ειδήσεις & Αποφάσεις")
+        st.subheader("Ειδήσεις & Αποφάσεις") # Removed Emoji
         start_idx = 6 if (not search_query and tab_code=="HOME") else 0
         grid_df = current_df.iloc[start_idx:]
         
