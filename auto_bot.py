@@ -213,16 +213,31 @@ def run_scraper():
     else:
         print("💤 No new articles.")
 
-# --- 6. SCHEDULER ---
-# Τρέχει κάθε 20 λεπτά για να είμαστε πάντα ενημερωμένοι
-schedule.every(20).minutes.do(run_scraper)
+# --- 6. SCHEDULER (ΤΟ ΠΡΟΓΡΑΜΜΑ ΣΟΥ) ---
+# Ορίζουμε συγκεκριμένες ώρες αιχμής για ενημέρωση (News Cycles)
+
+# Πρωινή Ενημέρωση (Ξεκίνημα ημέρας & Δημόσιο)
+schedule.every().day.at("08:00").do(run_scraper)
+schedule.every().day.at("10:00").do(run_scraper)
+
+# Μεσημεριανή Ενημέρωση (Ειδήσεις Ροής & Δελτία)
+schedule.every().day.at("13:00").do(run_scraper)
+schedule.every().day.at("15:00").do(run_scraper)
+
+# Απογευματινή Ενημέρωση (Κλείσιμο γραφείων & Αγορών)
+schedule.every().day.at("18:00").do(run_scraper)
+
+# Βραδινή Ενημέρωση (Σύνοψη ημέρας & ΦΕΚ που βγαίνουν αργά)
+schedule.every().day.at("21:00").do(run_scraper)
+schedule.every().day.at("23:30").do(run_scraper)
 
 if __name__ == "__main__":
-    print("🤖 NomoTech Autobot v10 (Hybrid) Started...")
+    print("🤖 NomoTech Autobot v11 (Scheduled) Started...")
     
-    # Πρώτο τρέξιμο με το που ανοίγει
+    # Τρέξε ΜΙΑ φορά τώρα αμέσως για να έχουμε δεδομένα με το που ανοίξει
     run_scraper()
     
+    # Ο βρόχος που περιμένει τις ώρες
     while True:
         schedule.run_pending()
-        time.sleep(60)
+        time.sleep(60) # Ελέγχει το ρολόι κάθε 1 λεπτό για να δει αν πήγε η ώρα
