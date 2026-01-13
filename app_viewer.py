@@ -17,19 +17,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (ADAPTIVE THEME ENGINE) ---
+# --- 2. CSS (SMART HYBRID THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    /* === BASE (LIGHT MODE DEFAULTS) === */
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
+    /* === BASE (LIGHT MODE - CLEAN & ORIGINAL) === */
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
     
-    /* --- SIDEBAR ARROW ALWAYS VISIBLE --- */
+    /* Sidebar Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000 !important; }
 
-    /* --- TOP BRANDING --- */
+    /* Top Branding */
     .top-powered-brand {
         font-family: 'Segoe UI', sans-serif;
         font-size: 0.75rem;
@@ -43,10 +43,10 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* --- TICKER --- */
+    /* Ticker Light */
     .ticker-wrap {
         width: 100%;
-        background-color: #ffffff; /* Light BG */
+        background-color: #ffffff;
         border-top: 1px solid #eee;
         border-bottom: 1px solid #eee;
         height: 32px;
@@ -62,9 +62,9 @@ st.markdown("""
         padding-left: 100%;
         animation: ticker 80s linear infinite;
         font-size: 0.8rem;
-        color: #333; /* Light Mode Text */
+        color: #333;
         font-family: 'Segoe UI', sans-serif;
-        font-weight: 500;
+        font-weight: 600;
     }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     .ticker-label {
@@ -73,27 +73,27 @@ st.markdown("""
         border-right: 1px solid #eee; height: 30px; line-height: 22px;
     }
 
-    /* --- BRAND CARD --- */
+    /* Brand Card Light (Clean Gray Border) */
     .brand-card {
-        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid #333;
-        border-radius: 0px; 
+        background: #ffffff;
+        border: 1px solid #ddd; /* Light Gray Border (Not Black) */
+        border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         text-align: center;
     }
     .brand-btn { 
         display: block; width: 100%; text-align: center;
         background-color: #111; color: #fff !important;
         border: 1px solid #111; padding: 10px 0; 
-        border-radius: 0px; font-size: 0.8rem; font-weight: 600;
+        border-radius: 2px; font-size: 0.8rem; font-weight: 600;
         text-decoration: none; transition: 0.3s;
         font-family: 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: 1px;
     }
     .brand-btn:hover { background-color: #444; border-color: #444; color: #fff !important; }
 
-    /* --- HEADER --- */
+    /* Header Light */
     .header-container { 
         background: white; padding: 0 0 25px 0; 
         border-bottom: 3px solid #003366; text-align: center; 
@@ -110,32 +110,41 @@ st.markdown("""
         border-top: 1px solid #f0f0f0; padding-top: 5px; font-family: 'Segoe UI', sans-serif;
     }
 
-    /* --- LISTS & CARDS --- */
+    /* Tabs & Cards Light */
+    .stTabs [data-baseweb="tab-list"] { gap: 25px; }
+    .stTabs [data-baseweb="tab"] { font-weight: 600 !important; font-size: 0.95rem !important; color: #555 !important; }
+    .stTabs [aria-selected="true"] { color: #003366 !important; border-bottom: 2px solid #003366 !important; }
+
     .list-item { background: white; padding: 20px; border-bottom: 1px solid #eee; transition: 0.2s; margin-bottom: 5px; }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366; }
     .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
     .list-title a:hover { color: #003366 !important; }
 
-    .grid-card { background: white; border: 1px solid #eee; border-radius: 2px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
+    .grid-card { background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
     .grid-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
     .grid-img { height: 170px; overflow: hidden; background: #f4f4f4; position: relative; }
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
 
+    /* Badges Restored (Colorful) */
+    .badge-sos { background-color: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px; }
+    .badge-law { background-color: #003366; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
+    .badge-real { background-color: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
+    .badge-leg { background-color: #444; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
+
     .stTextInput input { border-radius: 2px; border: 1px solid #ccc; padding: 10px; }
 
     /* =========================================
-       === DARK MODE OVERRIDES (THE LIFTING) === 
+       === DARK MODE INTELLIGENCE (THE FIX) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
-        /* General Colors */
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
-        /* Sidebar Arrow Invert */
+        /* Arrow Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
 
         /* Header Dark */
-        .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
+        .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; box-shadow: none; }
         .header-logo { color: #fff !important; }
         .header-sub { color: #aaa !important; }
         .top-powered-brand { color: #888 !important; }
@@ -148,14 +157,10 @@ st.markdown("""
         .ticker-label { background: #262730 !important; color: #ff4b4b !important; border-right: 1px solid #444 !important; }
 
         /* Brand Card Dark */
-        .brand-card { 
-            background: linear-gradient(180deg, #262730 0%, #1e1e1e 100%) !important; 
-            border: 1px solid #555 !important;
-        }
-        .brand-card img { filter: invert(1); } /* Invert Logo to White */
+        .brand-card { background: #262730 !important; border: 1px solid #555 !important; }
+        .brand-card img { filter: invert(1); } /* Invert Logo */
         .brand-sub { color: #ddd !important; }
-        .brand-btn { background-color: #eee !important; color: #000 !important; border-color: #fff !important; }
-        .brand-btn:hover { background-color: #fff !important; }
+        .brand-btn { background-color: #eee !important; color: #000 !important; }
 
         /* Lists & Grids Dark */
         .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
@@ -171,10 +176,14 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* Widget Fixes (Make TradingView text readable) */
-        .tradingview-widget-container { filter: invert(1) hue-rotate(180deg); } /* Magic Fix for Iframe */
+        /* --- MAGIC FIX FOR TRADINGVIEW TEXT --- */
+        /* Αντιστρέφει τα χρώματα του widget ΜΟΝΟ στο dark mode. 
+           Το μαύρο κείμενο γίνεται λευκό, το λευκό φόντο γίνεται μαύρο. */
+        .tradingview-widget-container { 
+            filter: invert(1) hue-rotate(180deg) !important; 
+            opacity: 0.9;
+        } 
         
-        /* Inputs */
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
     }
 </style>
