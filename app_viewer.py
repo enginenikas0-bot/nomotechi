@@ -5,7 +5,7 @@ import time
 import streamlit.components.v1 as components
 from datetime import datetime, timedelta
 import base64
-import re
+import unicodedata
 
 # --- 1. SETUP ---
 st.set_page_config(
@@ -15,27 +15,45 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (FULL THEME) ---
+# --- 2. CSS (DARK SIDEBAR & SMART UI) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
     
-    /* --- SIDEBAR STYLING --- */
+    /* --- SIDEBAR (FORCED DARK THEME) --- */
     [data-testid="stSidebar"] {
-        background-color: #f8f9fa;
-        border-right: 1px solid #eee;
+        background-color: #111827 !important; /* Dark Background */
+        border-right: 1px solid #374151;
     }
     
-    /* Branding Card */
+    /* Sidebar Text (Forced White) */
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
+        color: #ffffff !important;
+        font-weight: 500;
+    }
+    
+    /* Sidebar Headers */
+    .sidebar-header {
+        color: #ffffff !important;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #3b82f6;
+        padding-bottom: 5px;
+        display: inline-block;
+    }
+
+    /* Branding Card (Dark) */
     .sidebar-card {
-        background: white;
-        border: 1px solid #e2e8f0;
+        background: #1f2937;
+        border: 1px solid #374151;
         border-radius: 8px;
         padding: 20px;
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         margin-bottom: 20px;
     }
     .sidebar-logo {
@@ -44,31 +62,36 @@ st.markdown("""
         display: block;
         margin-left: auto;
         margin-right: auto;
+        filter: brightness(1.1); /* Pop logo on dark */
     }
+    /* BLACK BUTTON */
     .sidebar-btn {
         display: block;
         width: 100%;
-        background-color: #003366;
+        background-color: #000000; /* BLACK */
         color: white !important;
         text-decoration: none;
-        padding: 8px 0;
+        padding: 10px 0;
         border-radius: 4px;
         font-size: 0.8rem;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 15px;
         transition: 0.2s;
+        border: 1px solid #333;
     }
     .sidebar-btn:hover {
-        background-color: #004080;
+        background-color: #333333;
         color: white !important;
+        border-color: #fff;
     }
 
-    /* Inputs */
-    div[data-baseweb="input"] { background-color: #ffffff !important; border: 1px solid #ccc; border-radius: 4px; }
-    div[data-baseweb="input"] input { color: #333 !important; caret-color: #333; font-weight: 500; }
-    /* Dark Search Bar Override */
+    /* Inputs (Search & Email) */
+    div[data-baseweb="input"] { background-color: #f0f2f6 !important; border: 1px solid #ccc; border-radius: 4px; }
+    div[data-baseweb="input"] input { color: #111 !important; caret-color: #111; font-weight: 500; }
+    
+    /* Search Specific (Dark Blue) */
     .search-container div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; }
-    .search-container div[data-baseweb="input"] input { color: white !important; }
+    .search-container div[data-baseweb="input"] input { color: white !important; caret-color: white; }
 
     /* Header */
     .header-container { background: white; padding: 10px 0 25px 0; border-bottom: 2px solid #003366; text-align: center; margin-bottom: 20px; }
@@ -109,17 +132,9 @@ st.markdown("""
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* Dark Mode */
+    /* Dark Mode Global */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
-        [data-testid="stSidebar"] { background-color: #262730; border-right: 1px solid #444; }
-        
-        .sidebar-card { background: #1e293b; border-color: #334155; }
-        .sidebar-card div { color: #e2e8f0 !important; }
-        .sidebar-btn { background-color: #3b82f6; }
-        
-        div[data-baseweb="input"] { background: #262730 !important; border: 1px solid #444 !important; }
-        div[data-baseweb="input"] input { color: white !important; }
         
         .ticker-container { background: #262730 !important; border-color: #444; }
         .ticker-text { color: #eee !important; }
@@ -139,6 +154,17 @@ SOURCE_HINTS = {
     "LAW": ["dikastiko", "lawspot", "syntagma", "lawnet", "dsa", "ethemis"],
     "FEK": ["e-nomothesia", "taxheaven", "capital"]
 }
+
+def normalize_text(text):
+    """
+    SMART SEARCH: Removes accents and converts to lowercase.
+    'Αυθαίρετα' -> 'αυθαιρετα'
+    """
+    if not isinstance(text, str): return ""
+    # Normalize unicode characters to decompose combined chars (like 'ά' to 'α' + '´')
+    nfkd_form = unicodedata.normalize('NFKD', text)
+    # Filter out non-spacing mark characters (accents)
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content(row):
     title = str(row.get('title', '')).upper()
@@ -223,9 +249,6 @@ def render_badges(row):
     if "FEK" in tags: badges_html += '<span class="badge-fek">📜 ΝΟΜΟΘΕΣΙΑ</span>'
     return badges_html
 
-def validate_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
-
 def save_subscriber(email):
     sh = get_db_client()
     if not sh: return "DB_ERROR"
@@ -243,7 +266,7 @@ def get_image_as_base64(file_path):
 
 def reset_database(): return False
 
-# --- 4. LAYOUT & SIDEBAR ---
+# --- 4. LAYOUT & SIDEBAR (DARK MODE) ---
 with st.sidebar:
     # 1. BRANDING CARD
     logo_b64 = get_image_as_base64("logo.jpg")
@@ -251,24 +274,24 @@ with st.sidebar:
     
     st.markdown(f"""
     <div class="sidebar-card">
-        <div style="font-size:0.7rem; color:#888; letter-spacing:1px; margin-bottom:10px;">POWERED BY</div>
+        <div style="font-size:0.7rem; color:#9ca3af; letter-spacing:1px; margin-bottom:10px;">POWERED BY</div>
         {img_html}
-        <div style="font-weight:700; color:#1e293b; margin-top:5px; font-size:0.9rem;">NiKAS Technical</div>
-        <div style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">Construction Engineering</div>
+        <div style="font-weight:700; color:#f3f4f6; margin-top:10px; font-size:0.9rem;">NiKAS Technical</div>
+        <div style="font-size:0.75rem; color:#9ca3af; margin-bottom:15px;">Construction Engineering</div>
         <a href="https://www.nikastechnical.gr" target="_blank" class="sidebar-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. WEATHER WIDGET
-    st.markdown('<div style="font-weight:600; margin-bottom:10px; color:#444;">☁️ Καιρός Εργοταξίου</div>', unsafe_allow_html=True)
-    components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=230)
+    # 2. WEATHER WIDGET (TALLER)
+    st.markdown('<div class="sidebar-header">☁️ Καιρός Εργοταξίου</div>', unsafe_allow_html=True)
+    components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=310)
     st.markdown("---")
 
     # 3. NEWSLETTER
-    st.markdown('<div style="font-weight:600; margin-bottom:10px; color:#444;">📬 Ενημέρωση</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-header">📬 Ενημέρωση</div>', unsafe_allow_html=True)
     email = st.text_input("Email", placeholder="me@example.com", label_visibility="collapsed")
     if st.button("ΕΓΓΡΑΦΗ", type="primary"):
-        if validate_email(email):
+        if "@" in email and "." in email:
             status = save_subscriber(email)
             if status == "OK": st.success("✅ Εγγραφήκατε!")
             else: st.error("Σφάλμα σύνδεσης.")
@@ -292,9 +315,19 @@ st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση...")
 st.markdown('</div>', unsafe_allow_html=True)
 
+# SMART SEARCH FILTERING
 if search_query:
-    q = search_query.upper()
-    df = df[df.apply(lambda r: q in str(r['title']).upper() or q in str(r['content']).upper(), axis=1)]
+    # 1. Clean query (remove accents, lowercase)
+    q_clean = normalize_text(search_query)
+    q_words = q_clean.split()
+    
+    def search_algorithm(row):
+        # 2. Clean content
+        row_text = normalize_text(str(row['title']) + " " + str(row['content']) + " " + str(row.get('smart_tags', '')))
+        # 3. Check if ALL words exist in text (AND logic)
+        return all(word in row_text for word in q_words)
+
+    df = df[df.apply(search_algorithm, axis=1)]
 
 # FIXED TICKER
 if not df.empty:
