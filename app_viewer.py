@@ -17,13 +17,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (FINAL CORRECTED THEME) ---
+# --- 2. CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (CLEAN & BLUE SEARCH) === 
+       === LIGHT MODE (DEFAULT) === 
        ========================================= */
     html, body, [class*="css"] { 
         font-family: 'Segoe UI', sans-serif; 
@@ -31,26 +31,22 @@ st.markdown("""
         color: #222; 
     }
     
-    /* --- SEARCH BAR (BLUE BG + WHITE TEXT) --- */
+    /* --- SEARCH BAR (BLUE BG + WHITE TEXT + BORDER) --- */
     div[data-baseweb="input"] {
-        background-color: #003366 !important; 
-        border: none !important;
+        background-color: #003366 !important; /* Brand Blue */
+        border: 1px solid #004080 !important; /* Διακριτικό Μπλε Περίγραμμα */
         border-radius: 4px !important;
     }
     div[data-baseweb="input"] input {
-        color: #ffffff !important;
+        color: #ffffff !important; /* ΛΕΥΚΑ ΓΡΑΜΜΑΤΑ */
         caret-color: #ffffff !important;
         font-weight: 500 !important;
     }
     div[data-baseweb="input"] input::placeholder {
-        color: #cccccc !important;
+        color: #b3cce6 !important; /* Ανοιχτό γκρι-μπλε για το placeholder */
     }
 
-    /* --- WIDGET VISIBILITY (DEFAULT LIGHT) --- */
-    .tv-light-container { display: block !important; }
-    .tv-dark-container { display: none !important; }
-
-    /* Sidebar Arrow */
+    /* Sidebar Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -62,10 +58,10 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (NO BORDERS) */
+    /* Brand Card (NO BLACK BORDERS) */
     .brand-card {
         background: #ffffff;
-        border: none !important; 
+        border: 1px solid #f0f0f0 !important; /* Πολύ απαλό γκρι */
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
@@ -94,7 +90,7 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    /* Cards (NO BORDERS) */
+    /* Cards (NO BLACK BORDERS) */
     .list-item { 
         background: white; padding: 20px; 
         border: none !important; 
@@ -108,7 +104,7 @@ st.markdown("""
 
     .grid-card { 
         background: white; 
-        border: none !important; 
+        border: 1px solid #f5f5f5 !important; /* Απαλό γκρι */
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -124,7 +120,7 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Hero Slider */
+    /* Hero Slider Overlay Styling */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
@@ -157,10 +153,6 @@ st.markdown("""
         /* Search Bar Dark */
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
-
-        /* --- WIDGET SWAP (Show Dark, Hide Light) --- */
-        .tv-light-container { display: none !important; }
-        .tv-dark-container { display: block !important; }
 
         /* Arrow & Logo Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
@@ -196,6 +188,8 @@ st.markdown("""
         .article-date { color: #777 !important; border-top: 1px solid #444 !important; }
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
+        
+        .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -382,40 +376,46 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (STRICT MODE SEPARATION) ---
-            
-            # 1. LIGHT MODE WIDGET (Top Row)
-            # This has "colorTheme": "light". CSS hides this in Dark Mode.
-            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
+            # --- TRADINGVIEW (THE ONE AND ONLY UNIFIED WIDGET) ---
+            # Εδώ είναι το μυστικό: Ένα HTML, δύο div μέσα, και CSS που κρύβει το ένα
             components.html("""
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-              {
-              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-              "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
-              }
-              </script>
-            </div>
-            """, height=70)
-            st.markdown('</div>', unsafe_allow_html=True)
+            <style>
+                /* Default (Light Mode) */
+                .tv-widget-light { display: block; }
+                .tv-widget-dark { display: none; }
 
-            # 2. DARK MODE WIDGET (Bottom Row)
-            # This has "colorTheme": "dark". CSS hides this in Light Mode.
-            # NO CSS FILTERS APPLIED. PURE NATIVE DARK THEME.
-            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
-            components.html("""
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-              {
-              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
-              }
-              </script>
+                /* Dark Mode Override (Media Query inside the Iframe) */
+                @media (prefers-color-scheme: dark) {
+                    .tv-widget-light { display: none; }
+                    .tv-widget-dark { display: block; }
+                }
+                body { margin: 0; padding: 0; overflow: hidden; }
+            </style>
+
+            <div class="tv-widget-light">
+                <div class="tradingview-widget-container">
+                  <div class="tradingview-widget-container__widget"></div>
+                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                  {
+                  "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+                  "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
+                  }
+                  </script>
+                </div>
+            </div>
+
+            <div class="tv-widget-dark">
+                <div class="tradingview-widget-container">
+                  <div class="tradingview-widget-container__widget"></div>
+                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                  {
+                  "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+                  "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
+                  }
+                  </script>
+                </div>
             </div>
             """, height=70)
-            st.markdown('</div>', unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
