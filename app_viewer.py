@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (MSN STYLE & FIXES) ---
+# --- 2. CSS (THE FINAL THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -31,26 +31,26 @@ st.markdown("""
         color: #222; 
     }
     
-    /* --- SEARCH BAR (BLUE BG + WHITE TEXT + BORDER) --- */
+    /* --- SEARCH BAR (BLUE BG + WHITE TEXT) --- */
     div[data-baseweb="input"] {
-        background-color: #003366 !important; /* Σκούρο Μπλε */
-        border: 1px solid #002244 !important; /* Πλαίσιο στο ίδιο χρώμα */
+        background-color: #003366 !important; /* Brand Blue */
+        border: 1px solid #004080 !important;
         border-radius: 4px !important;
     }
     div[data-baseweb="input"] input {
-        color: #ffffff !important; /* Λευκά γράμματα */
+        color: #ffffff !important;
         caret-color: #ffffff !important;
         font-weight: 500 !important;
     }
     div[data-baseweb="input"] input::placeholder {
-        color: #b3cce6 !important; /* Ανοιχτό γκρι-μπλε placeholder */
+        color: #b3cce6 !important;
     }
 
-    /* --- SIDEBAR ARROW --- */
+    /* Sidebar Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
-    /* --- BRANDING --- */
+    /* Top Branding */
     .top-powered-brand {
         font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; font-weight: 400; color: #666;
         letter-spacing: 0.5px; margin-bottom: 2px; text-align: center; padding-top: 15px;
@@ -58,7 +58,7 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* --- CLEAN CARDS (NO BORDERS) --- */
+    /* Brand Card (NO BORDERS) */
     .brand-card {
         background: #ffffff;
         border: 1px solid #f0f0f0 !important; 
@@ -78,6 +78,7 @@ st.markdown("""
     }
     .brand-btn:hover { background-color: #444; color: #fff !important; }
 
+    /* Header */
     .header-container { 
         background: white; padding: 0 0 25px 0; 
         border-bottom: 2px solid #003366; text-align: center; 
@@ -89,6 +90,7 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
+    /* Cards (NO BORDERS) */
     .list-item { 
         background: white; padding: 20px; 
         border: none !important; 
@@ -112,12 +114,13 @@ st.markdown("""
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
     .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
 
+    /* Ticker Light */
     .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* --- HERO SLIDER --- */
+    /* Hero Slider Overlay Styling */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; margin-bottom: 0px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
@@ -126,40 +129,42 @@ st.markdown("""
     .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
     .hero-overlay { 
         position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; 
-        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none;
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); 
     }
     .hero-title { 
         font-family: 'Merriweather', serif; color: white !important; 
         font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer;
-        pointer-events: auto; 
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* --- MSN STYLE BUTTONS (THE HACK) --- */
-    /* Στοχεύουμε τα κουμπιά που είναι ακριβώς κάτω από την εικόνα */
-    /* Και τα τραβάμε ΠΑΝΩ (-250px) με αρνητικό margin */
-    
-    div[data-testid="column"] button.msn-btn {
-        /* Αυτό είναι το κλειδί: τα σηκώνουμε πάνω */
-        margin-top: -280px !important; 
-        
-        /* MSN Style */
-        background-color: rgba(255, 255, 255, 0.7) !important; /* Ημιδιάφανο λευκό */
-        color: #000000 !important; /* Μαύρο βέλος */
+    /* --- MSN BUTTONS CSS (TARGETED) --- */
+    /* Target buttons in the small columns of the slider row */
+    /* We assume layout is [1, 15, 1] */
+    div[data-testid="column"][style*="flex: 1"] button {
+        margin-top: -250px !important; /* LIFT UP ONTO IMAGE */
+        background-color: rgba(255, 255, 255, 0.75) !important;
         border: none !important;
+        color: black !important;
         width: 36px !important;
         height: 36px !important;
-        border-radius: 4px !important; /* Rounded Square */
-        z-index: 9999 !important; /* Πάνω από όλα */
+        border-radius: 4px !important; /* MSN Rounded Square */
+        z-index: 99999 !important; /* FRONT */
         position: relative !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
-        transition: 0.3s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+        transition: all 0.2s ease-in-out;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
     }
-    div[data-testid="column"] button.msn-btn:hover {
-        background-color: rgba(255, 255, 255, 1.0) !important; /* Full white on hover */
+    div[data-testid="column"][style*="flex: 1"] button:hover {
+        background-color: rgba(255, 255, 255, 1.0) !important;
         transform: scale(1.1);
     }
+    /* Hide the middle column container so it doesn't block clicks on image */
+    div[data-testid="column"][style*="flex: 15"] { pointer-events: none; }
+    div[data-testid="column"][style*="flex: 15"] * { pointer-events: auto; }
 
     /* Micro-Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -167,14 +172,21 @@ st.markdown("""
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
 
+    /* --- TRADINGVIEW TOGGLE LOGIC --- */
+    .tv-light-container { display: block !important; }
+    .tv-dark-container { display: none !important; }
+
     /* =========================================
-       === DARK MODE (AUTOMATIC) === 
+       === DARK MODE (AUTOMATIC OVERRIDES) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
+
+        .tv-light-container { display: none !important; }
+        .tv-dark-container { display: block !important; }
 
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
         .brand-card img { filter: invert(1); } 
@@ -398,8 +410,8 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (SINGLE LIGHT WIDGET) ---
-            st.markdown("", unsafe_allow_html=True)
+            # --- TRADINGVIEW (SINGLE UNIFIED WIDGET + CSS SWITCH) ---
+            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
@@ -411,7 +423,21 @@ elif not df.empty:
               </script>
             </div>
             """, height=70)
-            st.markdown("", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
+            components.html("""
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
+            </div>
+            """, height=70)
+            st.markdown('</div>', unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
@@ -435,35 +461,10 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (THE HACK) ---
-                # Τώρα στοχεύουμε το κουμπί απευθείας και το "σηκώνουμε" πάνω στην εικόνα
+                # --- MSN STYLE BUTTONS (FIXED POSITIONING) ---
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # Ειδικό CSS που τραβάει τα κουμπιά που είναι ακριβώς από κάτω
-                # και τα βάζει πάνω στην εικόνα
-                st.markdown("""
-                <style>
-                    /* Πιάνει τα συγκεκριμένα κουμπιά σε αυτή τη σειρά */
-                    div[data-testid="column"] button {
-                        margin-top: -280px !important; /* Τα ανεβάζει πάνω στην εικόνα */
-                        background-color: rgba(255, 255, 255, 0.7) !important;
-                        border: none !important;
-                        color: black !important;
-                        width: 36px !important;
-                        height: 36px !important;
-                        border-radius: 4px !important;
-                        z-index: 999 !important;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
-                    }
-                    div[data-testid="column"] button:hover {
-                        background-color: white !important;
-                        transform: scale(1.1);
-                    }
-                    /* Κρύβουμε το μεσαίο κενό για να μην ενοχλεί στα κλικ */
-                    div[data-testid="column"]:nth-child(2) { pointer-events: none; }
-                </style>
-                """, unsafe_allow_html=True)
-
+                # We apply the specific lift class to the buttons in these columns
                 with c_left: 
                     if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
                 with c_right: 
