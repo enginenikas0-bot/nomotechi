@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL FIX v29) ---
+# --- 2. CSS (GLOBAL THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -58,7 +58,7 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* --- CLEAN CARDS (NO BORDERS) --- */
+    /* --- CLEAN CARDS --- */
     .brand-card {
         background: #ffffff;
         border: 1px solid #f0f0f0 !important; 
@@ -117,9 +117,9 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* --- HERO SLIDER (THE MSN LOOK) --- */
+    /* --- HERO SLIDER --- */
     .hero-wrapper { 
-        position: relative; height: 450px; overflow: hidden; margin-bottom: 0px; /* Removed margin */
+        position: relative; height: 450px; overflow: hidden; margin-bottom: 0px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
     }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
@@ -132,15 +132,11 @@ st.markdown("""
         font-family: 'Merriweather', serif; color: white !important; 
         font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer;
-        pointer-events: auto; /* Enable click on text */
+        pointer-events: auto; 
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* --- SLIDER BUTTONS (MSN STYLE - FLOATING) --- */
-    /* This targets the buttons in the row immediately following the image */
-    /* We assume we wrap them in a specific layout in Python */
-    
-    /* Small Badges */
+    /* Micro-Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -375,34 +371,16 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (STRICT MODE SEPARATION) ---
-            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
+            # --- TRADINGVIEW (UNIFIED) ---
             components.html("""
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-              {
-              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-              "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
-              }
-              </script>
-            </div>
+            <style>
+                .tv-widget-light { display: block; } .tv-widget-dark { display: none; }
+                @media (prefers-color-scheme: dark) { .tv-widget-light { display: none; } .tv-widget-dark { display: block; } }
+                body { margin: 0; padding: 0; overflow: hidden; }
+            </style>
+            <div class="tv-widget-light"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],"showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"}</script></div></div>
+            <div class="tv-widget-dark"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],"showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"}</script></div></div>
             """, height=70)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
-            components.html("""
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-              {
-              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
-              }
-              </script>
-            </div>
-            """, height=70)
-            st.markdown('</div>', unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
@@ -426,38 +404,49 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (FLOATING) ---
-                # We place the columns immediately after the image
-                # CSS pulls them UP (-250px) into the image area
+                # --- MSN STYLE BUTTONS (BRUTE FORCE ABSOLUTE POSITIONING) ---
+                # This CSS targets the buttons in the row below the image and forces them up onto the image.
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # INJECT CUSTOM STYLE JUST FOR THESE BUTTONS
                 st.markdown("""
                 <style>
-                    /* Target the buttons inside the hero columns */
-                    /* Use the negative margin to lift the whole row up */
-                    div[data-testid="column"] button {
-                        transform: translateY(-260px); /* LIFT UP */
-                        background-color: rgba(255, 255, 255, 0.75) !important;
-                        border: none !important;
+                    /* Target the specific buttons in this section */
+                    div[data-testid="column"] > div > div > div > div > button {
+                        position: absolute !important;
+                        top: 50% !important; /* Center vertically relative to their container */
+                        transform: translateY(-250px) !important; /* Move UP onto the image area */
+                        z-index: 999 !important;
+                        
+                        /* MSN Style */
+                        background-color: rgba(255, 255, 255, 0.7) !important; /* Semi-transparent white */
                         color: black !important;
-                        width: 35px !important;
-                        height: 35px !important;
-                        border-radius: 4px !important; /* MSN Rounded Square */
-                        font-size: 18px !important;
-                        line-height: 1 !important;
+                        border: none !important;
+                        border-radius: 4px !important; /* Rounded Square */
+                        width: 36px !important;
+                        height: 36px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
                         padding: 0 !important;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
-                        z-index: 999;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
                         transition: 0.3s;
                     }
-                    div[data-testid="column"] button:hover {
+                    div[data-testid="column"] > div > div > div > div > button:hover {
                         background-color: rgba(255, 255, 255, 1.0) !important;
-                        transform: translateY(-260px) scale(1.1); /* Keep lifted position on hover */
+                        transform: translateY(-250px) scale(1.05) !important;
                     }
-                    /* Ensure the middle spacer doesn't block clicks */
-                    div[data-testid="column"] { pointer-events: none; }
-                    div[data-testid="column"] button { pointer-events: auto; }
+
+                    /* Position Left Button */
+                    div[data-testid="column"]:nth-child(1) button {
+                        left: 15px !important;
+                    }
+                    /* Position Right Button */
+                    div[data-testid="column"]:nth-child(3) button {
+                        right: 15px !important;
+                    }
+
+                    /* Hide the middle column container so it doesn't block clicks */
+                    div[data-testid="column"]:nth-child(2) { pointer-events: none; }
                 </style>
                 """, unsafe_allow_html=True)
 
