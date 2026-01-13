@@ -8,13 +8,13 @@ import base64
 
 # --- 1. SETUP ---
 st.set_page_config(
-    page_title="NomoTechi | Intelligence",
+    page_title="NomoTech | Intelligence",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (CLEAN & ARROW-FREE) ---
+# --- 2. CSS (CLEAN THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -26,7 +26,24 @@ st.markdown("""
     div[data-baseweb="input"] input { color: white !important; caret-color: white; font-weight: 500; }
     [data-testid="stSidebar"] button { color: #000 !important; }
 
-    /* Hero Slider (No Arrows) */
+    /* Header Styling */
+    .header-container { 
+        background: white; 
+        padding: 10px 0 25px 0; 
+        border-bottom: 2px solid #003366; 
+        text-align: center; /* CENTER ALIGNMENT */
+        margin-bottom: 20px; 
+    }
+    .header-logo { 
+        font-family: 'Merriweather', serif; 
+        font-size: 3rem; 
+        font-weight: 900; 
+        color: #003366; 
+        letter-spacing: -1px; 
+        line-height: 1.2;
+    }
+
+    /* Hero Slider */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; 
         border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -43,6 +60,16 @@ st.markdown("""
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto;
     }
 
+    /* Invisible Click Zones */
+    .click-zone-container {
+        position: absolute; top: 0; left: 0; width: 100%; height: 450px; z-index: 999; pointer-events: none;
+    }
+    .click-zone-container button {
+        pointer-events: auto !important; background: transparent !important; color: transparent !important;
+        border: none !important; height: 450px !important; width: 100% !important; transition: 0.2s;
+    }
+    .click-zone-container button:hover { background: rgba(255,255,255,0.05) !important; cursor: pointer; }
+
     /* Dots */
     .msn-dots-container {
         position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10;
@@ -57,7 +84,7 @@ st.markdown("""
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Content Cards */
+    /* Cards */
     .list-item { padding: 15px; border-bottom: 1px solid #eee; margin-bottom: 5px; transition: 0.2s; }
     .list-item:hover { border-left: 3px solid #003366; background: #fafafa; }
     .list-title a { color: #111 !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
@@ -83,12 +110,13 @@ st.markdown("""
         .grid-card { background: #262730 !important; border: none !important; }
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: white !important; }
         .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
+        .header-logo { color: #fff; }
         iframe[title="3rd party frame"] { filter: invert(1) hue-rotate(180deg) brightness(1.2); }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC, DATA & SMART DATES ---
+# --- 3. LOGIC & DATE FORMATTING ---
 if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 if 'last_run' not in st.session_state: st.session_state.last_run = time.time()
 
@@ -106,20 +134,25 @@ IMAGE_POOL = {
 
 def format_smart_date(date_str):
     """
-    Shows TIME if today, DATE if older.
-    Assumes date_str format 'YYYY-MM-DD HH:MM:SS' or similar.
+    Shows DD/MM/YY HH:MM for TODAY.
+    Shows DD/MM/YY for OLDER dates.
+    NO EMOJIS.
     """
     try:
         dt = pd.to_datetime(date_str)
         now = datetime.now()
         
-        # Check if today
+        # Date Format: DD/MM/YY (e.g., 13/01/26)
+        date_part = dt.strftime("%d/%m/%y")
+        time_part = dt.strftime("%H:%M")
+        
+        # Logic: If same day, show time too
         if dt.date() == now.date():
-            return f"🕒 {dt.strftime('%H:%M')}"
+            return f"{date_part} - {time_part}"
         else:
-            return f"📅 {dt.strftime('%d/%m')}"
+            return date_part
     except:
-        return date_str # Fallback
+        return str(date_str) # Fallback
 
 def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
@@ -132,22 +165,21 @@ def load_data():
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
         
-        # 1. REMOVE GARBAGE (headers in rows)
+        # Clean Garbage
         df = df[df['title'].str.lower() != 'title']
         
-        # 2. CONVERT DATE & FILTER OLDER THAN 30 DAYS
+        # Filter Older than 30 Days
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
-        cutoff_date = datetime.now() - timedelta(days=30)
-        df = df[df['datetime_obj'] > cutoff_date]
+        cutoff = datetime.now() - timedelta(days=30)
+        df = df[df['datetime_obj'] > cutoff]
         
-        # 3. SORT NEWEST FIRST
+        # Sort Newest First
         df = df.sort_values(by='datetime_obj', ascending=False)
         
         return df.to_dict('records')
     except: return []
 
 def get_image(row):
-    # Determine category for stock image fallback
     cat = "GENERAL"
     if "ENGINEERS" in str(row.get('category')): cat = "ENG"
     elif "LEGAL" in str(row.get('category')): cat = "LAW"
@@ -158,11 +190,11 @@ def get_image(row):
 
 def render_badges(category_str):
     badges_html = ""
-    if "SOS" in category_str: badges_html += '<span class="badge-sos">🚨 SOS</span>'
-    if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΣΤΗΡΙΑ</span>'
-    if "LEGAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
-    if "REAL_ESTATE" in category_str: badges_html += '<span class="badge-real">🏠 REAL ESTATE</span>'
-    if "LEGISLATION" in category_str: badges_html += '<span class="badge-gen">📜 ΝΟΜΟΘΕΣΙΑ</span>'
+    if "SOS" in category_str: badges_html += '<span class="badge-sos">SOS</span>'
+    if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">ΔΙΚΑΣΤΗΡΙΑ</span>'
+    if "LEGAL" in category_str: badges_html += '<span class="badge-law">ΝΟΜΙΚΟ</span>'
+    if "REAL_ESTATE" in category_str: badges_html += '<span class="badge-real">REAL ESTATE</span>'
+    if "LEGISLATION" in category_str: badges_html += '<span class="badge-gen">ΝΟΜΟΘΕΣΙΑ</span>'
     return badges_html
 
 def save_subscriber(email):
@@ -208,11 +240,12 @@ with st.sidebar:
     email = st.text_input("Email", placeholder="me@example.com")
     if st.button("Εγγραφή"): save_subscriber(email)
 
+# --- UPDATED HEADER (SWAPPED & CENTERED) ---
 st.markdown("""
 <div class="header-container">
-    <div style="font-size:0.75rem; color:#666; margin-bottom:5px;">Intelligence Platform</div>
-    <div style="font-size:3rem; font-weight:900; color:#003366; font-family:'Merriweather', serif;">🏛️ NomoTechi</div>
-    <div style="font-size:0.8rem; color:#888;">Powered by NiKAS Technical</div>
+    <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">Powered by NiKAS Technical</div>
+    <div class="header-logo">🏛️ NomoTech</div>
+    <div style="font-size:0.75rem; color:#666; margin-top:5px;">Intelligence Platform</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -221,16 +254,8 @@ if not raw_data: st.warning("⏳ Φόρτωση..."); st.stop()
 df = pd.DataFrame(raw_data)
 
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. Αυθαίρετα, Άρειος Πάγος)...")
+search_query = st.text_input("", placeholder="🔍 Αναζήτηση...")
 st.markdown('</div>', unsafe_allow_html=True)
-
-if search_query:
-    clean_query = normalize_greek(search_query)
-    mask = df.apply(lambda row: 
-                    clean_query in normalize_greek(str(row['title'])) or 
-                    clean_query in normalize_greek(str(row['content'])) or 
-                    clean_query in normalize_greek(str(row['category'])), axis=1)
-    df = df[mask]
 
 # Ticker
 if not df.empty:
@@ -239,7 +264,7 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ", "ΝΟΜΙΚΑ", "ΦΕΚ", "STATS"])
 
-# --- SLIDER FRAGMENT (NO ARROWS) ---
+# --- SLIDER FRAGMENT (INVISIBLE ZONES) ---
 @st.fragment(run_every=6)
 def show_hero_slider(curr_df):
     if curr_df.empty: return
@@ -251,9 +276,17 @@ def show_hero_slider(curr_df):
     hero_badges = render_badges(row['category'])
     smart_date = format_smart_date(row['last_update'])
 
-    # Dots HTML
+    # Invisible Click Zones
+    st.markdown('<div class="click-zone-container">', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 6, 1]) 
+    with c1:
+        if st.button(" ", key="inv_prev"): st.session_state.slider_idx -= 2; st.rerun()
+    with c3:
+        if st.button(" ", key="inv_next"): st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Image & Dots
     dots = "".join([f'<div class="msn-dot {"active" if i==idx else ""}"></div>' for i in range(slide_len)])
-    
     st.markdown(f"""
     <div class="hero-wrapper">
         <img src="{get_image(row)}" class="hero-image">
@@ -315,9 +348,8 @@ def render_tab(tab_name):
                             <div style="margin-bottom:10px;">{badges}</div>
                             </div>""", unsafe_allow_html=True)
                         
-                        # AI INTELLIGENCE CHECK (Expander)
                         with st.expander("🤖 Ανάλυση & Σύνοψη"):
-                            st.write(r['content']) # This displays the AI summary from DB
+                            st.write(r['content']) 
                         
                         st.markdown(f"""
                             <div style="padding:0 15px 15px 15px;">
@@ -326,7 +358,7 @@ def render_tab(tab_name):
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        st.markdown("") # Spacer
+                        st.markdown("") 
 
 with tabs[0]: render_tab("HOME")
 with tabs[1]: render_tab("ENGINEERS")
