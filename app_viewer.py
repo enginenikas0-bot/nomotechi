@@ -17,18 +17,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (MINIMAL & CLASSY) ---
+# --- 2. CSS (ADAPTIVE THEME ENGINE) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
+    /* === BASE (LIGHT MODE DEFAULTS) === */
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     
     /* --- SIDEBAR ARROW ALWAYS VISIBLE --- */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000 !important; }
 
-    /* --- TOP BRANDING (MINIMAL) --- */
+    /* --- TOP BRANDING --- */
     .top-powered-brand {
         font-family: 'Segoe UI', sans-serif;
         font-size: 0.75rem;
@@ -39,21 +40,13 @@ st.markdown("""
         text-align: center;
         padding-top: 15px;
     }
-    .top-powered-brand a {
-        color: #444 !important;
-        text-decoration: none;
-        border-bottom: 1px solid transparent;
-        transition: 0.3s;
-    }
-    .top-powered-brand a:hover {
-        color: #000 !important;
-        border-bottom: 1px solid #000;
-    }
+    .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
+    .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* --- TICKER STYLE (MINIMAL) --- */
+    /* --- TICKER --- */
     .ticker-wrap {
         width: 100%;
-        background-color: #ffffff;
+        background-color: #ffffff; /* Light BG */
         border-top: 1px solid #eee;
         border-bottom: 1px solid #eee;
         height: 32px;
@@ -67,9 +60,9 @@ st.markdown("""
     .ticker-item {
         display: inline-block;
         padding-left: 100%;
-        animation: ticker 80s linear infinite; /* Αργή, ήρεμη κίνηση */
+        animation: ticker 80s linear infinite;
         font-size: 0.8rem;
-        color: #333;
+        color: #333; /* Light Mode Text */
         font-family: 'Segoe UI', sans-serif;
         font-weight: 500;
     }
@@ -80,7 +73,7 @@ st.markdown("""
         border-right: 1px solid #eee; height: 30px; line-height: 22px;
     }
 
-    /* --- BRAND CARD STYLING --- */
+    /* --- BRAND CARD --- */
     .brand-card {
         background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
         border: 1px solid #333;
@@ -90,50 +83,34 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         text-align: center;
     }
-    
     .brand-btn { 
         display: block; width: 100%; text-align: center;
-        background-color: #111;
-        color: #fff !important;
-        border: 1px solid #111;
-        padding: 10px 0; 
-        border-radius: 0px; 
-        font-size: 0.8rem; font-weight: 600;
+        background-color: #111; color: #fff !important;
+        border: 1px solid #111; padding: 10px 0; 
+        border-radius: 0px; font-size: 0.8rem; font-weight: 600;
         text-decoration: none; transition: 0.3s;
-        font-family: 'Segoe UI', sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        font-family: 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: 1px;
     }
-    .brand-btn:hover { 
-        background-color: #444; 
-        border-color: #444;
-        color: #fff !important; 
+    .brand-btn:hover { background-color: #444; border-color: #444; color: #fff !important; }
+
+    /* --- HEADER --- */
+    .header-container { 
+        background: white; padding: 0 0 25px 0; 
+        border-bottom: 3px solid #003366; text-align: center; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 15px; margin-top: 0px; 
     }
-
-    /* UTILS */
-    .badge-sos { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
-    .badge-law { background-color: #003366; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
-    .badge-real { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
-    .badge-leg { background-color: #444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
-
-    .header-container { background: white; padding: 0 0 25px 0; border-bottom: 3px solid #003366; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 15px; margin-top: 0px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; margin-top: 0px; }
     .header-sub { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-top:5px;}
     
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; font-family: 'Segoe UI', sans-serif;}
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
     
-    /* DATE STYLE */
     .article-date {
         font-size: 0.75rem; color: #aaa; text-align: right; margin-top: 10px;
         border-top: 1px solid #f0f0f0; padding-top: 5px; font-family: 'Segoe UI', sans-serif;
     }
 
-    /* TABS CLEANUP */
-    .stTabs [data-baseweb="tab-list"] { gap: 25px; }
-    .stTabs [data-baseweb="tab"] { font-weight: 600 !important; font-size: 0.95rem !important; color: #555 !important; }
-    .stTabs [aria-selected="true"] { color: #003366 !important; border-bottom: 2px solid #003366 !important; }
-
+    /* --- LISTS & CARDS --- */
     .list-item { background: white; padding: 20px; border-bottom: 1px solid #eee; transition: 0.2s; margin-bottom: 5px; }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366; }
     .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
@@ -143,18 +120,63 @@ st.markdown("""
     .grid-card { background: white; border: 1px solid #eee; border-radius: 2px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
     .grid-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
     .grid-img { height: 170px; overflow: hidden; background: #f4f4f4; position: relative; }
-    .grid-img img { width: 100%; height: 100%; object-fit: cover; }
-    .grid-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
 
-    .hero-wrapper { position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; }
-    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
-    .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
-    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
-    .hero-title { font-family: 'Merriweather', serif; color: white; font-size: 2.2rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; }
-    .hero-title a { color: white !important; text-decoration: none; }
-
     .stTextInput input { border-radius: 2px; border: 1px solid #ccc; padding: 10px; }
+
+    /* =========================================
+       === DARK MODE OVERRIDES (THE LIFTING) === 
+       ========================================= */
+    @media (prefers-color-scheme: dark) {
+        /* General Colors */
+        html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
+        
+        /* Sidebar Arrow Invert */
+        [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
+
+        /* Header Dark */
+        .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
+        .header-logo { color: #fff !important; }
+        .header-sub { color: #aaa !important; }
+        .top-powered-brand { color: #888 !important; }
+        .top-powered-brand a { color: #fff !important; }
+        .top-powered-brand a:hover { border-bottom: 1px solid #fff; }
+
+        /* Ticker Dark */
+        .ticker-wrap { background-color: #262730 !important; border-color: #444 !important; }
+        .ticker-item { color: #eee !important; }
+        .ticker-label { background: #262730 !important; color: #ff4b4b !important; border-right: 1px solid #444 !important; }
+
+        /* Brand Card Dark */
+        .brand-card { 
+            background: linear-gradient(180deg, #262730 0%, #1e1e1e 100%) !important; 
+            border: 1px solid #555 !important;
+        }
+        .brand-card img { filter: invert(1); } /* Invert Logo to White */
+        .brand-sub { color: #ddd !important; }
+        .brand-btn { background-color: #eee !important; color: #000 !important; border-color: #fff !important; }
+        .brand-btn:hover { background-color: #fff !important; }
+
+        /* Lists & Grids Dark */
+        .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
+        .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff; }
+        .list-title { color: #fff !important; }
+        .list-title a { color: #fff !important; }
+        
+        .grid-card { background: #262730 !important; border: 1px solid #444 !important; }
+        .grid-title { color: #fff !important; }
+        .grid-img { background: #333 !important; }
+        
+        .article-date { color: #777 !important; border-top: 1px solid #444 !important; }
+        .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
+        .powered-footer a { color: #bbb !important; }
+
+        /* Widget Fixes (Make TradingView text readable) */
+        .tradingview-widget-container { filter: invert(1) hue-rotate(180deg); } /* Magic Fix for Iframe */
+        
+        /* Inputs */
+        .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -219,7 +241,6 @@ def get_image_as_base64(file_path):
     except:
         return None
 
-# --- SMART SEARCH HELPER ---
 def normalize_greek(text):
     if not isinstance(text, str): return ""
     replacements = {
@@ -241,7 +262,7 @@ with st.sidebar:
     <div class="brand-card">
         <div class="brand-label">POWERED BY</div>
         {img_html}
-        <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: #000; margin-bottom: 15px;">Construction Engineering</div>
+        <div class="brand-sub" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: #000; margin-bottom: 15px;">Construction Engineering</div>
         <a href="{nikas_url}" target="_blank" class="brand-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
@@ -278,7 +299,6 @@ if not raw_data:
     st.stop()
 df = pd.DataFrame(raw_data)
 
-# --- SMART SEARCH ---
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. Αυθαίρετα, Άρειος Πάγος)...")
 st.markdown('</div>', unsafe_allow_html=True)
@@ -291,7 +311,7 @@ if search_query:
                     clean_query in normalize_greek(str(row['category'])), axis=1)
     df = df[mask]
 
-# --- TICKER (RESTORED) ---
+# --- TICKER ---
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
     st.markdown(f"""
@@ -341,7 +361,6 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (RESTORED - MINIMAL) ---
             st.markdown("", unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
