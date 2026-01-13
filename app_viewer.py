@@ -17,12 +17,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL FUNCTIONAL THEME) ---
+# --- 2. CSS (THE FINAL COMPLETE THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    /* GLOBAL */
+    /* GLOBAL RESET */
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
     
     /* SEARCH BAR */
@@ -33,15 +33,20 @@ st.markdown("""
     /* SIDEBAR */
     [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #000 !important; }
 
-    /* BRANDING */
+    /* BRANDING & HEADER */
     .brand-card { background: #ffffff; border: 1px solid #f0f0f0; border-radius: 4px; padding: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .brand-btn { display: block; width: 100%; background: #111; color: #fff !important; padding: 10px; text-decoration: none; font-weight: 600; font-size: 0.8rem; border-radius: 2px; transition: 0.3s; }
     .brand-btn:hover { background: #444; }
 
-    /* HEADER */
     .header-container { background: white; padding: 0 0 20px 0; border-bottom: 2px solid #003366; text-align: center; margin-bottom: 20px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     
+    /* --- TICKER (RESTORED) --- */
+    .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
+    .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
+    .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
     /* --- HERO SLIDER (MSN STYLE) --- */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; 
@@ -59,7 +64,7 @@ st.markdown("""
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto;
     }
     
-    /* --- DOTS (TINY & DISCREET) --- */
+    /* --- DOTS (TINY) --- */
     .msn-dots-container {
         position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
         display: flex; gap: 6px; z-index: 10;
@@ -72,13 +77,13 @@ st.markdown("""
         background-color: #fff; transform: scale(1.3); box-shadow: 0 0 4px rgba(255,255,255,0.8);
     }
 
-    /* --- FLOATING ARROWS CONTAINER (ZERO HEIGHT TRICK) --- */
+    /* --- FLOATING ARROWS (ZERO HEIGHT TRICK) --- */
     .floating-arrows {
         position: absolute;
         width: 100%;
-        height: 0px !important; /* Zero Height */
+        height: 0px !important; 
         z-index: 999;
-        pointer-events: none; /* Pass clicks through empty space */
+        pointer-events: none; 
     }
     
     /* The Buttons */
@@ -105,19 +110,18 @@ st.markdown("""
     }
     .floating-arrows button p { font-size: 20px !important; line-height: 1; margin-bottom: 2px; }
 
-    /* --- BADGES --- */
-    .badge-sos { background: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
-    .badge-law { background: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
-    .badge-real { background: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
-    
-    /* --- LIST & TICKER --- */
+    /* --- LIST ITEMS & CARDS --- */
     .list-item { background: white; padding: 15px; border-bottom: 1px solid #f0f0f0; margin-bottom: 5px; transition: 0.2s; }
     .list-item:hover { border-left: 3px solid #003366; background: #fafafa; }
     .list-title a { color: #111 !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
     
-    .ticker-wrap { background: white; border-top: 1px solid #eee; border-bottom: 1px solid #eee; height: 32px; overflow: hidden; margin-bottom: 20px; }
-    .ticker-item { padding-left: 100%; animation: ticker 60s linear infinite; font-size: 0.8rem; font-weight: 600; line-height: 30px; }
-    @keyframes ticker { 100% { transform: translate3d(-100%, 0, 0); } }
+    .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
+
+    /* --- BADGES --- */
+    .badge-sos { background: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
+    .badge-law { background: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
+    .badge-real { background: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
 
     /* --- DARK MODE --- */
     @media (prefers-color-scheme: dark) {
@@ -129,8 +133,10 @@ st.markdown("""
         .list-item { background: #262730 !important; border-bottom: 1px solid #444; }
         .list-item:hover { background: #30333d !important; }
         .list-title a { color: #fff !important; }
+        
         .ticker-wrap { background: #262730 !important; border-color: #444; }
         .ticker-item { color: #ddd; }
+        .ticker-label { background: #262730 !important; border-right: 1px solid #444; }
         
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: white !important; }
         .brand-card { background: #262730 !important; border: none !important; }
@@ -147,7 +153,7 @@ st.markdown("""
 if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 if 'last_run' not in st.session_state: st.session_state.last_run = time.time()
 
-# AUTOPLAY CHECK (6 Seconds)
+# 6 Second Auto Timer
 if time.time() - st.session_state.last_run > 6:
     st.session_state.slider_idx += 1
     st.session_state.last_run = time.time()
@@ -292,10 +298,15 @@ if search_query:
                     clean_query in normalize_greek(str(row['category'])), axis=1)
     df = df[mask]
 
-# --- TICKER ---
+# --- TICKER (RESTORED) ---
 if not df.empty:
     latest_titles = "   +++   ".join([f"{row['title']}" for idx, row in df.head(10).iterrows()])
-    st.markdown(f'<div class="ticker-wrap"><div class="ticker-item">{latest_titles}</div></div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="ticker-wrap">
+        <div class="ticker-label">LATEST</div>
+        <div class="ticker-item">{latest_titles}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
@@ -391,13 +402,20 @@ def render_tab_content(tab_code):
                     img = get_display_image(row)
                     badges = render_badges(row['category'])
                     with col:
-                        st.image(img, use_column_width=True)
-                        st.markdown(f"**{row['title']}**")
-                        st.markdown(badges, unsafe_allow_html=True)
-                        with st.expander("Περίληψη"):
-                            st.write(row['content'])
-                        st.markdown(f"[Διαβάστε περισσότερα]({row['link']})")
-                        st.markdown("---")
+                        # Card Container
+                        st.markdown(f"""
+                        <div class="grid-card">
+                            <img src="{img}" style="width:100%; height:180px; object-fit:cover;">
+                            <div style="padding:15px;">
+                                <div style="font-weight:700; margin-bottom:5px; font-size:1.05rem;">{row['title']}</div>
+                                <div style="margin-bottom:10px;">{badges}</div>
+                                <div style="font-size:0.8rem; color:#666; margin-bottom:10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{row['content'][:150]}...</div>
+                                <a href="{row['link']}" target="_blank" style="text-decoration:none; color:#003366; font-weight:600; font-size:0.85rem;">Διαβάστε περισσότερα →</a>
+                                <div class="article-date">{row['last_update']}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.markdown("") # Spacer
 
 with tabs[0]: render_tab_content("HOME")
 with tabs[1]: render_tab_content("ENG")
