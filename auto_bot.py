@@ -1,5 +1,4 @@
 import time
-import schedule
 import feedparser
 import gspread
 import google.generativeai as genai
@@ -9,6 +8,7 @@ import random
 from datetime import datetime
 import json
 import os
+import sys
 
 # --- 1. CONFIGURATION ---
 GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY", "TO_API_KEY_SOU_EDW_AN_TREXEIS_TOPIKA")
@@ -20,7 +20,7 @@ USER_AGENTS = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
-# --- 2. ΠΛΗΡΗΣ ΛΙΣΤΑ ΠΗΓΩΝ ---
+# --- 2. LIST OF SOURCES ---
 RSS_FEEDS = {
     # --- ΜΗΧΑΝΙΚΟΙ / ΚΑΤΑΣΚΕΥΕΣ ---
     "Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
@@ -57,15 +57,17 @@ def setup_ai():
 
 def setup_db():
     try:
-        if os.path.exists(SERVICE_ACCOUNT_FILE):
+        # Check environment variable first (Cloud)
+        json_creds = os.environ.get("GCP_CREDENTIALS")
+        if json_creds:
+            creds_dict = json.loads(json_creds)
+            gc = gspread.service_account_from_dict(creds_dict)
+        elif os.path.exists(SERVICE_ACCOUNT_FILE):
+            # Check local file (Local PC)
             gc = gspread.service_account(filename=SERVICE_ACCOUNT_FILE)
         else:
-            json_creds = os.environ.get("GCP_CREDENTIALS")
-            if json_creds:
-                creds_dict = json.loads(json_creds)
-                gc = gspread.service_account_from_dict(creds_dict)
-            else:
-                return None
+            print("❌ No Credentials found!")
+            return None
         
         sh = gc.open(SPREADSHEET_NAME)
         return sh.sheet1
@@ -73,7 +75,7 @@ def setup_db():
         print(f"⚠️ DB Error: {e}")
         return None
 
-# --- 4. SCRAPING HELPERS ---
+# --- 4. HELPERS ---
 def clean_html(html_text):
     if not html_text: return ""
     soup = BeautifulSoup(html_text, "html.parser")
@@ -89,7 +91,7 @@ def scrape_full_text(url):
                 tag.extract()
             paragraphs = soup.find_all('p')
             full_text = " ".join([p.get_text() for p in paragraphs])
-            return full_text.strip()[:6000]
+            return full_text.strip()[:5000] # Safe limit
     except: 
         return ""
     return ""
@@ -120,39 +122,38 @@ def get_ai_summary(model, title, content):
     except:
         return "Περίληψη μη διαθέσιμη."
 
-# --- 5. SAFE CLEANUP ---
+# --- 5. CLEANUP ---
 def cleanup_database_safe(worksheet):
-    print("🧹 Checking database size...")
+    print("🧹 Cleaning database...")
     try:
         all_values = worksheet.get_all_values()
         total_rows = len(all_values)
-        MAX_ROWS = 600
-        KEEP_ROWS = 500
+        MAX_ROWS = 700 # Αυξημένο όριο λόγω των 10 άρθρων
+        KEEP_ROWS = 600
         
         if total_rows > MAX_ROWS:
-            print(f"⚠️ Database too big ({total_rows}). Trimming...")
+            print(f"⚠️ Limit reached ({total_rows}). Trimming to {KEEP_ROWS}...")
             header = all_values[0]
             data_to_keep = all_values[-KEEP_ROWS:]
             worksheet.clear()
             worksheet.append_row(header)
             worksheet.append_rows(data_to_keep)
-            print("✨ Trimmed.")
+            print("✨ Database optimized.")
         else:
-            print("✅ Database OK.")
+            print("✅ Database size OK.")
     except Exception as e:
-        print(f"⚠️ Cleanup Warning: {e}")
+        print(f"⚠️ Cleanup skipped: {e}")
 
 # --- 6. MAIN JOB ---
 def run_scraper():
-    # Καταγραφή ώρας έναρξης για το Log
-    print(f"🔄 Cycle Start: {datetime.now().strftime('%H:%M:%S')}")
+    print(f"🚀 Job Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     model = setup_ai()
     worksheet = setup_db()
     
     if not worksheet:
-        print("❌ DB Connection Fail.")
-        return
+        print("❌ CRITICAL: No DB Connection. Exiting.")
+        sys.exit(1) # Force Error for GitHub Actions to see
 
     try:
         existing_links = set(worksheet.col_values(5)) 
@@ -162,11 +163,12 @@ def run_scraper():
     new_rows = []
     
     for source_name, feed_url in RSS_FEEDS.items():
-        print(f"📡 {source_name}...", end=" ", flush=True)
+        print(f"📡 Scanning {source_name}...", end=" ", flush=True)
         try:
             feed = feedparser.parse(feed_url)
             count = 0
             
+            # Επαναφορά στο 10 (Max Volume)
             for entry in feed.entries[:10]:
                 link = entry.get('link', '')
                 
@@ -182,10 +184,6 @@ def run_scraper():
                     
                     real_image_url = fetch_article_image(link)
                     ai_summary = get_ai_summary(model, title, full_text)
-                    
-                    # ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ:
-                    # Καταγράφουμε την ώρα ΤΩΡΑ για κάθε άρθρο ξεχωριστά
-                    # Το βάζουμε ως string για να μην το πειράξει το Excel
                     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     
                     new_row = [
@@ -194,7 +192,7 @@ def run_scraper():
                         title,
                         ai_summary,
                         link,
-                        now_str, # Αποθήκευση πλήρους ημερομηνίας ΚΑΙ ώρας
+                        now_str,
                         source_name, 
                         real_image_url
                     ]
@@ -205,7 +203,7 @@ def run_scraper():
                 except Exception:
                     continue
                 
-            print(f"✅ ({count})")
+            print(f"✅ Found: {count}")
                 
         except Exception as e:
             print(f"❌ Error: {e}")
@@ -213,26 +211,16 @@ def run_scraper():
     if new_rows:
         try:
             worksheet.append_rows(new_rows)
-            print(f"💾 Saved {len(new_rows)} new articles.")
+            print(f"💾 SUCCESS: Saved {len(new_rows)} new articles.")
         except Exception as e:
-            print(f"❌ Save Error: {e}")
+            print(f"❌ DB Write Error: {e}")
     else:
-        print("💤 No new content.")
+        print("💤 No new content found.")
 
     cleanup_database_safe(worksheet)
+    print("🏁 Job Finished Successfully.")
 
-# --- 7. SCHEDULER ---
-schedule.every().day.at("08:00").do(run_scraper)
-schedule.every().day.at("10:00").do(run_scraper)
-schedule.every().day.at("13:00").do(run_scraper)
-schedule.every().day.at("15:00").do(run_scraper)
-schedule.every().day.at("18:00").do(run_scraper)
-schedule.every().day.at("21:00").do(run_scraper)
-schedule.every().day.at("23:30").do(run_scraper)
-
+# --- 7. EXECUTION (NO LOOP) ---
 if __name__ == "__main__":
-    print("🤖 NomoTech Autobot v15 (Time Fix) Started...")
+    # Τρέχει ΜΙΑ φορά και σταματάει (Ιδανικό για GitHub Actions με όριο 10 άρθρα)
     run_scraper()
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
