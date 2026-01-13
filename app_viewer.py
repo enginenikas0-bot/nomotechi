@@ -17,35 +17,40 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FIX) ---
+# --- 2. CSS (FINAL CORRECTED THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (DEFAULT) === 
+       === LIGHT MODE (CLEAN & BLUE SEARCH) === 
        ========================================= */
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
+    html, body, [class*="css"] { 
+        font-family: 'Segoe UI', sans-serif; 
+        background-color: #ffffff; 
+        color: #222; 
+    }
     
-    /* --- SEARCH BAR (BRAND BLUE + WHITE TEXT) --- */
-    /* Το φόντο της μπάρας γίνεται Σκούρο Μπλε για να φαίνονται τα λευκά γράμματα */
+    /* --- SEARCH BAR (BLUE BG + WHITE TEXT) --- */
     div[data-baseweb="input"] {
         background-color: #003366 !important; 
         border: none !important;
         border-radius: 4px !important;
     }
-    /* Τα γράμματα που γράφεις */
     div[data-baseweb="input"] input {
         color: #ffffff !important;
-        caret-color: #ffffff !important; /* Ο κέρσορας λευκός */
+        caret-color: #ffffff !important;
         font-weight: 500 !important;
     }
-    /* Το κείμενο "Αναζήτηση..." */
     div[data-baseweb="input"] input::placeholder {
         color: #cccccc !important;
     }
 
-    /* Sidebar Arrow Fix */
+    /* --- WIDGET VISIBILITY (DEFAULT LIGHT) --- */
+    .tv-light-container { display: block !important; }
+    .tv-dark-container { display: none !important; }
+
+    /* Sidebar Arrow */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -119,7 +124,7 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Hero Slider Overlay Styling */
+    /* Hero Slider */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
@@ -152,6 +157,10 @@ st.markdown("""
         /* Search Bar Dark */
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
+
+        /* --- WIDGET SWAP (Show Dark, Hide Light) --- */
+        .tv-light-container { display: none !important; }
+        .tv-dark-container { display: block !important; }
 
         /* Arrow & Logo Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
@@ -187,13 +196,6 @@ st.markdown("""
         .article-date { color: #777 !important; border-top: 1px solid #444 !important; }
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
-
-        /* --- TRADINGVIEW DARK MODE FIX (MAGIC FILTER) --- */
-        /* Αυτό αντιστρέφει τα χρώματα του widget ΜΟΝΟ στο Dark Mode */
-        /* Τα μαύρα γράμματα γίνονται λευκά */
-        iframe[title="3rd party frame"] { 
-            filter: invert(1) hue-rotate(180deg) !important;
-        } 
     }
 </style>
 """, unsafe_allow_html=True)
@@ -380,10 +382,11 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (SINGLE COMPONENT) ---
-            # Χρησιμοποιούμε μόνο ΕΝΑ widget (Light). 
-            # Η αλλαγή σε Dark γίνεται ΜΟΝΟ μέσω CSS (filter invert).
-            st.markdown("", unsafe_allow_html=True)
+            # --- TRADINGVIEW (STRICT MODE SEPARATION) ---
+            
+            # 1. LIGHT MODE WIDGET (Top Row)
+            # This has "colorTheme": "light". CSS hides this in Dark Mode.
+            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
@@ -395,7 +398,24 @@ elif not df.empty:
               </script>
             </div>
             """, height=70)
-            st.markdown("", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # 2. DARK MODE WIDGET (Bottom Row)
+            # This has "colorTheme": "dark". CSS hides this in Light Mode.
+            # NO CSS FILTERS APPLIED. PURE NATIVE DARK THEME.
+            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
+            components.html("""
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
+            </div>
+            """, height=70)
+            st.markdown('</div>', unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
