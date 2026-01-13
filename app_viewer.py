@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (GLOBAL THEME) ---
+# --- 2. CSS (MSN STYLE & FIXES) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -31,19 +31,19 @@ st.markdown("""
         color: #222; 
     }
     
-    /* --- SEARCH BAR --- */
+    /* --- SEARCH BAR (BLUE BG + WHITE TEXT + BORDER) --- */
     div[data-baseweb="input"] {
-        background-color: #003366 !important; 
-        border: 1px solid #004080 !important;
+        background-color: #003366 !important; /* Σκούρο Μπλε */
+        border: 1px solid #002244 !important; /* Πλαίσιο στο ίδιο χρώμα */
         border-radius: 4px !important;
     }
     div[data-baseweb="input"] input {
-        color: #ffffff !important;
+        color: #ffffff !important; /* Λευκά γράμματα */
         caret-color: #ffffff !important;
         font-weight: 500 !important;
     }
     div[data-baseweb="input"] input::placeholder {
-        color: #b3cce6 !important;
+        color: #b3cce6 !important; /* Ανοιχτό γκρι-μπλε placeholder */
     }
 
     /* --- SIDEBAR ARROW --- */
@@ -58,7 +58,7 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* --- CLEAN CARDS --- */
+    /* --- CLEAN CARDS (NO BORDERS) --- */
     .brand-card {
         background: #ffffff;
         border: 1px solid #f0f0f0 !important; 
@@ -119,7 +119,7 @@ st.markdown("""
 
     /* --- HERO SLIDER --- */
     .hero-wrapper { 
-        position: relative; height: 450px; overflow: hidden; margin-bottom: 0px;
+        position: relative; height: 450px; overflow: hidden; margin-bottom: 0px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
     }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
@@ -136,6 +136,31 @@ st.markdown("""
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
+    /* --- MSN STYLE BUTTONS (THE HACK) --- */
+    /* Στοχεύουμε τα κουμπιά που είναι ακριβώς κάτω από την εικόνα */
+    /* Και τα τραβάμε ΠΑΝΩ (-250px) με αρνητικό margin */
+    
+    div[data-testid="column"] button.msn-btn {
+        /* Αυτό είναι το κλειδί: τα σηκώνουμε πάνω */
+        margin-top: -280px !important; 
+        
+        /* MSN Style */
+        background-color: rgba(255, 255, 255, 0.7) !important; /* Ημιδιάφανο λευκό */
+        color: #000000 !important; /* Μαύρο βέλος */
+        border: none !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 4px !important; /* Rounded Square */
+        z-index: 9999 !important; /* Πάνω από όλα */
+        position: relative !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        transition: 0.3s;
+    }
+    div[data-testid="column"] button.msn-btn:hover {
+        background-color: rgba(255, 255, 255, 1.0) !important; /* Full white on hover */
+        transform: scale(1.1);
+    }
+
     /* Micro-Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -143,16 +168,13 @@ st.markdown("""
     .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
 
     /* =========================================
-       === DARK MODE (AUTOMATIC OVERRIDES) === 
+       === DARK MODE (AUTOMATIC) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
-
-        .tv-light-container { display: none !important; }
-        .tv-dark-container { display: block !important; }
 
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
         .brand-card img { filter: invert(1); } 
@@ -185,6 +207,11 @@ st.markdown("""
         .powered-footer a { color: #bbb !important; }
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
+
+        /* --- TRADINGVIEW DARK MODE FIX (INVERT) --- */
+        iframe[title="3rd party frame"] { 
+            filter: invert(1) hue-rotate(180deg) !important;
+        } 
     }
 </style>
 """, unsafe_allow_html=True)
@@ -371,16 +398,20 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (UNIFIED) ---
+            # --- TRADINGVIEW (SINGLE LIGHT WIDGET) ---
+            st.markdown("", unsafe_allow_html=True)
             components.html("""
-            <style>
-                .tv-widget-light { display: block; } .tv-widget-dark { display: none; }
-                @media (prefers-color-scheme: dark) { .tv-widget-light { display: none; } .tv-widget-dark { display: block; } }
-                body { margin: 0; padding: 0; overflow: hidden; }
-            </style>
-            <div class="tv-widget-light"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],"showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"}</script></div></div>
-            <div class="tv-widget-dark"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],"showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"}</script></div></div>
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
+            </div>
             """, height=70)
+            st.markdown("", unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
@@ -404,48 +435,31 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (BRUTE FORCE ABSOLUTE POSITIONING) ---
-                # This CSS targets the buttons in the row below the image and forces them up onto the image.
+                # --- MSN STYLE BUTTONS (THE HACK) ---
+                # Τώρα στοχεύουμε το κουμπί απευθείας και το "σηκώνουμε" πάνω στην εικόνα
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
+                # Ειδικό CSS που τραβάει τα κουμπιά που είναι ακριβώς από κάτω
+                # και τα βάζει πάνω στην εικόνα
                 st.markdown("""
                 <style>
-                    /* Target the specific buttons in this section */
-                    div[data-testid="column"] > div > div > div > div > button {
-                        position: absolute !important;
-                        top: 50% !important; /* Center vertically relative to their container */
-                        transform: translateY(-250px) !important; /* Move UP onto the image area */
-                        z-index: 999 !important;
-                        
-                        /* MSN Style */
-                        background-color: rgba(255, 255, 255, 0.7) !important; /* Semi-transparent white */
-                        color: black !important;
+                    /* Πιάνει τα συγκεκριμένα κουμπιά σε αυτή τη σειρά */
+                    div[data-testid="column"] button {
+                        margin-top: -280px !important; /* Τα ανεβάζει πάνω στην εικόνα */
+                        background-color: rgba(255, 255, 255, 0.7) !important;
                         border: none !important;
-                        border-radius: 4px !important; /* Rounded Square */
+                        color: black !important;
                         width: 36px !important;
                         height: 36px !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        padding: 0 !important;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
-                        transition: 0.3s;
+                        border-radius: 4px !important;
+                        z-index: 999 !important;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
                     }
-                    div[data-testid="column"] > div > div > div > div > button:hover {
-                        background-color: rgba(255, 255, 255, 1.0) !important;
-                        transform: translateY(-250px) scale(1.05) !important;
+                    div[data-testid="column"] button:hover {
+                        background-color: white !important;
+                        transform: scale(1.1);
                     }
-
-                    /* Position Left Button */
-                    div[data-testid="column"]:nth-child(1) button {
-                        left: 15px !important;
-                    }
-                    /* Position Right Button */
-                    div[data-testid="column"]:nth-child(3) button {
-                        right: 15px !important;
-                    }
-
-                    /* Hide the middle column container so it doesn't block clicks */
+                    /* Κρύβουμε το μεσαίο κενό για να μην ενοχλεί στα κλικ */
                     div[data-testid="column"]:nth-child(2) { pointer-events: none; }
                 </style>
                 """, unsafe_allow_html=True)
