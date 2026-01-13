@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (GLOBAL THEME) ---
+# --- 2. CSS (THE FINAL DRASTIC FIX) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -46,68 +46,31 @@ st.markdown("""
         color: #b3cce6 !important;
     }
 
-    /* --- SIDEBAR ARROW --- */
+    /* --- SIDEBAR & BRANDING --- */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
-    /* --- BRANDING --- */
-    .top-powered-brand {
-        font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; font-weight: 400; color: #666;
-        letter-spacing: 0.5px; margin-bottom: 2px; text-align: center; padding-top: 15px;
-    }
-    .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
-    .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
+    .top-powered-brand { font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; color: #666; text-align: center; padding-top: 15px; }
+    .top-powered-brand a { color: #444 !important; text-decoration: none; }
 
     /* --- CLEAN CARDS --- */
-    .brand-card {
-        background: #ffffff;
-        border: 1px solid #f0f0f0 !important; 
-        border-radius: 4px; 
-        padding: 25px 15px;
-        margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        text-align: center;
-    }
-    .brand-btn { 
-        display: block; width: 100%; text-align: center;
-        background-color: #111; color: #fff !important;
-        border: none; padding: 10px 0; 
-        border-radius: 2px; font-size: 0.8rem; font-weight: 600;
-        text-decoration: none; transition: 0.3s;
-        font-family: 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: 1px;
-    }
+    .brand-card { background: #ffffff; border: 1px solid #f0f0f0 !important; border-radius: 4px; padding: 25px 15px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
+    .brand-btn { display: block; width: 100%; text-align: center; background-color: #111; color: #fff !important; border: none; padding: 10px 0; border-radius: 2px; font-size: 0.8rem; font-weight: 600; text-decoration: none; font-family: 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
     .brand-btn:hover { background-color: #444; color: #fff !important; }
 
-    .header-container { 
-        background: white; padding: 0 0 25px 0; 
-        border-bottom: 2px solid #003366; text-align: center; 
-        box-shadow: none !important; margin-bottom: 15px; 
-    }
+    .header-container { background: white; padding: 0 0 25px 0; border-bottom: 2px solid #003366; text-align: center; margin-bottom: 15px; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-top:5px;}
     
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    .list-item { 
-        background: white; padding: 20px; 
-        border: none !important; 
-        border-bottom: 1px solid #f5f5f5 !important;
-        transition: 0.2s; margin-bottom: 5px; 
-    }
+    .list-item { background: white; padding: 20px; border: none !important; border-bottom: 1px solid #f5f5f5 !important; margin-bottom: 5px; }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366 !important; }
     .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
-    .list-title a:hover { color: #003366 !important; }
-
-    .grid-card { 
-        background: white; 
-        border: 1px solid #f5f5f5 !important; 
-        border-radius: 4px; 
-        overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        transition: transform 0.2s; 
-    }
+    
+    .grid-card { background: white; border: 1px solid #f5f5f5 !important; border-radius: 4px; overflow: hidden; height: 100%; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: transform 0.2s; }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
     .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
@@ -136,20 +99,87 @@ st.markdown("""
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* Micro-Badges */
-    .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
-    .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
-    .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
-    .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
+    /* --- !!! MSN BUTTONS FIX (THE MAGIC) !!! --- */
+    
+    /* 1. Ξεκλειδώνουμε όλα τα containers για να μην κόβουν τα κουμπιά */
+    [data-testid="stVerticalBlock"], [data-testid="stHorizontalBlock"], [data-testid="column"] {
+        overflow: visible !important;
+    }
+
+    /* 2. Στοχεύουμε τα κουμπιά που βρίσκονται ΜΕΣΑ στο στοιχείο που θα ορίσουμε ως .msn-controls */
+    /* Αυτό το class θα το βάλουμε με markdown γύρω από τα κουμπιά */
+    
+    div.stButton > button {
+        /* Default Streamlit button reset */
+    }
+
+    /* Ειδικό στυλ ΜΟΝΟ για τα κουμπιά του slider */
+    /* Χρησιμοποιούμε έναν πολύ συγκεκριμένο selector */
+    div[data-testid="column"] button p {
+        font-size: 20px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding-bottom: 2px !important;
+    }
+
+    /* ΚΟΥΜΠΙ ΑΡΙΣΤΕΡΑ */
+    div[data-testid="column"]:nth-of-type(1) button {
+        background-color: rgba(255, 255, 255, 0.75) !important;
+        color: #000 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        width: 40px !important;
+        height: 40px !important;
+        position: absolute !important;
+        top: -260px !important; /* ΑΝΕΒΑΣΜΑ */
+        left: 20px !important;  /* ΚΟΛΛΗΜΑ ΑΡΙΣΤΕΡΑ */
+        z-index: 99999 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+    }
+
+    /* ΚΟΥΜΠΙ ΔΕΞΙΑ */
+    div[data-testid="column"]:nth-of-type(3) button {
+        background-color: rgba(255, 255, 255, 0.75) !important;
+        color: #000 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        width: 40px !important;
+        height: 40px !important;
+        position: absolute !important;
+        top: -260px !important; /* ΑΝΕΒΑΣΜΑ */
+        right: 20px !important; /* ΚΟΛΛΗΜΑ ΔΕΞΙΑ */
+        z-index: 99999 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+    }
+
+    /* HOVER EFFECT */
+    div[data-testid="column"] button:hover {
+        background-color: white !important;
+        transform: scale(1.1);
+    }
+
+    /* ΚΡΥΨΙΜΟ ΤΟΥ ΜΕΣΑΙΟΥ Spacer */
+    div[data-testid="column"]:nth-of-type(2) {
+        pointer-events: none;
+    }
+
+    /* Badges */
+    .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
+    .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
+    .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
+    .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; }
 
     /* =========================================
-       === DARK MODE (AUTOMATIC OVERRIDES) === 
+       === DARK MODE === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
+
+        .tv-light-container { display: none !important; }
+        .tv-dark-container { display: block !important; }
 
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
         .brand-card img { filter: invert(1); } 
@@ -183,15 +213,12 @@ st.markdown("""
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
 
-        /* --- TRADINGVIEW DARK MODE FIX (INVERT) --- */
-        iframe[title="3rd party frame"] { 
-            filter: invert(1) hue-rotate(180deg) !important;
-        } 
+        iframe[title="3rd party frame"] { filter: invert(1) hue-rotate(180deg) !important; } 
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC & HELPERS ---
+# --- 3. LOGIC ---
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -373,7 +400,7 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (SINGLE COMPONENT - UNIFIED HTML) ---
+            # --- TRADINGVIEW (SINGLE COMPONENT - UNIFIED) ---
             components.html("""
             <style>
                 body { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
@@ -410,50 +437,11 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (THE DRASTIC FIX v35) ---
+                # --- MSN STYLE BUTTONS (THE ABSOLUTE FINAL FIX) ---
+                # We put them in a row, BUT use the special class to target them
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # STYLING INJECTION SPECIFIC TO THIS BLOCK
-                st.markdown("""
-                <style>
-                    /* 1. ΞΕΚΛΕΙΔΩΜΑ ΟΡΙΩΝ ΓΙΑ ΝΑ ΦΑΝΟΥΝ ΤΑ ΚΟΥΜΠΙΑ */
-                    div[data-testid="column"] { 
-                        overflow: visible !important; 
-                        z-index: 9999 !important; 
-                    }
-                    div.stVerticalBlock {
-                        overflow: visible !important;
-                    }
-
-                    /* 2. ΣΤΟΧΕΥΣΗ ΚΟΥΜΠΙΩΝ ΜΕ ΤΗΛΕΜΕΤΑΦΟΡΑ (TOP: -260px) */
-                    div[data-testid="column"] button {
-                        position: relative !important;
-                        top: -260px !important; /* Βίαιη μετακίνηση πάνω στην εικόνα */
-                        margin-bottom: -50px !important; /* Εξαφάνιση του κενού από κάτω */
-                        
-                        /* MSN STYLE */
-                        width: 36px !important;
-                        height: 36px !important;
-                        border-radius: 6px !important;
-                        background-color: rgba(255, 255, 255, 0.7) !important;
-                        color: black !important;
-                        border: none !important;
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
-                        z-index: 99999 !important; /* Πάνω από όλα */
-                        transition: all 0.2s ease-in-out !important;
-                    }
-                    div[data-testid="column"] button:hover {
-                        background-color: #fff !important;
-                        transform: scale(1.1);
-                    }
-                    
-                    /* Κρύβουμε το μεσαίο κενό container */
-                    div[data-testid="column"]:nth-of-type(2) {
-                        pointer-events: none;
-                    }
-                </style>
-                """, unsafe_allow_html=True)
-
+                # Apply the CSS that lifts THIS specific row
                 with c_left: 
                     if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
                 with c_right: 
