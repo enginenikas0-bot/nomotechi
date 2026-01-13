@@ -2,38 +2,35 @@ import streamlit as st
 import pandas as pd
 import gspread
 import time
-import base64
 import streamlit.components.v1 as components
-from datetime import datetime
+from datetime import datetime, timedelta
+import base64
 
 # --- 1. SETUP ---
 st.set_page_config(
-    page_title="NomoTechi",
+    page_title="NomoTechi | Intelligence",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL CORRECTED THEME) ---
+# --- 2. CSS (CLEAN & ARROW-FREE) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
     
-    /* Search Bar */
+    /* UI Elements */
     div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; border-radius: 4px; }
     div[data-baseweb="input"] input { color: white !important; caret-color: white; font-weight: 500; }
-    div[data-baseweb="input"] input::placeholder { color: #b3cce6 !important; }
-    
-    /* Sidebar */
-    [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #000 !important; }
+    [data-testid="stSidebar"] button { color: #000 !important; }
 
-    /* --- HERO SLIDER --- */
+    /* Hero Slider (No Arrows) */
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; 
         border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        z-index: 1; margin-top: -50px; /* Pull image up to cover any gap */
+        z-index: 1;
     }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { 
@@ -46,51 +43,7 @@ st.markdown("""
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto;
     }
 
-    /* --- NAV BUTTONS CONTAINER (The Fix) --- */
-    /* This container floats ON TOP of the image space */
-    .nav-overlay-container {
-        position: relative;
-        height: 0px !important;
-        width: 100%;
-        z-index: 999;
-        pointer-events: none; /* Let clicks pass through middle */
-    }
-
-    /* LEFT BUTTON POSITIONING */
-    div[data-testid="column"]:nth-of-type(1) .nav-btn button {
-        position: absolute;
-        top: 200px !important; /* Vertically centered (approx 450/2) */
-        left: 10px !important; /* Left Edge */
-    }
-
-    /* RIGHT BUTTON POSITIONING */
-    div[data-testid="column"]:nth-of-type(3) .nav-btn button {
-        position: absolute;
-        top: 200px !important; /* Vertically centered */
-        right: 10px !important; /* Right Edge */
-    }
-
-    /* SHARED BUTTON STYLING (Glass Effect) */
-    .nav-btn button {
-        pointer-events: auto !important;
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        backdrop-filter: blur(4px);
-        color: white !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-        border-radius: 8px !important;
-        width: 40px !important; height: 60px !important; /* Rectangular vertical */
-        display: flex; align-items: center; justify-content: center;
-        transition: all 0.2s ease-in-out;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    .nav-btn button:hover {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        color: #000 !important;
-        transform: scale(1.1);
-    }
-    .nav-btn button p { font-size: 24px !important; line-height: 1; margin-top: -4px; }
-
-    /* --- DOTS --- */
+    /* Dots */
     .msn-dots-container {
         position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10;
     }
@@ -99,21 +52,24 @@ st.markdown("""
     }
     .msn-dot.active { background: #fff; transform: scale(1.4); box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 
-    /* --- TICKER --- */
+    /* Ticker */
     .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Standard Elements */
+    /* Content Cards */
     .list-item { padding: 15px; border-bottom: 1px solid #eee; margin-bottom: 5px; transition: 0.2s; }
+    .list-item:hover { border-left: 3px solid #003366; background: #fafafa; }
     .list-title a { color: #111 !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
-    .brand-card { background: #ffffff; border: 1px solid #f0f0f0; border-radius: 4px; padding: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .header-container { background: white; padding: 0 0 20px 0; border-bottom: 2px solid #003366; text-align: center; margin-bottom: 20px; }
+    
+    .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
+    .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
     /* Badges */
-    .badge-sos { background: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
-    .badge-law { background: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
-    .badge-real { background: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
+    .badge-sos { background: #dc3545; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 5px; }
+    .badge-law { background: #003366; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 5px; }
+    .badge-real { background: #28a745; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 5px; }
+    .badge-gen { background: #666; color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; margin-right: 5px; }
 
     /* Dark Mode */
     @media (prefers-color-scheme: dark) {
@@ -124,26 +80,46 @@ st.markdown("""
         .list-title a { color: #fff !important; }
         .ticker-wrap { background: #262730 !important; border-color: #444; }
         .ticker-item { color: #ddd; }
+        .grid-card { background: #262730 !important; border: none !important; }
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: white !important; }
-        .brand-card { background: #262730 !important; border: none !important; }
-        .brand-card img { filter: invert(1); }
         .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
         iframe[title="3rd party frame"] { filter: invert(1) hue-rotate(180deg) brightness(1.2); }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC & DATA ---
+# --- 3. LOGIC, DATA & SMART DATES ---
 if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
 if 'last_run' not in st.session_state: st.session_state.last_run = time.time()
 
-# 6 Second Auto Timer
+# Autoplay (6s)
 if time.time() - st.session_state.last_run > 6:
     st.session_state.slider_idx += 1
     st.session_state.last_run = time.time()
     st.rerun()
 
-IMAGE_POOL = ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200", "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"]
+IMAGE_POOL = {
+    "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200"],
+    "LAW": ["https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1200"],
+    "GENERAL": ["https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200"]
+}
+
+def format_smart_date(date_str):
+    """
+    Shows TIME if today, DATE if older.
+    Assumes date_str format 'YYYY-MM-DD HH:MM:SS' or similar.
+    """
+    try:
+        dt = pd.to_datetime(date_str)
+        now = datetime.now()
+        
+        # Check if today
+        if dt.date() == now.date():
+            return f"🕒 {dt.strftime('%H:%M')}"
+        else:
+            return f"📅 {dt.strftime('%d/%m')}"
+    except:
+        return date_str # Fallback
 
 def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
@@ -155,12 +131,30 @@ def load_data():
     try: 
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
-        df = df[df['title'].str.lower() != 'title'] # Cleanup
-        return df.iloc[::-1].to_dict('records') # Newest first
+        
+        # 1. REMOVE GARBAGE (headers in rows)
+        df = df[df['title'].str.lower() != 'title']
+        
+        # 2. CONVERT DATE & FILTER OLDER THAN 30 DAYS
+        df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
+        cutoff_date = datetime.now() - timedelta(days=30)
+        df = df[df['datetime_obj'] > cutoff_date]
+        
+        # 3. SORT NEWEST FIRST
+        df = df.sort_values(by='datetime_obj', ascending=False)
+        
+        return df.to_dict('records')
     except: return []
 
 def get_image(row):
-    return row.get('image_url') if str(row.get('image_url')).startswith('http') else IMAGE_POOL[0]
+    # Determine category for stock image fallback
+    cat = "GENERAL"
+    if "ENGINEERS" in str(row.get('category')): cat = "ENG"
+    elif "LEGAL" in str(row.get('category')): cat = "LAW"
+    
+    img_url = row.get('image_url', '')
+    if str(img_url).startswith('http'): return img_url
+    return IMAGE_POOL.get(cat, IMAGE_POOL["GENERAL"])[0]
 
 def render_badges(category_str):
     badges_html = ""
@@ -168,7 +162,7 @@ def render_badges(category_str):
     if "JUDICIAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΣΤΗΡΙΑ</span>'
     if "LEGAL" in category_str: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
     if "REAL_ESTATE" in category_str: badges_html += '<span class="badge-real">🏠 REAL ESTATE</span>'
-    if "LEGISLATION" in category_str: badges_html += '<span class="badge-sos">📜 ΝΟΜΟΘΕΣΙΑ</span>'
+    if "LEGISLATION" in category_str: badges_html += '<span class="badge-gen">📜 ΝΟΜΟΘΕΣΙΑ</span>'
     return badges_html
 
 def save_subscriber(email):
@@ -195,11 +189,21 @@ def get_image_as_base64(file_path):
 
 def normalize_greek(text):
     if not isinstance(text, str): return ""
+    replacements = {'ά':'α','έ':'ε','ή':'η','ί':'ι','ό':'ο','ύ':'υ','ώ':'ω'}
+    text = text.translate(str.maketrans(replacements))
     return text.lower()
 
 # --- 4. LAYOUT ---
 with st.sidebar:
-    st.markdown('<div class="brand-card"><div style="font-size:0.7rem; color:#666;">POWERED BY</div><div style="font-size:2rem;">🏗️</div><div style="font-size:0.8rem;">Construction Engineering</div></div>', unsafe_allow_html=True)
+    nikas_url = "https://www.nikastechnical.gr"
+    st.markdown(f"""
+    <div style="background:white; border:1px solid #eee; padding:15px; border-radius:4px; text-align:center; margin-bottom:20px;">
+        <div style="font-size:0.7rem; color:#666;">POWERED BY</div>
+        <div style="font-size:2rem;">🏗️</div>
+        <div style="font-size:0.8rem; margin-bottom:10px;">Construction Engineering</div>
+        <a href="{nikas_url}" target="_blank" style="background:#111; color:white; padding:5px 10px; text-decoration:none; font-size:0.8rem; border-radius:3px;">VISIT US</a>
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown("### 📬 Newsletter")
     email = st.text_input("Email", placeholder="me@example.com")
     if st.button("Εγγραφή"): save_subscriber(email)
@@ -217,8 +221,16 @@ if not raw_data: st.warning("⏳ Φόρτωση..."); st.stop()
 df = pd.DataFrame(raw_data)
 
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-search_query = st.text_input("", placeholder="🔍 Αναζήτηση...")
+search_query = st.text_input("", placeholder="🔍 Αναζήτηση (π.χ. Αυθαίρετα, Άρειος Πάγος)...")
 st.markdown('</div>', unsafe_allow_html=True)
+
+if search_query:
+    clean_query = normalize_greek(search_query)
+    mask = df.apply(lambda row: 
+                    clean_query in normalize_greek(str(row['title'])) or 
+                    clean_query in normalize_greek(str(row['content'])) or 
+                    clean_query in normalize_greek(str(row['category'])), axis=1)
+    df = df[mask]
 
 # Ticker
 if not df.empty:
@@ -227,7 +239,7 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ", "ΝΟΜΙΚΑ", "ΦΕΚ", "STATS"])
 
-# --- THE SLIDER FRAGMENT (AUTOPLAY + GREEN ZONE NAV) ---
+# --- SLIDER FRAGMENT (NO ARROWS) ---
 @st.fragment(run_every=6)
 def show_hero_slider(curr_df):
     if curr_df.empty: return
@@ -237,33 +249,18 @@ def show_hero_slider(curr_df):
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     hero_badges = render_badges(row['category'])
+    smart_date = format_smart_date(row['last_update'])
 
-    # --- NAVIGATION BUTTONS (The "Green Zone" Fix) ---
-    # We place these in a zero-height container BEFORE the image
-    st.markdown('<div class="nav-overlay-container">', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([1, 10, 1])
-    with c1:
-        st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-        if st.button("❮", key="nav_prev"): 
-            st.session_state.slider_idx -= 2 
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    with c3:
-        st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-        if st.button("❯", key="nav_next"): 
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # --- IMAGE & DOTS ---
+    # Dots HTML
     dots = "".join([f'<div class="msn-dot {"active" if i==idx else ""}"></div>' for i in range(slide_len)])
+    
     st.markdown(f"""
     <div class="hero-wrapper">
         <img src="{get_image(row)}" class="hero-image">
         <div class="hero-overlay">
             <div style="margin-bottom:5px;">{hero_badges}</div>
             <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
-            <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{row['last_update']}</div>
+            <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{smart_date}</div>
         </div>
         <div class="msn-dots-container">{dots}</div>
     </div>
@@ -273,10 +270,10 @@ def render_tab(tab_name):
     if tab_name == "HOME": curr = df
     else: curr = df[df['category'].str.contains(tab_name, case=False, na=False)]
     
-    if curr.empty: st.info("No articles."); return
+    if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
-        # Widget
+        # TradingView
         components.html("""
         <style> body{margin:0; overflow:hidden;} .light{display:block;} .dark{display:none;} @media(prefers-color-scheme:dark){.light{display:none;} .dark{display:block;}} </style>
         <div class="light"><div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],"colorTheme":"light","isTransparent":true,"displayMode":"compact","locale":"el"}</script></div></div>
@@ -290,27 +287,53 @@ def render_tab(tab_name):
         with c_list:
             st.markdown("### Top Stories")
             for i, r in curr.head(5).iterrows():
-                st.markdown(f"""<div class="list-item"><div class="list-title"><a href="{r['link']}" target="_blank">{r['title']}</a></div><div style="font-size:0.75rem; color:#888;">{r['last_update']}</div></div>""", unsafe_allow_html=True)
+                date_display = format_smart_date(r['last_update'])
+                st.markdown(f"""<div class="list-item"><div class="list-title"><a href="{r['link']}" target="_blank">{r['title']}</a></div><div style="font-size:0.75rem; color:#888;">{date_display}</div></div>""", unsafe_allow_html=True)
         st.markdown("---")
 
     st.subheader("Ειδήσεις & Αποφάσεις")
-    cols = st.columns(3)
+    
+    # Grid Logic with AI Summaries
     start = 5 if (tab_name == "HOME" and not search_query) else 0
-    for i, r in enumerate(curr.iloc[start:].head(9).itertuples()):
-        with cols[i%3]:
-            st.image(get_image(r._asdict()), use_column_width=True)
-            st.markdown(f"**{r.title}**")
-            st.caption(r.last_update)
-            st.markdown(f"[Link]({r.link})")
-            st.markdown("---")
+    grid_items = curr.iloc[start:]
+    
+    if not grid_items.empty:
+        rows = len(grid_items) // 3 + 1
+        for i in range(rows):
+            cols = st.columns(3)
+            for j, col in enumerate(cols):
+                idx = i * 3 + j
+                if idx < len(grid_items):
+                    r = grid_items.iloc[idx]
+                    date_display = format_smart_date(r['last_update'])
+                    badges = render_badges(r['category'])
+                    with col:
+                        st.markdown('<div class="grid-card">', unsafe_allow_html=True)
+                        st.image(get_image(r), use_column_width=True)
+                        st.markdown(f"""<div style="padding:15px;">
+                            <div style="font-weight:700; font-size:1.05rem; margin-bottom:5px;">{r['title']}</div>
+                            <div style="margin-bottom:10px;">{badges}</div>
+                            </div>""", unsafe_allow_html=True)
+                        
+                        # AI INTELLIGENCE CHECK (Expander)
+                        with st.expander("🤖 Ανάλυση & Σύνοψη"):
+                            st.write(r['content']) # This displays the AI summary from DB
+                        
+                        st.markdown(f"""
+                            <div style="padding:0 15px 15px 15px;">
+                                <a href="{r['link']}" target="_blank" style="text-decoration:none; color:#003366; font-weight:600; font-size:0.85rem;">Διαβάστε περισσότερα →</a>
+                                <div class="article-meta">{date_display}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.markdown("") # Spacer
 
 with tabs[0]: render_tab("HOME")
 with tabs[1]: render_tab("ENGINEERS")
 with tabs[2]: render_tab("LEGAL")
 with tabs[3]: render_tab("FEK")
 with tabs[4]: 
-    st.metric("Total", len(df))
+    st.metric("Total Articles", len(df))
     if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
-        if st.button("🧹 Clear Cache"): st.cache_data.clear(); st.rerun()
         if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
         st.dataframe(df)
