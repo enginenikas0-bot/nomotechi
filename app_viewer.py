@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL DRASTIC FIX v37) ---
+# --- 2. CSS (THE FINAL DRASTIC FIX v38) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -84,6 +84,8 @@ st.markdown("""
     .hero-wrapper { 
         position: relative; height: 450px; overflow: hidden; margin-bottom: 0px; 
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
+        margin-top: -60px; /* Pull image up to cover the button space */
+        z-index: 1;
     }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
     .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
@@ -99,42 +101,38 @@ st.markdown("""
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* --- !!! MSN BUTTONS FIX v37 (THE FORCE OVERRIDE) !!! --- */
-    
-    /* 1. Ξεκλειδώνουμε όλα τα containers για να επιτρέψουμε την επικάλυψη */
-    div[data-testid="stVerticalBlock"], div[data-testid="stHorizontalBlock"], div[data-testid="column"] {
+    /* --- MSN BUTTONS (The Floating Overlay) --- */
+    /* This targets the container holding the buttons which we place BEFORE the image */
+    .msn-controls-container {
+        position: relative;
+        height: 0px !important; /* Take up no space */
         overflow: visible !important;
+        z-index: 9999; /* Stay on top of image */
     }
 
-    /* 2. Στοχεύουμε τα κουμπιά που θα προσθέσουμε με το ειδικό ID */
-    /* Το ID #msn-controls θα μπει με markdown γύρω από τα buttons */
-    
-    .msn-arrow-btn > button {
+    /* Target the buttons inside our custom container */
+    /* We use a very specific selector strategy here */
+    div[data-testid="column"] button {
         background-color: rgba(255, 255, 255, 0.75) !important;
         color: #000 !important;
         border: none !important;
-        border-radius: 6px !important; /* Στρογγυλεμένες γωνίες */
-        width: 40px !important;
-        height: 40px !important;
+        border-radius: 6px !important;
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
-        transition: all 0.2s ease-in-out !important;
-        
-        /* THE LIFT - ΤΑ ΣΗΚΩΝΟΥΜΕ ΠΑΝΩ */
-        position: relative !important;
-        top: -280px !important; /* Ανεβαίνουν πάνω στην εικόνα */
-        z-index: 999999 !important; /* Πάνω από όλα */
-        margin-bottom: -50px !important; /* Εξουδετέρωση κενού */
+        transition: transform 0.2s !important;
     }
-
-    .msn-arrow-btn > button:hover {
+    div[data-testid="column"] button:hover {
         background-color: #fff !important;
         transform: scale(1.1);
     }
     
-    /* Ρυθμίζουμε το μέγεθος του βέλους μέσα στο κουμπί */
-    .msn-arrow-btn > button p {
-        font-size: 20px !important;
-        margin-top: -3px !important;
+    /* Force Positioning Downwards onto the Image */
+    /* This pushes the buttons down from their top position to the middle of the image */
+    .msn-push-down button {
+        top: 225px !important; /* Move down ~half of 450px image height */
+        position: relative !important;
     }
 
     /* Badges */
@@ -192,7 +190,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC ---
+# --- 3. LOGIC & HELPERS ---
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200","https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200"],
     "ENERGY": ["https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200","https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1200"],
@@ -397,7 +395,22 @@ elif not df.empty:
                 hero_img = get_display_image(hero_article)
                 hero_badges = render_badges(hero_article['category'])
                 
-                # --- HERO SLIDER OVERLAY ---
+                # --- HERO SLIDER: BUTTONS FIRST (FLOATING) ---
+                # We place the buttons *before* the image in the DOM
+                # The CSS class .msn-controls-container ensures they take up 0 height and float down
+                st.markdown('<div class="msn-controls-container">', unsafe_allow_html=True)
+                c_left, c_mid, c_right = st.columns([1, 15, 1])
+                with c_left: 
+                    st.markdown('<div class="msn-push-down">', unsafe_allow_html=True)
+                    if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                with c_right:
+                    st.markdown('<div class="msn-push-down">', unsafe_allow_html=True) 
+                    if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # --- HERO IMAGE ---
                 st.markdown(f"""
                 <div class="hero-wrapper">
                     <img src="{hero_img}" class="hero-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
@@ -410,20 +423,6 @@ elif not df.empty:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                
-                # --- MSN STYLE BUTTONS (THE CLASS INJECTION FIX v37) ---
-                c_left, c_mid, c_right = st.columns([1, 15, 1])
-                
-                # Εδώ βάζουμε το ειδικό class στον Container των κουμπιών
-                with c_left: 
-                    st.markdown('<div class="msn-arrow-btn">', unsafe_allow_html=True)
-                    if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                with c_right: 
-                    st.markdown('<div class="msn-arrow-btn">', unsafe_allow_html=True)
-                    if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
 
             with col_list:
                 st.markdown("### Top Stories")
