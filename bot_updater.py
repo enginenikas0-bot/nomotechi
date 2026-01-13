@@ -155,8 +155,8 @@ def run_scraper():
             feed = feedparser.parse(feed_url)
             count = 0
             
-            # Ελέγχουμε τα 4 πιο πρόσφατα άρθρα
-            for entry in feed.entries[:4]:
+            # --- UPDATE: ΕΛΕΓΧΟΣ 10 ΑΡΘΡΩΝ ΑΝΑ ΠΗΓΗ ---
+            for entry in feed.entries[:10]:
                 link = entry.get('link', '')
                 
                 if link in existing_links:
@@ -180,8 +180,6 @@ def run_scraper():
                 # ID | Source | Title | Content | Link | Last_Update | Category | Image
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
-                # ΣΗΜΕΙΩΣΗ: Στο Category βάζουμε το Source Name.
-                # Το Viewer v59 κάνει μόνος του την έξυπνη κατηγοριοποίηση (Smart Tags).
                 new_row = [
                     str(hash(link)),    # ID
                     source_name,        # Source
@@ -213,31 +211,21 @@ def run_scraper():
     else:
         print("💤 No new articles.")
 
-# --- 6. SCHEDULER (ΤΟ ΠΡΟΓΡΑΜΜΑ ΣΟΥ) ---
-# Ορίζουμε συγκεκριμένες ώρες αιχμής για ενημέρωση (News Cycles)
-
-# Πρωινή Ενημέρωση (Ξεκίνημα ημέρας & Δημόσιο)
+# --- 6. SCHEDULER (UPDATED HOURS) ---
 schedule.every().day.at("08:00").do(run_scraper)
 schedule.every().day.at("10:00").do(run_scraper)
-
-# Μεσημεριανή Ενημέρωση (Ειδήσεις Ροής & Δελτία)
 schedule.every().day.at("13:00").do(run_scraper)
 schedule.every().day.at("15:00").do(run_scraper)
-
-# Απογευματινή Ενημέρωση (Κλείσιμο γραφείων & Αγορών)
 schedule.every().day.at("18:00").do(run_scraper)
-
-# Βραδινή Ενημέρωση (Σύνοψη ημέρας & ΦΕΚ που βγαίνουν αργά)
 schedule.every().day.at("21:00").do(run_scraper)
 schedule.every().day.at("23:30").do(run_scraper)
 
 if __name__ == "__main__":
-    print("🤖 NomoTech Autobot v11 (Scheduled) Started...")
+    print("🤖 NomoTech Autobot v12 (High Volume) Started...")
     
-    # Τρέξε ΜΙΑ φορά τώρα αμέσως για να έχουμε δεδομένα με το που ανοίξει
+    # Πρώτο τρέξιμο για γέμισμα
     run_scraper()
     
-    # Ο βρόχος που περιμένει τις ώρες
     while True:
         schedule.run_pending()
-        time.sleep(60) # Ελέγχει το ρολόι κάθε 1 λεπτό για να δει αν πήγε η ώρα
+        time.sleep(60)
