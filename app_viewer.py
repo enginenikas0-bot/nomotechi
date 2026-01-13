@@ -15,40 +15,39 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (FORCED DARK BRANDING) ---
+# --- 2. CSS (UNIFIED DARK THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     
-    /* --- HEADER (ALWAYS DARK BLUE) --- */
-    /* Force Dark Blue Background regardless of Light/Dark Mode */
+    /* --- HEADER (MATCHING TICKER COLOR) --- */
     .header-container { 
-        background-color: #003366 !important; 
-        padding: 15px 0 25px 0; 
-        border-bottom: 3px solid #004080; 
+        background-color: #1e293b !important; /* DARK SLATE BLUE (Same as Ticker) */
+        padding: 20px 0 25px 0; 
+        border-bottom: 1px solid #334155; /* Subtle border match */
         text-align: center; 
         margin-bottom: 0px; 
-        border-radius: 0 0 8px 8px;
+        border-radius: 0 0 0 0;
     }
     /* Force White Text */
     .header-logo { 
         font-family: 'Merriweather', serif; 
-        font-size: 2.5rem; /* Slightly smaller for mobile safety */
+        font-size: 2.5rem; 
         font-weight: 900; 
         color: #ffffff !important; 
         letter-spacing: -1px; 
         line-height: 1.2; 
     }
-    .powered-text { font-size: 0.75rem; color: #b3cce6 !important; letter-spacing: 1px; }
-    .sub-text { font-size: 0.75rem; color: #d9e6f2 !important; margin-top: 5px; }
+    .powered-text { font-size: 0.75rem; color: #94a3b8 !important; letter-spacing: 1px; }
+    .sub-text { font-size: 0.75rem; color: #cbd5e1 !important; margin-top: 5px; }
 
     /* --- TICKER (ALWAYS DARK SLATE) --- */
     .ticker-container { 
         width: 100%; 
         overflow: hidden; 
-        background-color: #1e293b !important; /* Dark Slate */
+        background-color: #1e293b !important; /* Matches Header */
         border-top: 1px solid #334155; 
         border-bottom: 1px solid #334155; 
         white-space: nowrap; 
@@ -84,8 +83,8 @@ st.markdown("""
     /* --- SLIDER --- */
     .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
-    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; /* Less padding for mobile */ background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
-    .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; /* Scaled for mobile */ font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
+    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
+    .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
 
     /* Visual Dots */
     .msn-dots-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; pointer-events: none; }
@@ -112,10 +111,15 @@ st.markdown("""
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         .grid-card { background: #262730 !important; border: none !important; }
         .article-meta { border-top-color: #334155 !important; color: #94a3b8 !important; }
+        
+        /* Force Header/Ticker Consistency in Dark Mode */
+        .header-container { background-color: #1e293b !important; }
+        .ticker-container { background-color: #1e293b !important; }
+        
         /* Inputs in dark mode */
         div[data-baseweb="input"] { background-color: #262730 !important; border-color: #444 !important; }
         div[data-baseweb="input"] input { color: white !important; }
-        .search-container div[data-baseweb="input"] { background-color: #003366 !important; } /* Keep search blue */
+        .search-container div[data-baseweb="input"] { background-color: #003366 !important; } 
         [data-testid="collapsedControl"] { color: white !important; }
     }
 </style>
@@ -346,7 +350,7 @@ def render_tab(tab_name):
     if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
-        # --- JS WIDGET DETECTION FOR MOBILE ---
+        # JS WIDGET FOR MOBILE
         components.html("""
         <div id="tv-widget-container"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
