@@ -26,16 +26,18 @@ except Exception as e:
 
 # --- 2. SOURCES (CLEAN LIST) ---
 RSS_FEEDS = {
-    "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
+   "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ Dikastiko Reportaz": "https://www.dikastikoreportaz.gr/feed/", 
     "⚖️ Lawspot": "https://www.lawspot.gr/rss",
     "⚖️ Syntagma Watch": "https://www.syntagmawatch.gr/feed/", 
     "⚖️ LawNet": "https://www.lawnet.gr/feed/",
     "⚖️ ΔΣΑ": "https://www.dsa.gr/rss.xml",
+    "⚖️ eThemis": "https://www.ethemis.gr/feed/",
     "🏠 POMIDA": "https://www.pomida.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🌿 B2Green": "https://news.b2green.gr/feed",
     "🏛️ ΤΕΕ": "https://web.tee.gr/feed/",
+    "🏛️ Michanikos": "https://www.michanikos.gr/feed/",
     "🚜 PEDMEDE": "https://www.pedmede.gr/feed/",
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "💼 Taxheaven": "https://www.taxheaven.gr/rss",
@@ -229,3 +231,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+
