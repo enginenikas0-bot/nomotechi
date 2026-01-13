@@ -182,6 +182,11 @@ st.markdown("""
         .powered-footer a { color: #bbb !important; }
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
+
+        /* --- TRADINGVIEW DARK MODE FIX (INVERT) --- */
+        iframe[title="3rd party frame"] { 
+            filter: invert(1) hue-rotate(180deg) !important;
+        } 
     }
 </style>
 """, unsafe_allow_html=True)
@@ -405,45 +410,48 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (THE FORCE FIX v34) ---
+                # --- MSN STYLE BUTTONS (THE DRASTIC FIX v35) ---
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # FORCEFUL CSS INJECTION
+                # STYLING INJECTION SPECIFIC TO THIS BLOCK
                 st.markdown("""
                 <style>
-                    /* Target buttons in these specific columns */
-                    div[data-testid="column"] button.msn-btn-target {
-                        position: relative !important;
-                        top: -260px !important; /* Move UP onto the image */
-                        z-index: 99999 !important; /* Always on top */
-                        margin-bottom: -40px !important; /* Collapse space below */
+                    /* 1. ΞΕΚΛΕΙΔΩΜΑ ΟΡΙΩΝ ΓΙΑ ΝΑ ΦΑΝΟΥΝ ΤΑ ΚΟΥΜΠΙΑ */
+                    div[data-testid="column"] { 
+                        overflow: visible !important; 
+                        z-index: 9999 !important; 
+                    }
+                    div.stVerticalBlock {
+                        overflow: visible !important;
+                    }
 
-                        /* MSN Style */
-                        background-color: rgba(255, 255, 255, 0.75) !important;
-                        border: none !important;
-                        color: #000 !important;
+                    /* 2. ΣΤΟΧΕΥΣΗ ΚΟΥΜΠΙΩΝ ΜΕ ΤΗΛΕΜΕΤΑΦΟΡΑ (TOP: -260px) */
+                    div[data-testid="column"] button {
+                        position: relative !important;
+                        top: -260px !important; /* Βίαιη μετακίνηση πάνω στην εικόνα */
+                        margin-bottom: -50px !important; /* Εξαφάνιση του κενού από κάτω */
+                        
+                        /* MSN STYLE */
                         width: 36px !important;
                         height: 36px !important;
-                        border-radius: 6px !important; /* Rounded Corners */
-                        padding: 0 !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+                        border-radius: 6px !important;
+                        background-color: rgba(255, 255, 255, 0.7) !important;
+                        color: black !important;
+                        border: none !important;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+                        z-index: 99999 !important; /* Πάνω από όλα */
                         transition: all 0.2s ease-in-out !important;
                     }
-                    div[data-testid="column"] button.msn-btn-target:hover {
+                    div[data-testid="column"] button:hover {
                         background-color: #fff !important;
-                        transform: scale(1.1) !important;
+                        transform: scale(1.1);
                     }
-                    /* Ensure container doesn't clip */
-                    div[data-testid="column"] { overflow: visible !important; }
+                    
+                    /* Κρύβουμε το μεσαίο κενό container */
+                    div[data-testid="column"]:nth-of-type(2) {
+                        pointer-events: none;
+                    }
                 </style>
-                <script>
-                    // Auto-add class to these specific buttons as a backup
-                    const btns = window.parent.document.querySelectorAll('div[data-testid="column"] button');
-                    btns.forEach(b => { if(b.innerText === "❮" || b.innerText === "❯") b.classList.add("msn-btn-target"); });
-                </script>
                 """, unsafe_allow_html=True)
 
                 with c_left: 
@@ -464,7 +472,7 @@ elif not df.empty:
                     """, unsafe_allow_html=True)
             st.markdown("---")
 
-        st.subheader("Ειδήσεις & Αποφάσεις") # Removed Emoji
+        st.subheader("Ειδήσεις & Αποφάσεις")
         start_idx = 6 if (not search_query and tab_code=="HOME") else 0
         grid_df = current_df.iloc[start_idx:]
         
