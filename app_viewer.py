@@ -15,26 +15,26 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (DARK SIDEBAR & SMART UI) ---
+# --- 2. CSS (MOBILE & DARK MODE FIXES) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
     
-    /* --- SIDEBAR (FORCED DARK THEME) --- */
+    /* Input Fields */
+    div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; border-radius: 4px; }
+    div[data-baseweb="input"] input { color: white !important; caret-color: white; font-weight: 500; }
+    
+    /* --- SIDEBAR (DARK) --- */
     [data-testid="stSidebar"] {
-        background-color: #111827 !important; /* Dark Background */
+        background-color: #111827 !important;
         border-right: 1px solid #374151;
     }
-    
-    /* Sidebar Text (Forced White) */
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
         color: #ffffff !important;
         font-weight: 500;
     }
-    
-    /* Sidebar Headers */
     .sidebar-header {
         color: #ffffff !important;
         font-family: 'Montserrat', sans-serif;
@@ -45,8 +45,6 @@ st.markdown("""
         padding-bottom: 5px;
         display: inline-block;
     }
-
-    /* Branding Card (Dark) */
     .sidebar-card {
         background: #1f2937;
         border: 1px solid #374151;
@@ -62,13 +60,12 @@ st.markdown("""
         display: block;
         margin-left: auto;
         margin-right: auto;
-        filter: brightness(1.1); /* Pop logo on dark */
+        filter: brightness(1.1);
     }
-    /* BLACK BUTTON */
     .sidebar-btn {
         display: block;
         width: 100%;
-        background-color: #000000; /* BLACK */
+        background-color: #000000;
         color: white !important;
         text-decoration: none;
         padding: 10px 0;
@@ -79,42 +76,51 @@ st.markdown("""
         transition: 0.2s;
         border: 1px solid #333;
     }
-    .sidebar-btn:hover {
-        background-color: #333333;
-        color: white !important;
-        border-color: #fff;
+
+    /* --- HEADER (Default Light) --- */
+    .header-container { 
+        background: white; 
+        padding: 10px 0 25px 0; 
+        border-bottom: 2px solid #003366; 
+        text-align: center; 
+        margin-bottom: 20px; 
+    }
+    .header-logo { 
+        font-family: 'Merriweather', serif; 
+        font-size: 3rem; 
+        font-weight: 900; 
+        color: #003366; 
+        letter-spacing: -1px; 
+        line-height: 1.2; 
+    }
+    .powered-text { font-size: 0.8rem; color: #888; }
+    .sub-text { font-size: 0.75rem; color: #666; }
+
+    /* --- SLIDER --- */
+    .hero-wrapper { 
+        position: relative; height: 450px; overflow: hidden; 
+        border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        z-index: 1; 
+    }
+    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
+    .hero-overlay { 
+        position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 40px 60px 40px; 
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none;
+    }
+    .hero-title { 
+        font-family: 'Merriweather', serif; color: white !important; 
+        font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
+        text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto;
     }
 
-    /* Inputs (Search & Email) */
-    div[data-baseweb="input"] { background-color: #f0f2f6 !important; border: 1px solid #ccc; border-radius: 4px; }
-    div[data-baseweb="input"] input { color: #111 !important; caret-color: #111; font-weight: 500; }
-    
-    /* Search Specific (Dark Blue) */
-    .search-container div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; }
-    .search-container div[data-baseweb="input"] input { color: white !important; caret-color: white; }
+    /* Dots */
+    .msn-dots-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; pointer-events: none; }
+    .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* Header */
-    .header-container { background: white; padding: 10px 0 25px 0; border-bottom: 2px solid #003366; text-align: center; margin-bottom: 20px; }
-    .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; line-height: 1.2; }
-
-    /* Slider */
-    .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
-    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
-    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 40px 60px 40px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
-    .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 2.2rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
-
-    /* Dots Overlay */
-    .dots-overlay-container { position: relative; height: 0px !important; top: -40px !important; z-index: 999; display: flex; justify-content: center; align-items: center; pointer-events: none; }
-    .dot-wrapper { display: inline-block; margin: 0 2px; pointer-events: auto; }
-    .dot-wrapper button { background: transparent !important; border: none !important; color: rgba(255,255,255,0.4) !important; padding: 0 !important; font-size: 14px !important; line-height: 1 !important; transition: 0.2s; }
-    .dot-wrapper button:hover { color: rgba(255,255,255,0.8) !important; transform: scale(1.2); }
-    .dot-active button { color: #ffffff !important; transform: scale(1.5) !important; text-shadow: 0 0 5px rgba(255,255,255,0.8); }
-    .dot-wrapper button p { margin: 0 !important; }
-
-    /* Ticker */
+    /* --- TICKER (Default Light) --- */
     .ticker-container { width: 100%; overflow: hidden; background: #ffffff; border-top: 1px solid #eee; border-bottom: 1px solid #eee; white-space: nowrap; height: 40px; display: flex; align-items: center; }
     .ticker-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 80s linear infinite; }
-    .ticker-content:hover { animation-play-state: paused; }
     .ticker-text { font-family: 'Segoe UI', sans-serif; font-weight: 600; color: #333; font-size: 0.9rem; }
     @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
@@ -132,23 +138,30 @@ st.markdown("""
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* Dark Mode Global */
+    /* --- FORCED DARK MODE (MOBILE FIX) --- */
     @media (prefers-color-scheme: dark) {
-        html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
+        html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         
-        .ticker-container { background: #262730 !important; border-color: #444; }
-        .ticker-text { color: #eee !important; }
-        .list-item { background: #334155; border-left-color: #60a5fa; }
-        .grid-card { background: #262730 !important; border: none !important; }
-        [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: white !important; }
-        .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
-        .header-logo { color: #fff; }
-        iframe[title="3rd party frame"] { filter: invert(1) hue-rotate(180deg) brightness(1.2); }
+        /* Force Header Dark */
+        .header-container { background-color: #0e1117 !important; border-bottom-color: #4da6ff !important; }
+        .header-logo { color: #ffffff !important; }
+        .powered-text, .sub-text { color: #aaa !important; }
+
+        /* Force Ticker Dark */
+        .ticker-container { background-color: #1e293b !important; border-color: #334155 !important; }
+        .ticker-text { color: #e2e8f0 !important; }
+
+        /* Force Cards Dark */
+        .grid-card { background-color: #1e293b !important; border: none !important; }
+        .article-meta { border-top-color: #334155 !important; color: #94a3b8 !important; }
+        
+        /* Mobile Specific Overrides */
+        [data-testid="stSidebar"] { background-color: #111827 !important; }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. INTELLIGENCE & DATA ---
+# --- 3. LOGIC ---
 SOURCE_HINTS = {
     "ENG": ["pomida", "ypodomes", "b2green", "tee", "pedmede", "michanikos", "elinyae"],
     "LAW": ["dikastiko", "lawspot", "syntagma", "lawnet", "dsa", "ethemis"],
@@ -156,14 +169,8 @@ SOURCE_HINTS = {
 }
 
 def normalize_text(text):
-    """
-    SMART SEARCH: Removes accents and converts to lowercase.
-    'Αυθαίρετα' -> 'αυθαιρετα'
-    """
     if not isinstance(text, str): return ""
-    # Normalize unicode characters to decompose combined chars (like 'ά' to 'α' + '´')
     nfkd_form = unicodedata.normalize('NFKD', text)
-    # Filter out non-spacing mark characters (accents)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content(row):
@@ -268,7 +275,6 @@ def reset_database(): return False
 
 # --- 4. LAYOUT & SIDEBAR (DARK MODE) ---
 with st.sidebar:
-    # 1. BRANDING CARD
     logo_b64 = get_image_as_base64("logo.jpg")
     img_html = f'<img src="data:image/jpeg;base64,{logo_b64}" class="sidebar-logo">' if logo_b64 else '<div style="font-size:3rem; margin-bottom:10px;">🏗️</div>'
     
@@ -282,12 +288,10 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. WEATHER WIDGET (TALLER)
     st.markdown('<div class="sidebar-header">☁️ Καιρός Εργοταξίου</div>', unsafe_allow_html=True)
     components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=310)
     st.markdown("---")
 
-    # 3. NEWSLETTER
     st.markdown('<div class="sidebar-header">📬 Ενημέρωση</div>', unsafe_allow_html=True)
     email = st.text_input("Email", placeholder="me@example.com", label_visibility="collapsed")
     if st.button("ΕΓΓΡΑΦΗ", type="primary"):
@@ -298,12 +302,11 @@ with st.sidebar:
         else:
             st.warning("Μη έγκυρο email.")
 
-# MAIN HEADER
 st.markdown("""
 <div class="header-container">
-    <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">Powered by NiKAS Technical</div>
+    <div class="powered-text" style="margin-bottom:5px;">Powered by NiKAS Technical</div>
     <div class="header-logo">🏛️ NomoTech</div>
-    <div style="font-size:0.75rem; color:#666; margin-top:5px;">Intelligence Platform</div>
+    <div class="sub-text" style="margin-top:5px;">Intelligence Platform</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -315,21 +318,14 @@ st.markdown('<div class="search-container">', unsafe_allow_html=True)
 search_query = st.text_input("", placeholder="🔍 Αναζήτηση...")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# SMART SEARCH FILTERING
 if search_query:
-    # 1. Clean query (remove accents, lowercase)
     q_clean = normalize_text(search_query)
     q_words = q_clean.split()
-    
     def search_algorithm(row):
-        # 2. Clean content
         row_text = normalize_text(str(row['title']) + " " + str(row['content']) + " " + str(row.get('smart_tags', '')))
-        # 3. Check if ALL words exist in text (AND logic)
         return all(word in row_text for word in q_words)
-
     df = df[df.apply(search_algorithm, axis=1)]
 
-# FIXED TICKER
 if not df.empty:
     titles = "   +++   ".join([f"{r['title']}" for i, r in df.head(10).iterrows()])
     st.markdown(f"""
@@ -342,17 +338,12 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
-# --- SLIDER FRAGMENT (DOTS) ---
 @st.fragment(run_every=6)
 def show_hero_slider(curr_df):
     if curr_df.empty: return
     
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
-    if 'manual_override' not in st.session_state: st.session_state.manual_override = False
-    
-    if not st.session_state.manual_override:
-        st.session_state.slider_idx += 1
-    st.session_state.manual_override = False 
+    st.session_state.slider_idx += 1
 
     slide_len = min(5, len(curr_df))
     idx = st.session_state.slider_idx % slide_len
@@ -361,7 +352,11 @@ def show_hero_slider(curr_df):
     badges = render_badges(row)
     date_d = format_smart_date(row['last_update'])
 
-    # IMAGE
+    dots_html = ""
+    for i in range(slide_len):
+        active_cls = "active" if i == idx else ""
+        dots_html += f'<div class="msn-dot {active_cls}"></div>'
+
     st.markdown(f"""
     <div class="hero-wrapper">
         <img src="{get_image(row)}" class="hero-image">
@@ -370,24 +365,11 @@ def show_hero_slider(curr_df):
             <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
             <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{date_d}</div>
         </div>
+        <div class="msn-dots-container">
+            {dots_html}
+        </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # DOTS OVERLAY
-    st.markdown('<div class="dots-overlay-container">', unsafe_allow_html=True)
-    cols = st.columns([10, slide_len, 10]) 
-    with cols[1]:
-        dot_cols = st.columns(slide_len)
-        for i in range(slide_len):
-            with dot_cols[i]:
-                wrapper_class = "dot-wrapper dot-active" if i == idx else "dot-wrapper"
-                st.markdown(f'<div class="{wrapper_class}">', unsafe_allow_html=True)
-                if st.button("●", key=f"dot_{i}"):
-                    st.session_state.slider_idx = i
-                    st.session_state.manual_override = True
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
 def render_tab(tab_name):
     if tab_name == "HOME": 
@@ -404,11 +386,47 @@ def render_tab(tab_name):
     if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
-        # Widget
+        # UPDATED WIDGET FOR MOBILE DARK MODE SUPPORT
         components.html("""
-        <style> body{margin:0; overflow:hidden;} .light{display:block;} .dark{display:none;} @media(prefers-color-scheme:dark){.light{display:none;} .dark{display:block;}} </style>
-        <div class="light"><div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],"colorTheme":"light","isTransparent":true,"displayMode":"compact","locale":"el"}</script></div></div>
-        <div class="dark"><div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],"colorTheme":"dark","isTransparent":true,"displayMode":"compact","locale":"el"}</script></div></div>
+        <style> 
+            body { margin:0; overflow:hidden; } 
+            .light { display:block; } 
+            .dark { display:none; } 
+            
+            @media (prefers-color-scheme: dark) {
+                .light { display:none; } 
+                .dark { display:block; } 
+                body { background-color: #0e1117; } /* Match Streamlit Dark BG */
+            }
+        </style>
+        
+        <div class="light">
+            <div class="tradingview-widget-container">
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                {
+                "symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],
+                "colorTheme":"light",
+                "isTransparent":true,
+                "displayMode":"compact",
+                "locale":"el"
+                }
+                </script>
+            </div>
+        </div>
+        
+        <div class="dark">
+            <div class="tradingview-widget-container">
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                {
+                "symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],
+                "colorTheme":"dark",
+                "isTransparent":true,
+                "displayMode":"compact",
+                "locale":"el"
+                }
+                </script>
+            </div>
+        </div>
         """, height=70)
 
         c_hero, c_list = st.columns([1.8, 1.2])
