@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FINAL DRASTIC FIX) ---
+# --- 2. CSS (THE FINAL DRASTIC FIX v37) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -99,68 +99,42 @@ st.markdown("""
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* --- !!! MSN BUTTONS FIX (THE MAGIC) !!! --- */
+    /* --- !!! MSN BUTTONS FIX v37 (THE FORCE OVERRIDE) !!! --- */
     
-    /* 1. Ξεκλειδώνουμε όλα τα containers για να μην κόβουν τα κουμπιά */
-    [data-testid="stVerticalBlock"], [data-testid="stHorizontalBlock"], [data-testid="column"] {
+    /* 1. Ξεκλειδώνουμε όλα τα containers για να επιτρέψουμε την επικάλυψη */
+    div[data-testid="stVerticalBlock"], div[data-testid="stHorizontalBlock"], div[data-testid="column"] {
         overflow: visible !important;
     }
 
-    /* 2. Στοχεύουμε τα κουμπιά που βρίσκονται ΜΕΣΑ στο στοιχείο που θα ορίσουμε ως .msn-controls */
-    /* Αυτό το class θα το βάλουμε με markdown γύρω από τα κουμπιά */
+    /* 2. Στοχεύουμε τα κουμπιά που θα προσθέσουμε με το ειδικό ID */
+    /* Το ID #msn-controls θα μπει με markdown γύρω από τα buttons */
     
-    div.stButton > button {
-        /* Default Streamlit button reset */
-    }
-
-    /* Ειδικό στυλ ΜΟΝΟ για τα κουμπιά του slider */
-    /* Χρησιμοποιούμε έναν πολύ συγκεκριμένο selector */
-    div[data-testid="column"] button p {
-        font-size: 20px !important;
-        line-height: 1 !important;
-        margin: 0 !important;
-        padding-bottom: 2px !important;
-    }
-
-    /* ΚΟΥΜΠΙ ΑΡΙΣΤΕΡΑ */
-    div[data-testid="column"]:nth-of-type(1) button {
+    .msn-arrow-btn > button {
         background-color: rgba(255, 255, 255, 0.75) !important;
         color: #000 !important;
         border: none !important;
-        border-radius: 6px !important;
+        border-radius: 6px !important; /* Στρογγυλεμένες γωνίες */
         width: 40px !important;
         height: 40px !important;
-        position: absolute !important;
-        top: -260px !important; /* ΑΝΕΒΑΣΜΑ */
-        left: 20px !important;  /* ΚΟΛΛΗΜΑ ΑΡΙΣΤΕΡΑ */
-        z-index: 99999 !important;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+        transition: all 0.2s ease-in-out !important;
+        
+        /* THE LIFT - ΤΑ ΣΗΚΩΝΟΥΜΕ ΠΑΝΩ */
+        position: relative !important;
+        top: -280px !important; /* Ανεβαίνουν πάνω στην εικόνα */
+        z-index: 999999 !important; /* Πάνω από όλα */
+        margin-bottom: -50px !important; /* Εξουδετέρωση κενού */
     }
 
-    /* ΚΟΥΜΠΙ ΔΕΞΙΑ */
-    div[data-testid="column"]:nth-of-type(3) button {
-        background-color: rgba(255, 255, 255, 0.75) !important;
-        color: #000 !important;
-        border: none !important;
-        border-radius: 6px !important;
-        width: 40px !important;
-        height: 40px !important;
-        position: absolute !important;
-        top: -260px !important; /* ΑΝΕΒΑΣΜΑ */
-        right: 20px !important; /* ΚΟΛΛΗΜΑ ΔΕΞΙΑ */
-        z-index: 99999 !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
-    }
-
-    /* HOVER EFFECT */
-    div[data-testid="column"] button:hover {
-        background-color: white !important;
+    .msn-arrow-btn > button:hover {
+        background-color: #fff !important;
         transform: scale(1.1);
     }
-
-    /* ΚΡΥΨΙΜΟ ΤΟΥ ΜΕΣΑΙΟΥ Spacer */
-    div[data-testid="column"]:nth-of-type(2) {
-        pointer-events: none;
+    
+    /* Ρυθμίζουμε το μέγεθος του βέλους μέσα στο κουμπί */
+    .msn-arrow-btn > button p {
+        font-size: 20px !important;
+        margin-top: -3px !important;
     }
 
     /* Badges */
@@ -437,15 +411,19 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # --- MSN STYLE BUTTONS (THE ABSOLUTE FINAL FIX) ---
-                # We put them in a row, BUT use the special class to target them
+                # --- MSN STYLE BUTTONS (THE CLASS INJECTION FIX v37) ---
                 c_left, c_mid, c_right = st.columns([1, 15, 1])
                 
-                # Apply the CSS that lifts THIS specific row
+                # Εδώ βάζουμε το ειδικό class στον Container των κουμπιών
                 with c_left: 
+                    st.markdown('<div class="msn-arrow-btn">', unsafe_allow_html=True)
                     if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
                 with c_right: 
+                    st.markdown('<div class="msn-arrow-btn">', unsafe_allow_html=True)
                     if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
             with col_list:
                 st.markdown("### Top Stories")
