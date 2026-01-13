@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (THE FINAL FIX v29) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -31,26 +31,26 @@ st.markdown("""
         color: #222; 
     }
     
-    /* --- SEARCH BAR (BLUE BG + WHITE TEXT + BORDER) --- */
+    /* --- SEARCH BAR --- */
     div[data-baseweb="input"] {
-        background-color: #003366 !important; /* Brand Blue */
-        border: 1px solid #004080 !important; /* Διακριτικό Μπλε Περίγραμμα */
+        background-color: #003366 !important; 
+        border: 1px solid #004080 !important;
         border-radius: 4px !important;
     }
     div[data-baseweb="input"] input {
-        color: #ffffff !important; /* ΛΕΥΚΑ ΓΡΑΜΜΑΤΑ */
+        color: #ffffff !important;
         caret-color: #ffffff !important;
         font-weight: 500 !important;
     }
     div[data-baseweb="input"] input::placeholder {
-        color: #b3cce6 !important; /* Ανοιχτό γκρι-μπλε για το placeholder */
+        color: #b3cce6 !important;
     }
 
-    /* Sidebar Arrow Fix */
+    /* --- SIDEBAR ARROW --- */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
-    /* Top Branding */
+    /* --- BRANDING --- */
     .top-powered-brand {
         font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; font-weight: 400; color: #666;
         letter-spacing: 0.5px; margin-bottom: 2px; text-align: center; padding-top: 15px;
@@ -58,10 +58,10 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (NO BLACK BORDERS) */
+    /* --- CLEAN CARDS (NO BORDERS) --- */
     .brand-card {
         background: #ffffff;
-        border: 1px solid #f0f0f0 !important; /* Πολύ απαλό γκρι */
+        border: 1px solid #f0f0f0 !important; 
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
@@ -78,7 +78,6 @@ st.markdown("""
     }
     .brand-btn:hover { background-color: #444; color: #fff !important; }
 
-    /* Header */
     .header-container { 
         background: white; padding: 0 0 25px 0; 
         border-bottom: 2px solid #003366; text-align: center; 
@@ -90,7 +89,6 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    /* Cards (NO BLACK BORDERS) */
     .list-item { 
         background: white; padding: 20px; 
         border: none !important; 
@@ -104,7 +102,7 @@ st.markdown("""
 
     .grid-card { 
         background: white; 
-        border: 1px solid #f5f5f5 !important; /* Απαλό γκρι */
+        border: 1px solid #f5f5f5 !important; 
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -114,31 +112,35 @@ st.markdown("""
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
     .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
 
-    /* Ticker Light */
     .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Hero Slider Overlay Styling */
+    /* --- HERO SLIDER (THE MSN LOOK) --- */
     .hero-wrapper { 
-        position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; 
+        position: relative; height: 450px; overflow: hidden; margin-bottom: 0px; /* Removed margin */
         box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
     }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
     .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
     .hero-overlay { 
         position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; 
-        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); 
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none;
     }
     .hero-title { 
         font-family: 'Merriweather', serif; color: white !important; 
         font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
         text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer;
+        pointer-events: auto; /* Enable click on text */
     }
     .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
 
-    /* Micro-Badges */
+    /* --- SLIDER BUTTONS (MSN STYLE - FLOATING) --- */
+    /* This targets the buttons in the row immediately following the image */
+    /* We assume we wrap them in a specific layout in Python */
+    
+    /* Small Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -150,15 +152,15 @@ st.markdown("""
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
-        /* Search Bar Dark */
         div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
         div[data-baseweb="input"] input { color: white !important; }
 
-        /* Arrow & Logo Invert */
+        .tv-light-container { display: none !important; }
+        .tv-dark-container { display: block !important; }
+
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
         .brand-card img { filter: invert(1); } 
 
-        /* Header Dark */
         .header-container { background: #0e1117 !important; border-bottom: 3px solid #4da6ff; }
         .header-logo { color: #fff !important; }
         .header-sub { color: #aaa !important; }
@@ -166,17 +168,14 @@ st.markdown("""
         .top-powered-brand a { color: #fff !important; }
         .top-powered-brand a:hover { border-bottom: 1px solid #fff; }
 
-        /* Ticker Dark */
         .ticker-wrap { background-color: #262730 !important; border-color: #444 !important; }
         .ticker-item { color: #eee !important; }
         .ticker-label { background: #262730 !important; color: #ff4b4b !important; border-right: 1px solid #444 !important; }
 
-        /* Brand Card Dark */
         .brand-card { background: #262730 !important; border: none !important; box-shadow: none !important; }
         .brand-sub { color: #ddd !important; }
         .brand-btn { background-color: #eee !important; color: #000 !important; }
 
-        /* Cards Dark */
         .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
         .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff !important; }
         .list-title, .list-title a { color: #fff !important; }
@@ -376,46 +375,34 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (THE ONE AND ONLY UNIFIED WIDGET) ---
-            # Εδώ είναι το μυστικό: Ένα HTML, δύο div μέσα, και CSS που κρύβει το ένα
+            # --- TRADINGVIEW (STRICT MODE SEPARATION) ---
+            st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
             components.html("""
-            <style>
-                /* Default (Light Mode) */
-                .tv-widget-light { display: block; }
-                .tv-widget-dark { display: none; }
-
-                /* Dark Mode Override (Media Query inside the Iframe) */
-                @media (prefers-color-scheme: dark) {
-                    .tv-widget-light { display: none; }
-                    .tv-widget-dark { display: block; }
-                }
-                body { margin: 0; padding: 0; overflow: hidden; }
-            </style>
-
-            <div class="tv-widget-light">
-                <div class="tradingview-widget-container">
-                  <div class="tradingview-widget-container__widget"></div>
-                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-                  {
-                  "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-                  "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
-                  }
-                  </script>
-                </div>
-            </div>
-
-            <div class="tv-widget-dark">
-                <div class="tradingview-widget-container">
-                  <div class="tradingview-widget-container__widget"></div>
-                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-                  {
-                  "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
-                  "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
-                  }
-                  </script>
-                </div>
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
             </div>
             """, height=70)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
+            components.html("""
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [{"proName": "ATHEX:GD", "title": "Χ.Α.Α."}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "XETRA:DAX", "title": "DAX"}],
+              "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "compact", "locale": "el"
+              }
+              </script>
+            </div>
+            """, height=70)
+            st.markdown('</div>', unsafe_allow_html=True)
             
             col_hero, col_list = st.columns([1.8, 1.2])
             with col_hero:
@@ -439,10 +426,44 @@ elif not df.empty:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                c1, c2, c3 = st.columns([0.1, 0.8, 0.1])
-                with c1: 
+                # --- MSN STYLE BUTTONS (FLOATING) ---
+                # We place the columns immediately after the image
+                # CSS pulls them UP (-250px) into the image area
+                c_left, c_mid, c_right = st.columns([1, 15, 1])
+                
+                # INJECT CUSTOM STYLE JUST FOR THESE BUTTONS
+                st.markdown("""
+                <style>
+                    /* Target the buttons inside the hero columns */
+                    /* Use the negative margin to lift the whole row up */
+                    div[data-testid="column"] button {
+                        transform: translateY(-260px); /* LIFT UP */
+                        background-color: rgba(255, 255, 255, 0.75) !important;
+                        border: none !important;
+                        color: black !important;
+                        width: 35px !important;
+                        height: 35px !important;
+                        border-radius: 4px !important; /* MSN Rounded Square */
+                        font-size: 18px !important;
+                        line-height: 1 !important;
+                        padding: 0 !important;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
+                        z-index: 999;
+                        transition: 0.3s;
+                    }
+                    div[data-testid="column"] button:hover {
+                        background-color: rgba(255, 255, 255, 1.0) !important;
+                        transform: translateY(-260px) scale(1.1); /* Keep lifted position on hover */
+                    }
+                    /* Ensure the middle spacer doesn't block clicks */
+                    div[data-testid="column"] { pointer-events: none; }
+                    div[data-testid="column"] button { pointer-events: auto; }
+                </style>
+                """, unsafe_allow_html=True)
+
+                with c_left: 
                     if st.button("❮", key=f"prev_{tab_code}"): st.session_state.slider_idx -= 1; st.rerun()
-                with c3: 
+                with c_right: 
                     if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
 
             with col_list:
