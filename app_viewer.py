@@ -17,19 +17,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (BORDERLESS MINIMALISM) ---
+# --- 2. CSS (THE FINAL FIX) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (BORDERLESS & CLEAN) === 
+       === LIGHT MODE (ABSOLUTE MINIMALISM) === 
        ========================================= */
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
     
-    /* Sidebar Arrow */
-    [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000 !important; }
-    [data-testid="stSidebar"] button { opacity: 1 !important; color: #000 !important; }
+    /* Arrow Fix - ALWAYS VISIBLE BLACK */
+    [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
+    [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
     /* Top Branding */
     .top-powered-brand {
@@ -39,14 +39,14 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (BORDERLESS) */
+    /* Brand Card (NO BORDERS) */
     .brand-card {
         background: #ffffff;
         border: none !important; /* ΚΑΝΕΝΑ ΠΕΡΙΓΡΑΜΜΑ */
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Μόνο σκιά */
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06); /* ΜΟΝΟ ΣΚΙΑ */
         text-align: center;
     }
     .brand-btn { 
@@ -59,11 +59,11 @@ st.markdown("""
     }
     .brand-btn:hover { background-color: #444; color: #fff !important; }
 
-    /* Header */
+    /* Header (NO SHADOW/BORDER) */
     .header-container { 
         background: white; padding: 0 0 25px 0; 
-        border-bottom: 3px solid #003366; text-align: center; 
-        box-shadow: none; margin-bottom: 15px; /* No shadow, clean */
+        border-bottom: 2px solid #003366; text-align: center; 
+        box-shadow: none !important; margin-bottom: 15px; 
     }
     .header-logo { font-family: 'Merriweather', serif; font-size: 3rem; font-weight: 900; color: #003366; letter-spacing: -1px; }
     .header-sub { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-top:5px;}
@@ -71,8 +71,8 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    /* Cards (BORDERLESS) */
-    .list-item { background: white; padding: 20px; border-bottom: 1px solid #f0f0f0; transition: 0.2s; margin-bottom: 5px; }
+    /* Cards (NO BORDERS) */
+    .list-item { background: white; padding: 20px; border-bottom: 1px solid #f5f5f5; transition: 0.2s; margin-bottom: 5px; border-left: none; border-right: none; border-top: none; }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366; }
     .list-title { font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; font-weight: 600; color: #111; margin-bottom: 5px; line-height: 1.4; }
     .list-title a { color: #111 !important; text-decoration: none; }
@@ -83,26 +83,25 @@ st.markdown("""
         border: none !important; /* ΚΑΝΕΝΑ ΠΕΡΙΓΡΑΜΜΑ */
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06); /* Απαλή Σκιά */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* ΑΠΑΛΗ ΣΚΙΑ */
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     .grid-title { font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; font-weight: 700; color: #111; margin-bottom: 8px; line-height: 1.35; }
-    .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f0f0f0; padding-top: 5px; }
+    .article-date { font-size: 0.7rem; color: #aaa; text-align: right; margin-top: 10px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
 
     /* Ticker Light */
-    .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
+    .ticker-wrap { background-color: #ffffff; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; height: 32px; overflow: hidden; white-space: nowrap; display: flex; align-items: center; margin-bottom: 20px; }
     .ticker-item { display: inline-block; padding-left: 100%; animation: ticker 80s linear infinite; font-size: 0.8rem; color: #333; font-weight: 600; }
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Micro-Badges */
-    .badge-sos { background-color: #dc3545; color: white; padding: 2px 5px; border-radius: 2px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; }
-    .badge-law { background-color: #003366; color: white; padding: 2px 5px; border-radius: 2px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; }
-    .badge-real { background-color: #28a745; color: white; padding: 2px 5px; border-radius: 2px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; }
-    .badge-leg { background-color: #444; color: white; padding: 2px 5px; border-radius: 2px; font-size: 0.6rem; font-weight: 700; margin-right: 4px; display: inline-block; }
+    /* Micro-Badges (Smaller) */
+    .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
+    .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
+    .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
+    .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
 
-    /* Inputs */
     .stTextInput input { border-radius: 2px; border: 1px solid #e0e0e0; padding: 10px; background-color: #fff; }
 
     /* =========================================
@@ -128,16 +127,17 @@ st.markdown("""
         .ticker-item { color: #eee !important; }
         .ticker-label { background: #262730 !important; color: #ff4b4b !important; border-right: 1px solid #444 !important; }
 
-        /* Cards Dark (No Border) */
-        .brand-card { background: #262730 !important; box-shadow: none !important; }
+        /* Brand Card Dark (No Border) */
+        .brand-card { background: #262730 !important; border: none !important; box-shadow: none !important; }
         .brand-sub { color: #ddd !important; }
         .brand-btn { background-color: #eee !important; color: #000 !important; }
 
+        /* Cards Dark (No Border) */
         .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
         .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff; }
         .list-title, .list-title a { color: #fff !important; }
         
-        .grid-card { background: #262730 !important; box-shadow: none !important; }
+        .grid-card { background: #262730 !important; border: none !important; box-shadow: none !important; }
         .grid-title { color: #fff !important; }
         .grid-img { background: #333 !important; }
         
@@ -145,10 +145,11 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* --- TRADINGVIEW DARK MODE FIX (THE NUCLEAR OPTION) --- */
-        /* Αυτό στοχεύει το iframe και αντιστρέφει τα χρώματα ΜΕΣΑ στο widget */
-        iframe[title="3rd party frame"] { 
-            filter: invert(1) hue-rotate(180deg) !important; 
+        /* --- TRADINGVIEW DARK MODE FIX (MAGIC FILTER) --- */
+        /* Αυτό κάνει τα γράμματα ΛΕΥΚΑ στο Dark Mode */
+        .tradingview-widget-container { 
+            filter: invert(1) hue-rotate(180deg) !important;
+            mix-blend-mode: hard-light; /* Εξτρα φωτεινότητα στα γράμματα */
         } 
         
         .stTextInput input { background-color: #262730; color: white; border: 1px solid #555; }
