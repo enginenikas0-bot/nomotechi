@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE FIX FOR BORDERS & WIDGETS) ---
+# --- 2. CSS (STRICT SEPARATION LIGHT/DARK) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -25,19 +25,35 @@ st.markdown("""
     /* =========================================
        === LIGHT MODE (DEFAULT) === 
        ========================================= */
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
+    html, body, [class*="css"] { 
+        font-family: 'Segoe UI', sans-serif; 
+        background-color: #ffffff; 
+        color: #222; 
+    }
     
-    /* CLEAN INPUTS (REMOVES BLACK BORDERS) */
+    /* --- SEARCH BAR LIGHT MODE (WHITE TEXT REQUEST) --- */
+    /* Για να φαίνονται τα λευκά γράμματα, κάνουμε το φόντο Σκούρο Μπλε */
     div[data-baseweb="input"] {
-        border: 1px solid #eee !important;
-        background-color: #f8f9fa !important;
+        background-color: #003366 !important; /* Brand Blue Background */
+        border: none !important;
         border-radius: 4px !important;
     }
-    div[data-baseweb="base-input"] {
-        background-color: transparent !important;
+    /* Το ίδιο το κείμενο που γράφεις */
+    div[data-baseweb="input"] input {
+        color: #ffffff !important; /* ΛΕΥΚΑ ΓΡΑΜΜΑΤΑ */
+        -webkit-text-fill-color: #ffffff !important;
+        font-weight: 500 !important;
     }
-    
-    /* Sidebar Arrow Fix */
+    /* Placeholder (το κείμενο "Αναζήτηση...") */
+    div[data-baseweb="input"] input::placeholder {
+        color: #cccccc !important; /* Ανοιχτό γκρι για να ξεχωρίζει */
+    }
+
+    /* --- TRADINGVIEW LIGHT (SHOW TOP ONLY) --- */
+    .tv-light-container { display: block !important; }
+    .tv-dark-container { display: none !important; }
+
+    /* Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -52,11 +68,11 @@ st.markdown("""
     /* Brand Card (NO BORDERS) */
     .brand-card {
         background: #ffffff;
-        border: 1px solid #f0f0f0 !important; 
+        border: none !important; 
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* Only Shadow */
         text-align: center;
     }
     .brand-btn { 
@@ -95,10 +111,10 @@ st.markdown("""
 
     .grid-card { 
         background: white; 
-        border: 1px solid #f5f5f5 !important; /* Πολύ απαλό γκρι, όχι μαύρο */
+        border: none !important; 
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -135,19 +151,19 @@ st.markdown("""
     .badge-real { background-color: #28a745; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-leg { background-color: #444; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
 
-    /* --- TRADINGVIEW TOGGLE LOGIC --- */
-    /* Default (Light Mode): Show Light Widget, Hide Dark */
-    .tv-light-container { display: block; }
-    .tv-dark-container { display: none; }
-
     /* =========================================
-       === DARK MODE (AUTOMATIC) === 
+       === DARK MODE (AUTOMATIC OVERRIDES) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
         
-        /* CLEAN INPUTS DARK */
-        div[data-baseweb="input"] { border: 1px solid #333 !important; background-color: #262730 !important; }
+        /* --- SEARCH BAR DARK MODE (Standard Dark) --- */
+        div[data-baseweb="input"] { background-color: #262730 !important; border: 1px solid #333 !important; }
+        div[data-baseweb="input"] input { color: white !important; }
+
+        /* --- TRADINGVIEW DARK (SHOW BOTTOM ONLY) --- */
+        .tv-light-container { display: none !important; }
+        .tv-dark-container { display: block !important; }
 
         /* Arrow & Logo Invert */
         [data-testid="collapsedControl"], [data-testid="stSidebar"] button { color: #ffffff !important; }
@@ -183,11 +199,6 @@ st.markdown("""
         .article-date { color: #777 !important; border-top: 1px solid #444 !important; }
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
-
-        /* --- TRADINGVIEW DARK MODE TOGGLE --- */
-        /* In Dark Mode: Hide Light Widget, Show Dark */
-        .tv-light-container { display: none !important; }
-        .tv-dark-container { display: block !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -374,8 +385,8 @@ elif not df.empty:
             return
 
         if not search_query and tab_code == "HOME":
-            # --- TRADINGVIEW (DOUBLE WIDGET TRICK) ---
-            # 1. LIGHT MODE WIDGET (Hidden in Dark Mode)
+            # --- TRADINGVIEW (STRICT MODE SEPARATION) ---
+            # 1. LIGHT MODE WIDGET (Top Row) - Hidden in Dark Mode via CSS
             st.markdown('<div class="tv-light-container">', unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
@@ -390,7 +401,7 @@ elif not df.empty:
             """, height=70)
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # 2. DARK MODE WIDGET (Hidden in Light Mode)
+            # 2. DARK MODE WIDGET (Bottom Row) - Hidden in Light Mode via CSS
             st.markdown('<div class="tv-dark-container">', unsafe_allow_html=True)
             components.html("""
             <div class="tradingview-widget-container">
