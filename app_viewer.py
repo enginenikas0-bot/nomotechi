@@ -17,17 +17,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (THE NUCLEAR FIX v21) ---
+# --- 2. CSS (THE FINAL FIX v22) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
     /* =========================================
-       === LIGHT MODE (FORCE MINIMAL) === 
+       === LIGHT MODE (DEFAULT) === 
        ========================================= */
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; color: #222; }
     
-    /* Arrow Fix - ALWAYS VISIBLE BLACK */
+    /* Arrow Fix */
     [data-testid="collapsedControl"] { display: block !important; opacity: 1 !important; color: #000000 !important; }
     [data-testid="stSidebar"] button { opacity: 1 !important; color: #000000 !important; }
 
@@ -39,15 +39,15 @@ st.markdown("""
     .top-powered-brand a { color: #444 !important; text-decoration: none; border-bottom: 1px solid transparent; transition: 0.3s; }
     .top-powered-brand a:hover { color: #000 !important; border-bottom: 1px solid #000; }
 
-    /* Brand Card (NO BORDERS - FORCED) */
+    /* Brand Card (NO BORDERS) */
     .brand-card {
         background: #ffffff;
-        border: 0px solid transparent !important;
+        border: none !important; 
         outline: none !important;
         border-radius: 4px; 
         padding: 25px 15px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Only Shadow */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         text-align: center;
     }
     .brand-btn { 
@@ -72,11 +72,11 @@ st.markdown("""
     .powered-footer { text-align: center; font-size: 0.75rem; color: #999; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; }
     .powered-footer a { color: #333; text-decoration: none; font-weight: 600; }
 
-    /* Cards (NO BORDERS - FORCED) */
+    /* Cards (NO BORDERS) */
     .list-item { 
         background: white; padding: 20px; 
-        border: none !important; /* Force remove border */
-        border-bottom: 1px solid #f5f5f5 !important; /* Only bottom line */
+        border: none !important; 
+        border-bottom: 1px solid #f5f5f5 !important;
         transition: 0.2s; margin-bottom: 5px; 
     }
     .list-item:hover { background-color: #fafafa; border-left: 3px solid #003366 !important; }
@@ -86,11 +86,11 @@ st.markdown("""
 
     .grid-card { 
         background: white; 
-        border: 0px solid transparent !important; /* Force remove border */
+        border: none !important; 
         outline: none !important;
         border-radius: 4px; 
         overflow: hidden; height: 100%; display: flex; flex-direction: column; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Only Shadow */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         transition: transform 0.2s; 
     }
     .grid-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -103,6 +103,24 @@ st.markdown("""
     .ticker-label { position: absolute; left: 0; background: white; z-index: 10; padding: 5px 15px; font-size: 0.7rem; font-weight: 700; color: #cc0000; border-right: 1px solid #eee; height: 30px; line-height: 22px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
+    /* Hero Slider Overlay Styling (Restored) */
+    .hero-wrapper { 
+        position: relative; height: 450px; overflow: hidden; margin-bottom: 25px; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15); border-radius: 4px; border: none !important;
+    }
+    .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: transform 6s ease; }
+    .hero-image:hover { transform: scale(1.05); filter: brightness(0.75); }
+    .hero-overlay { 
+        position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; 
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); 
+    }
+    .hero-title { 
+        font-family: 'Merriweather', serif; color: white !important; 
+        font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
+        text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer;
+    }
+    .hero-title:hover { text-decoration: underline; color: #f0f0f0 !important; }
+
     /* Micro-Badges */
     .badge-sos { background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
     .badge-law { background-color: #003366; color: white; padding: 1px 4px; border-radius: 2px; font-size: 0.55rem; font-weight: 700; margin-right: 3px; display: inline-block; letter-spacing: 0.5px; }
@@ -112,7 +130,7 @@ st.markdown("""
     .stTextInput input { border-radius: 2px; border: 1px solid #e0e0e0; padding: 10px; background-color: #fff; }
 
     /* =========================================
-       === DARK MODE (FIXED & INVERTED) === 
+       === DARK MODE (INVERTED & FIXED) === 
        ========================================= */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117; color: #fafafa; }
@@ -141,7 +159,7 @@ st.markdown("""
 
         /* Cards Dark */
         .list-item { background: #262730 !important; border-bottom: 1px solid #444 !important; }
-        .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff; }
+        .list-item:hover { background-color: #30333d !important; border-left: 3px solid #4da6ff !important; }
         .list-title, .list-title a { color: #fff !important; }
         
         .grid-card { background: #262730 !important; border: none !important; box-shadow: none !important; }
@@ -152,10 +170,8 @@ st.markdown("""
         .powered-footer { color: #666 !important; border-top: 1px solid #333 !important; }
         .powered-footer a { color: #bbb !important; }
 
-        /* --- TRADINGVIEW DARK MODE FIX (NUCLEAR) --- */
-        /* Αυτό στοχεύει ΟΛΑ τα iframes στο Dark Mode και αντιστρέφει τα χρώματα */
-        /* Έτσι το μαύρο κείμενο του TradingView γίνεται αναγκαστικά λευκό */
-        iframe { 
+        /* --- TRADINGVIEW DARK MODE FIX (ONLY IN DARK MODE) --- */
+        iframe[title="3rd party frame"] { 
             filter: invert(1) hue-rotate(180deg) !important;
         } 
         
@@ -368,13 +384,16 @@ elif not df.empty:
                 hero_img = get_display_image(hero_article)
                 hero_badges = render_badges(hero_article['category'])
                 
+                # --- HERO SLIDER OVERLAY (RESTORED) ---
                 st.markdown(f"""
                 <div class="hero-wrapper">
                     <img src="{hero_img}" class="hero-image" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200';">
                     <div class="hero-overlay">
                         <div>{hero_badges}</div>
-                        <div class="hero-title"><a href="{hero_article['link']}" target="_blank">{hero_article['title']}</a></div>
-                        <div style="color:#ddd; margin-top:5px;">{hero_article['last_update']}</div>
+                        <a href="{hero_article['link']}" target="_blank" style="text-decoration:none;">
+                            <div class="hero-title">{hero_article['title']}</div>
+                        </a>
+                        <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{hero_article['last_update']}</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -386,7 +405,7 @@ elif not df.empty:
                     if st.button("❯", key=f"next_{tab_code}"): st.session_state.slider_idx += 1; st.rerun()
 
             with col_list:
-                st.markdown("### ⚡ Top Stories")
+                st.markdown("### Top Stories")
                 for idx, row in current_df.head(6).iterrows():
                     badges = render_badges(row['category'])
                     st.markdown(f"""
