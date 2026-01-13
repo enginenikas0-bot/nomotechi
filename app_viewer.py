@@ -15,119 +15,88 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (MOBILE & DARK MODE FIXES) ---
+# --- 2. CSS (FORCED DARK BRANDING) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     
-    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; color: #222; }
+    html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     
-    /* Input Fields */
-    div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; border-radius: 4px; }
-    div[data-baseweb="input"] input { color: white !important; caret-color: white; font-weight: 500; }
-    
-    /* --- SIDEBAR (DARK) --- */
-    [data-testid="stSidebar"] {
-        background-color: #111827 !important;
-        border-right: 1px solid #374151;
-    }
-    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
-        color: #ffffff !important;
-        font-weight: 500;
-    }
-    .sidebar-header {
-        color: #ffffff !important;
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        font-size: 1rem;
-        margin-bottom: 10px;
-        border-bottom: 2px solid #3b82f6;
-        padding-bottom: 5px;
-        display: inline-block;
-    }
-    .sidebar-card {
-        background: #1f2937;
-        border: 1px solid #374151;
-        border-radius: 8px;
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        margin-bottom: 20px;
-    }
-    .sidebar-logo {
-        max-width: 120px;
-        margin-bottom: 10px;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        filter: brightness(1.1);
-    }
-    .sidebar-btn {
-        display: block;
-        width: 100%;
-        background-color: #000000;
-        color: white !important;
-        text-decoration: none;
-        padding: 10px 0;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        margin-top: 15px;
-        transition: 0.2s;
-        border: 1px solid #333;
-    }
-
-    /* --- HEADER (Default Light) --- */
+    /* --- HEADER (ALWAYS DARK BLUE) --- */
+    /* Force Dark Blue Background regardless of Light/Dark Mode */
     .header-container { 
-        background: white; 
-        padding: 10px 0 25px 0; 
-        border-bottom: 2px solid #003366; 
+        background-color: #003366 !important; 
+        padding: 15px 0 25px 0; 
+        border-bottom: 3px solid #004080; 
         text-align: center; 
-        margin-bottom: 20px; 
+        margin-bottom: 0px; 
+        border-radius: 0 0 8px 8px;
     }
+    /* Force White Text */
     .header-logo { 
         font-family: 'Merriweather', serif; 
-        font-size: 3rem; 
+        font-size: 2.5rem; /* Slightly smaller for mobile safety */
         font-weight: 900; 
-        color: #003366; 
+        color: #ffffff !important; 
         letter-spacing: -1px; 
         line-height: 1.2; 
     }
-    .powered-text { font-size: 0.8rem; color: #888; }
-    .sub-text { font-size: 0.75rem; color: #666; }
+    .powered-text { font-size: 0.75rem; color: #b3cce6 !important; letter-spacing: 1px; }
+    .sub-text { font-size: 0.75rem; color: #d9e6f2 !important; margin-top: 5px; }
+
+    /* --- TICKER (ALWAYS DARK SLATE) --- */
+    .ticker-container { 
+        width: 100%; 
+        overflow: hidden; 
+        background-color: #1e293b !important; /* Dark Slate */
+        border-top: 1px solid #334155; 
+        border-bottom: 1px solid #334155; 
+        white-space: nowrap; 
+        height: 42px; 
+        display: flex; 
+        align-items: center; 
+        margin-bottom: 20px;
+    }
+    .ticker-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 80s linear infinite; }
+    .ticker-content:hover { animation-play-state: paused; }
+    .ticker-text { 
+        font-family: 'Segoe UI', sans-serif; 
+        font-weight: 600; 
+        color: #f1f5f9 !important; /* White-ish text */
+        font-size: 0.9rem; 
+    }
+    @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+    /* --- SIDEBAR (ALWAYS DARK) --- */
+    [data-testid="stSidebar"] { background-color: #111827 !important; border-right: 1px solid #374151; }
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #ffffff !important; font-weight: 500; }
+    .sidebar-header { color: #ffffff !important; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 10px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; display: inline-block; }
+    .sidebar-card { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; }
+    .sidebar-logo { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; filter: brightness(1.1); }
+    .sidebar-btn { display: block; width: 100%; background-color: #000000; color: white !important; text-decoration: none; padding: 10px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 700; margin-top: 15px; transition: 0.2s; border: 1px solid #333; }
+    .sidebar-btn:hover { background-color: #333333; color: white !important; border-color: #fff; }
+
+    /* --- SEARCH BAR --- */
+    div[data-baseweb="input"] { background-color: #f0f2f6 !important; border: 1px solid #ccc; border-radius: 4px; }
+    .search-container div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; }
+    .search-container div[data-baseweb="input"] input { color: white !important; caret-color: white; }
 
     /* --- SLIDER --- */
-    .hero-wrapper { 
-        position: relative; height: 450px; overflow: hidden; 
-        border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        z-index: 1; 
-    }
+    .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
-    .hero-overlay { 
-        position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 40px 60px 40px; 
-        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none;
-    }
-    .hero-title { 
-        font-family: 'Merriweather', serif; color: white !important; 
-        font-size: 2.2rem; font-weight: 700; line-height: 1.2; 
-        text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto;
-    }
+    .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; /* Less padding for mobile */ background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
+    .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; /* Scaled for mobile */ font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
 
-    /* Dots */
+    /* Visual Dots */
     .msn-dots-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; pointer-events: none; }
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
-
-    /* --- TICKER (Default Light) --- */
-    .ticker-container { width: 100%; overflow: hidden; background: #ffffff; border-top: 1px solid #eee; border-bottom: 1px solid #eee; white-space: nowrap; height: 40px; display: flex; align-items: center; }
-    .ticker-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 80s linear infinite; }
-    .ticker-text { font-family: 'Segoe UI', sans-serif; font-weight: 600; color: #333; font-size: 0.9rem; }
-    @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
     /* Cards */
     .list-item { background: #1e293b; padding: 15px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #3b82f6; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .list-title a { color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
     .list-date { color: #cbd5e1 !important; font-size: 0.75rem; margin-top: 5px; }
+    
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
     .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
@@ -138,25 +107,16 @@ st.markdown("""
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* --- FORCED DARK MODE (MOBILE FIX) --- */
+    /* Dark Mode (System) Overrides */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
-        
-        /* Force Header Dark */
-        .header-container { background-color: #0e1117 !important; border-bottom-color: #4da6ff !important; }
-        .header-logo { color: #ffffff !important; }
-        .powered-text, .sub-text { color: #aaa !important; }
-
-        /* Force Ticker Dark */
-        .ticker-container { background-color: #1e293b !important; border-color: #334155 !important; }
-        .ticker-text { color: #e2e8f0 !important; }
-
-        /* Force Cards Dark */
-        .grid-card { background-color: #1e293b !important; border: none !important; }
+        .grid-card { background: #262730 !important; border: none !important; }
         .article-meta { border-top-color: #334155 !important; color: #94a3b8 !important; }
-        
-        /* Mobile Specific Overrides */
-        [data-testid="stSidebar"] { background-color: #111827 !important; }
+        /* Inputs in dark mode */
+        div[data-baseweb="input"] { background-color: #262730 !important; border-color: #444 !important; }
+        div[data-baseweb="input"] input { color: white !important; }
+        .search-container div[data-baseweb="input"] { background-color: #003366 !important; } /* Keep search blue */
+        [data-testid="collapsedControl"] { color: white !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -273,7 +233,7 @@ def get_image_as_base64(file_path):
 
 def reset_database(): return False
 
-# --- 4. LAYOUT & SIDEBAR (DARK MODE) ---
+# --- 4. UI ---
 with st.sidebar:
     logo_b64 = get_image_as_base64("logo.jpg")
     img_html = f'<img src="data:image/jpeg;base64,{logo_b64}" class="sidebar-logo">' if logo_b64 else '<div style="font-size:3rem; margin-bottom:10px;">🏗️</div>'
@@ -386,47 +346,18 @@ def render_tab(tab_name):
     if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
-        # UPDATED WIDGET FOR MOBILE DARK MODE SUPPORT
+        # --- JS WIDGET DETECTION FOR MOBILE ---
         components.html("""
-        <style> 
-            body { margin:0; overflow:hidden; } 
-            .light { display:block; } 
-            .dark { display:none; } 
-            
-            @media (prefers-color-scheme: dark) {
-                .light { display:none; } 
-                .dark { display:block; } 
-                body { background-color: #0e1117; } /* Match Streamlit Dark BG */
-            }
-        </style>
-        
-        <div class="light">
-            <div class="tradingview-widget-container">
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-                {
-                "symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],
-                "colorTheme":"light",
-                "isTransparent":true,
-                "displayMode":"compact",
-                "locale":"el"
-                }
-                </script>
-            </div>
-        </div>
-        
-        <div class="dark">
-            <div class="tradingview-widget-container">
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-                {
-                "symbols":[{"proName":"ATHEX:GD","title":"ATHEX"},{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FX_IDC:EURUSD","title":"EUR/USD"}],
-                "colorTheme":"dark",
-                "isTransparent":true,
-                "displayMode":"compact",
-                "locale":"el"
-                }
-                </script>
-            </div>
-        </div>
+        <div id="tv-widget-container"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+        {
+          "symbols": [{"proName": "ATHEX:GD", "title": "ATHEX"}, {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}],
+          "colorTheme": window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light",
+          "isTransparent": true,
+          "displayMode": "compact",
+          "locale": "el"
+        }
+        </script>
         """, height=70)
 
         c_hero, c_list = st.columns([1.8, 1.2])
