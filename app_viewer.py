@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (MSN STYLE & GEOMETRY) ---
+# --- 2. CSS (CALCULATED GEOMETRY) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -52,10 +52,15 @@ st.markdown("""
     div[data-baseweb="input"] { background-color: #0f172a !important; border: 1px solid #334155 !important; border-radius: 4px; }
     .search-container div[data-baseweb="input"] input { color: #e2e8f0 !important; caret-color: #3b82f6; font-weight: 500; }
 
-    /* SLIDER HEIGHT ADJUSTED FOR ALIGNMENT */
+    /* SLIDER (Calculated Height: 412px) 
+       Calculation: 
+       Right Side = 6 items * (95px height + 8px margin) = 618px
+       Bottom Side = 2 rows * (95px height + 8px margin) = 206px
+       Slider = 618px - 206px = 412px
+    */
     .hero-wrapper { 
         position: relative; 
-        height: 440px; /* Slightly Reduced to match 4 Right Items perfectly if needed, but we have 6 now */
+        height: 412px; 
         overflow: hidden; 
         border-radius: 4px; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
@@ -70,13 +75,13 @@ st.markdown("""
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* MINI CARD */
+    /* MINI CARD (95px Height) */
     .mini-card { 
         background: #111827; 
         border: 1px solid #374151; 
         border-radius: 8px; 
         margin-bottom: 8px; 
-        height: 98px; 
+        height: 95px; 
         display: flex;
         flex-direction: row; 
         overflow: hidden;
@@ -115,7 +120,7 @@ st.markdown("""
     }
     
     .mini-image-box {
-        width: 100px; /* Slightly narrower for 4-col layout */
+        width: 100px; 
         height: 100%;
         background-size: cover;
         background-position: center;
@@ -305,6 +310,7 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
+# --- UPDATED SLIDER WITH SYNCED CONTENT (12 ITEMS) ---
 @st.fragment(run_every=4) 
 def show_hero_slider(curr_df):
     if curr_df.empty: return
@@ -312,7 +318,7 @@ def show_hero_slider(curr_df):
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
-    slide_len = min(14, len(curr_df)) # Limit to 14
+    slide_len = min(12, len(curr_df)) # Limit to 12
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     
@@ -353,6 +359,7 @@ def render_tab(tab_name):
     if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
+        # JS WIDGET
         components.html("""
         <div id="tv-widget-container"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
@@ -366,22 +373,22 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # --- ALIGNMENT STRATEGY (14 ITEMS) ---
+        # --- ALIGNMENT STRATEGY (12 ITEMS: 6 RIGHT, 6 BOTTOM in 3 COLS) ---
         c_hero, c_right = st.columns([2.2, 1])
         
-        # LEFT COLUMN
+        # LEFT COLUMN (Slider + Bottom Grid)
         with c_hero:
             show_hero_slider(curr)
             
-            # BOTTOM ITEMS: 8 Items (Indices 6 to 13)
-            # Displayed in 2 ROWS of 4 COLUMNS
-            bottom_items = curr.iloc[6:14]
+            # BOTTOM ITEMS: 6 Items (Indices 6 to 11)
+            # Displayed in 2 ROWS of 3 COLUMNS (Wider cards)
+            bottom_items = curr.iloc[6:12]
             if not bottom_items.empty:
-                rows_b = (len(bottom_items) + 3) // 4 # Calculate rows for 4 cols
+                rows_b = (len(bottom_items) + 2) // 3 
                 for i in range(rows_b):
-                    cols_b = st.columns(4) # 4 columns!
+                    cols_b = st.columns(3) # 3 Wider columns
                     for j, col_b in enumerate(cols_b):
-                        idx_b = i * 4 + j
+                        idx_b = i * 3 + j
                         if idx_b < len(bottom_items):
                             r = bottom_items.iloc[idx_b]
                             src_label = str(r['source']).upper()[:12]
@@ -422,7 +429,7 @@ def render_tab(tab_name):
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
-    start = 14 if (tab_name == "HOME" and not search_query) else 0 # Offset by 14
+    start = 12 if (tab_name == "HOME" and not search_query) else 0 # Offset by 12
     
     grid_items = curr.iloc[start:]
     if not grid_items.empty:
