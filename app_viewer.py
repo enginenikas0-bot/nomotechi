@@ -50,7 +50,12 @@ st.markdown("""
     .mini-card { background: #111827; border: 1px solid #374151; border-radius: 8px; margin-bottom: 8px; height: 95px; display: flex; flex-direction: row; overflow: hidden; transition: transform 0.2s; }
     .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
-    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; line-height: 1; }
+    
+    /* Metadata Row in Mini Card */
+    .mini-meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
+    .mini-ago { font-size: 0.65rem; color: #60a5fa; font-weight: 600; } /* Blueish relative time */
+
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .mini-image-box { width: 100px; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; border-left: 1px solid #374151; flex-shrink: 0; }
 
@@ -73,7 +78,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC (SURGICAL SEPARATION) ---
+# --- 3. LOGIC ---
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
@@ -81,10 +86,7 @@ def normalize_text(text):
 
 def analyze_content_deep(row):
     """
-    STRICT FILTER LOGIC:
-    - ENG: Pure Technical, Real Estate, or Construction Law.
-    - LAW: Pure Justice, Courts, Lawyers, Criminal/Civil Law.
-    - FEK: Official Legislation Documents (regardless of topic).
+    SURGICAL SEPARATION (v79 LOGIC)
     """
     title = normalize_text(str(row.get('title', '')))
     content = normalize_text(str(row.get('content', '')))
@@ -93,66 +95,30 @@ def analyze_content_deep(row):
     
     tags = set()
 
-    # --- 1. DETECTING "PURE" ENGINEERING / TECHNICAL ---
-    # Keywords that specifically mean "Technical Engineering/Real Estate"
-    eng_keywords_strict = [
-        "μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", 
-        "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", 
-        "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"
-    ]
-    
+    # --- ENG ---
+    eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"]
     is_eng = False
-    # Check Source Bias first
-    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]):
-        is_eng = True
-    # Check Content
-    elif any(kw in title for kw in eng_keywords_strict) or "ENG" in ai_category or "REAL_ESTATE" in ai_category:
-        is_eng = True
-    
-    if is_eng:
-        tags.add("ENG")
+    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): is_eng = True
+    elif any(kw in title for kw in eng_keywords) or "ENG" in ai_category or "REAL_ESTATE" in ai_category: is_eng = True
+    if is_eng: tags.add("ENG")
 
-    # --- 2. DETECTING "PURE" LEGAL / JUSTICE (THE FILTER) ---
-    # Keywords that specifically mean "Justice System / Lawyers / Courts"
-    law_keywords_strict = [
-        "δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", 
-        "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", 
-        "δικαιοσυνη", "δικονομ", "δικη", "εφετει"
-    ]
-    
+    # --- LAW ---
+    law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", "δικαιοσυνη", "δικονομ", "δικη", "εφετει"]
     is_law = False
-    # Check Source Bias first
-    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]):
-        is_law = True
-    # Check Content
-    elif any(kw in title for kw in law_keywords_strict) or "LAW" in ai_category:
-        is_law = True
-
-    # --- CRITICAL FILTER: PREVENT CONTAMINATION ---
-    # A technical law (e.g. "Nomos gia aythaireta") is ENG+FEK, NOT LAW.
-    # Only tag LAW if it explicitly involves Courts/Lawyers/Justice System.
-    if is_law:
-        # If it was flagged LAW only because of a generic word like "Nomos" (Law)
-        # but contains technical keywords, REMOVE LAW tag unless it mentions courts.
-        if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]):
-            is_law = False 
+    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): is_law = True
+    elif any(kw in title for kw in law_keywords) or "LAW" in ai_category: is_law = True
     
+    # Filter overlap
     if is_law:
-        tags.add("LAW")
+        if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]): is_law = False 
+    if is_law: tags.add("LAW")
 
-    # --- 3. DETECTING OFFICIAL LEGISLATION (FEK) ---
-    # This is a DOCUMENT TYPE, not a topic. Can apply to ENG or LAW.
+    # --- FEK ---
     leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε."]
-    
-    if any(kw in title for kw in leg_keywords) or "FEK" in ai_category:
-        tags.add("FEK")
-    if "e-nomothesia" in source or "taxheaven" in source:
-        tags.add("FEK")
+    if any(kw in title for kw in leg_keywords) or "FEK" in ai_category: tags.add("FEK")
+    if "e-nomothesia" in source or "taxheaven" in source: tags.add("FEK")
 
-    # --- 4. SOS ---
     if "sos" in title: tags.add("SOS")
-
-    # Fallback
     if not tags: tags.add("GENERAL")
     
     return list(tags)
@@ -161,32 +127,59 @@ def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
     except: return None
 
-# CACHE 60s
-@st.cache_data(ttl=60) 
+# --- NEW HELPERS FOR TIME ---
+def get_relative_time(date_obj):
+    """Calculates '2h ago', '15m ago'"""
+    if pd.isnull(date_obj): return ""
+    now = datetime.now()
+    diff = now - date_obj
+    seconds = diff.total_seconds()
+    
+    if seconds < 0: return "Τώρα" # Future dates fix
+    
+    if seconds < 3600:
+        mins = int(seconds // 60)
+        return f"πριν {mins}λ"
+    elif seconds < 86400:
+        hours = int(seconds // 3600)
+        return f"πριν {hours}ώ"
+    elif seconds < 172800:
+        return "Χθες"
+    else:
+        return f"πριν {diff.days}ημ"
+
+def format_smart_date(date_obj):
+    """Shows Time for Today, Date for others"""
+    if pd.isnull(date_obj): return ""
+    now = datetime.now()
+    if date_obj.date() == now.date():
+        return f"Σήμερα, {date_obj.strftime('%H:%M')}"
+    return date_obj.strftime("%d/%m/%y")
+
+# --- LOAD DATA (RETENTION 30 DAYS) ---
+@st.cache_data(ttl=0) 
 def load_data():
     sh = get_db_client()
     if not sh: return []
     try: 
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
-        df = df[df['title'].str.lower() != 'title']
+        
+        # 1. Parse Dates
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
-        cutoff = datetime.now() - timedelta(days=30)
-        df = df[df['datetime_obj'] > cutoff]
+        
+        # 2. FILTER: KEEP ONLY LAST 30 DAYS
+        cutoff_date = datetime.now() - timedelta(days=30)
+        df = df[df['datetime_obj'] > cutoff_date]
+        
+        # 3. Sort Descending
         df = df.sort_values(by='datetime_obj', ascending=False)
+        
         records = df.to_dict('records')
         for r in records: r['smart_tags'] = analyze_content_deep(r)
         return records
-    except: return []
-
-def format_smart_date(date_str):
-    try:
-        dt = pd.to_datetime(date_str)
-        now = datetime.now()
-        if dt.date() == now.date(): 
-            return f"{dt.strftime('%d/%m/%y')} - {dt.strftime('%H:%M')}"
-        return dt.strftime("%d/%m/%y")
-    except: return str(date_str)
+    except Exception as e: 
+        return []
 
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200"],
@@ -243,7 +236,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ", use_container_width=True):
+    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ (LIVE)", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     
@@ -270,7 +263,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 raw_data = load_data()
-if not raw_data: st.warning("⏳ Φόρτωση..."); st.stop()
+if not raw_data: st.warning("⏳ Φόρτωση ή Κενή Βάση..."); st.stop()
 df = pd.DataFrame(raw_data)
 
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
@@ -310,7 +303,8 @@ def show_hero_slider(curr_df):
     row = curr_df.iloc[idx]
     
     badges = render_badges(row)
-    date_d = format_smart_date(row['last_update'])
+    # Full date for Slider
+    date_d = format_smart_date(row['datetime_obj'])
 
     dots_html = ""
     for i in range(min(10, slide_len)):
@@ -359,7 +353,7 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # --- ALIGNMENT STRATEGY (12 ITEMS: 6 RIGHT, 6 BOTTOM in 3 COLS) ---
+        # --- ALIGNMENT STRATEGY (12 ITEMS) ---
         c_hero, c_right = st.columns([2.2, 1])
         
         # LEFT COLUMN (Slider + Bottom Grid)
@@ -371,18 +365,24 @@ def render_tab(tab_name):
             if not bottom_items.empty:
                 rows_b = (len(bottom_items) + 2) // 3 
                 for i in range(rows_b):
-                    cols_b = st.columns(3) # 3 Wider columns
+                    cols_b = st.columns(3) 
                     for j, col_b in enumerate(cols_b):
                         idx_b = i * 3 + j
                         if idx_b < len(bottom_items):
                             r = bottom_items.iloc[idx_b]
                             src_label = str(r['source']).upper()[:12]
                             img_url = get_image(r)
+                            # Relative Time Calculation
+                            rel_time = get_relative_time(r['datetime_obj'])
+                            
                             with col_b:
                                 st.markdown(f"""
                                 <div class="mini-card">
                                     <div class="mini-text-content">
-                                        <div class="mini-source">{src_label}</div>
+                                        <div class="mini-meta-row">
+                                            <div class="mini-source">{src_label}</div>
+                                            <div class="mini-ago">{rel_time}</div>
+                                        </div>
                                         <div class="mini-title">
                                             <a href="{r['link']}" target="_blank">{r['title']}</a>
                                         </div>
@@ -397,10 +397,16 @@ def render_tab(tab_name):
             for i, r in curr.head(6).iterrows():
                 src_label = str(r['source']).upper()[:12]
                 img_url = get_image(r)
+                # Relative Time Calculation
+                rel_time = get_relative_time(r['datetime_obj'])
+                
                 st.markdown(f"""
                 <div class="mini-card">
                     <div class="mini-text-content">
-                        <div class="mini-source">{src_label}</div>
+                        <div class="mini-meta-row">
+                            <div class="mini-source">{src_label}</div>
+                            <div class="mini-ago">{rel_time}</div>
+                        </div>
                         <div class="mini-title">
                             <a href="{r['link']}" target="_blank">{r['title']}</a>
                         </div>
@@ -424,7 +430,7 @@ def render_tab(tab_name):
                 idx = i * 3 + j
                 if idx < len(grid_items):
                     r = grid_items.iloc[idx]
-                    d = format_smart_date(r['last_update'])
+                    d = format_smart_date(r['datetime_obj'])
                     b = render_badges(r)
                     with col:
                         st.markdown('<div class="grid-card">', unsafe_allow_html=True)
