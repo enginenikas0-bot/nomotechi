@@ -15,58 +15,30 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (CALCULATED GEOMETRY) ---
+# --- 2. CSS (PERFECT 12-GRID GEOMETRY) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     
-    /* HEADER */
-    .header-container { 
-        background-color: #1e293b !important; padding: 20px 0 25px 0; border-bottom: 1px solid #334155; 
-        text-align: center; margin-bottom: 0px; border-radius: 0;
-    }
+    .header-container { background-color: #1e293b !important; padding: 20px 0 25px 0; border-bottom: 1px solid #334155; text-align: center; margin-bottom: 0px; border-radius: 0; }
     .header-logo { font-family: 'Merriweather', serif; font-size: 2.5rem; font-weight: 900; color: #ffffff !important; letter-spacing: -1px; line-height: 1.2; }
     .powered-text { font-size: 0.75rem; color: #94a3b8 !important; letter-spacing: 1px; }
-    .sub-text { font-size: 0.75rem; color: #cbd5e1 !important; margin-top: 5px; }
 
-    /* TICKER */
-    .ticker-container { 
-        width: 100%; overflow: hidden; background-color: #1e293b !important; 
-        border-top: 1px solid #334155; border-bottom: 1px solid #334155; 
-        white-space: nowrap; height: 42px; display: flex; align-items: center; margin-bottom: 20px;
-    }
+    .ticker-container { width: 100%; overflow: hidden; background-color: #1e293b !important; border-top: 1px solid #334155; border-bottom: 1px solid #334155; white-space: nowrap; height: 42px; display: flex; align-items: center; margin-bottom: 20px; }
     .ticker-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 80s linear infinite; }
     .ticker-text { font-family: 'Segoe UI', sans-serif; font-weight: 600; color: #f1f5f9 !important; font-size: 0.9rem; }
     @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* SIDEBAR */
     [data-testid="stSidebar"] { background-color: #111827 !important; border-right: 1px solid #374151; }
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #ffffff !important; font-weight: 500; }
-    .sidebar-header { color: #ffffff !important; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 10px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; display: inline-block; }
     .sidebar-card { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; }
-    .sidebar-logo { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; filter: brightness(1.1); }
     .sidebar-btn { display: block; width: 100%; background-color: #000000; color: white !important; text-decoration: none; padding: 10px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 700; margin-top: 15px; transition: 0.2s; border: 1px solid #333; }
     
-    /* SEARCH BAR */
     div[data-baseweb="input"] { background-color: #0f172a !important; border: 1px solid #334155 !important; border-radius: 4px; }
     .search-container div[data-baseweb="input"] input { color: #e2e8f0 !important; caret-color: #3b82f6; font-weight: 500; }
 
-    /* SLIDER (Calculated Height: 412px) 
-       Calculation: 
-       Right Side = 6 items * (95px height + 8px margin) = 618px
-       Bottom Side = 2 rows * (95px height + 8px margin) = 206px
-       Slider = 618px - 206px = 412px
-    */
-    .hero-wrapper { 
-        position: relative; 
-        height: 412px; 
-        overflow: hidden; 
-        border-radius: 4px; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-        z-index: 1; 
-        margin-bottom: 10px; 
-    }
+    .hero-wrapper { position: relative; height: 412px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; margin-bottom: 10px; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
     .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
@@ -75,72 +47,22 @@ st.markdown("""
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* MINI CARD (95px Height) */
-    .mini-card { 
-        background: #111827; 
-        border: 1px solid #374151; 
-        border-radius: 8px; 
-        margin-bottom: 8px; 
-        height: 95px; 
-        display: flex;
-        flex-direction: row; 
-        overflow: hidden;
-        transition: transform 0.2s;
-    }
+    .mini-card { background: #111827; border: 1px solid #374151; border-radius: 8px; margin-bottom: 8px; height: 95px; display: flex; flex-direction: row; overflow: hidden; transition: transform 0.2s; }
     .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
-    
-    .mini-text-content {
-        flex: 1; 
-        padding: 10px 10px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-    }
-    
-    .mini-source {
-        font-size: 0.65rem;
-        color: #9ca3af;
-        text-transform: uppercase;
-        font-weight: 700;
-        margin-bottom: 4px;
-        letter-spacing: 0.5px;
-        line-height: 1;
-    }
-    
-    .mini-title a { 
-        color: #f3f4f6 !important; 
-        text-decoration: none; 
-        font-weight: 600; 
-        font-size: 0.78rem; 
-        line-height: 1.2;   
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    
-    .mini-image-box {
-        width: 100px; 
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        border-left: 1px solid #374151;
-        flex-shrink: 0;
-    }
+    .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
+    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; line-height: 1; }
+    .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .mini-image-box { width: 100px; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; border-left: 1px solid #374151; flex-shrink: 0; }
 
-    /* GRID CARD */
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
     .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
-    /* BADGES */
     .badge-sos { background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-law { background: #003366; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-real { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* DARK MODE */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         .grid-card { background: #262730 !important; border: none !important; }
@@ -151,35 +73,69 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC ---
+# --- 3. LOGIC (MULTI-DIMENSIONAL INTELLIGENCE) ---
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
-def analyze_content_strict(row):
-    ai_tag = str(row.get('category', '')).upper()
-    tags = []
+def analyze_content_deep(row):
+    """
+    MULTI-TAGGING LOGIC:
+    Ένα άρθρο μπορεί να είναι ΚΑΙ 'ENG' ΚΑΙ 'FEK'.
+    """
+    # 1. Gather all data points
+    title = normalize_text(str(row.get('title', '')))
+    content = normalize_text(str(row.get('content', ''))) # AI Summary
+    source = normalize_text(str(row.get('source', '')))
+    ai_category = str(row.get('category', '')).upper()
+    
+    tags = set() # Use Set to avoid duplicates
 
-    if "ENG" in ai_tag: tags.append("ENG")
-    elif "LAW" in ai_tag: tags.append("LAW")
-    elif "FEK" in ai_tag: tags.append("FEK")
-    elif "REAL_ESTATE" in ai_tag or "REAL ESTATE" in ai_tag: tags.append("ENG") 
+    # --- DIMENSION 1: LEGISLATION (ΝΟΜΟΘΕΣΙΑ/ΦΕΚ) ---
+    # Κάθε τι που είναι Νόμος, ΦΕΚ, Απόφαση, Εγκύκλιος
+    leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε."]
+    if any(kw in title for kw in leg_keywords) or "FEK" in ai_category:
+        tags.add("FEK")
+    if "e-nomothesia" in source or "taxheaven" in source: # Trusted sources
+        tags.add("FEK")
+
+    # --- DIMENSION 2: ENGINEERING / REAL ESTATE (ΜΗΧΑΝΙΚΟΙ) ---
+    eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate"]
+    eng_sources = ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]
     
-    if not tags:
-        full_text = (str(row.get('title')) + " " + str(row.get('content'))).upper()
-        if "ΜΗΧΑΝΙΚ" in full_text or "ΕΡΓΑ" in full_text: tags.append("ENG")
-        elif "ΔΙΚΑΣΤ" in full_text or "ΝΟΜΟΣ" in full_text: tags.append("LAW")
-        else: tags.append("GENERAL")
+    if any(s in source for s in eng_sources):
+        tags.add("ENG")
+    elif any(kw in title for kw in eng_keywords) or any(kw in content for kw in eng_keywords):
+        tags.add("ENG")
+    elif "ENG" in ai_category or "REAL_ESTATE" in ai_category:
+        tags.add("ENG")
+
+    # --- DIMENSION 3: LEGAL / JUSTICE (ΝΟΜΙΚΑ) ---
+    law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "νομικ"]
+    law_sources = ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]
     
-    if "SOS" in str(row.get('title', '')).upper(): tags.append("SOS")
+    if any(s in source for s in law_sources):
+        tags.add("LAW")
+    elif any(kw in title for kw in law_keywords) or any(kw in content for kw in law_keywords):
+        tags.add("LAW")
+    elif "LAW" in ai_category:
+        tags.add("LAW")
+
+    # --- DIMENSION 4: SOS ---
+    if "sos" in title: tags.add("SOS")
+
+    # Fallback
+    if not tags: tags.add("GENERAL")
     
-    return tags
+    return list(tags)
 
 def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
     except: return None
 
+# CACHE 60s
+@st.cache_data(ttl=60) 
 def load_data():
     sh = get_db_client()
     if not sh: return []
@@ -192,7 +148,8 @@ def load_data():
         df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
         records = df.to_dict('records')
-        for r in records: r['smart_tags'] = analyze_content_strict(r)
+        # Apply the new DEEP analysis
+        for r in records: r['smart_tags'] = analyze_content_deep(r)
         return records
     except: return []
 
@@ -259,6 +216,10 @@ with st.sidebar:
         <a href="https://www.nikastechnical.gr" target="_blank" class="sidebar-btn">ΕΠΙΣΚΕΦΘΕΙΤΕ ΜΑΣ</a>
     </div>
     """, unsafe_allow_html=True)
+    
+    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
     
     st.markdown('<div class="sidebar-header">☁️ Καιρός Εργοταξίου</div>', unsafe_allow_html=True)
     components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image", height=310)
@@ -359,7 +320,6 @@ def render_tab(tab_name):
     if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
-        # JS WIDGET
         components.html("""
         <div id="tv-widget-container"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
@@ -381,7 +341,6 @@ def render_tab(tab_name):
             show_hero_slider(curr)
             
             # BOTTOM ITEMS: 6 Items (Indices 6 to 11)
-            # Displayed in 2 ROWS of 3 COLUMNS (Wider cards)
             bottom_items = curr.iloc[6:12]
             if not bottom_items.empty:
                 rows_b = (len(bottom_items) + 2) // 3 
@@ -407,7 +366,6 @@ def render_tab(tab_name):
                                 """, unsafe_allow_html=True)
 
         # RIGHT COLUMN: 6 Items (Indices 0 to 5)
-        # Matches height of Slider + Bottom Grid perfectly
         with c_right:
             st.markdown("##### ΡΟΗ")
             for i, r in curr.head(6).iterrows():
