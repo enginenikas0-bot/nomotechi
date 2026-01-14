@@ -73,7 +73,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC (MULTI-DIMENSIONAL INTELLIGENCE) ---
+# --- 3. LOGIC (SURGICAL SEPARATION) ---
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
@@ -81,48 +81,75 @@ def normalize_text(text):
 
 def analyze_content_deep(row):
     """
-    MULTI-TAGGING LOGIC:
-    Ένα άρθρο μπορεί να είναι ΚΑΙ 'ENG' ΚΑΙ 'FEK'.
+    STRICT FILTER LOGIC:
+    - ENG: Pure Technical, Real Estate, or Construction Law.
+    - LAW: Pure Justice, Courts, Lawyers, Criminal/Civil Law.
+    - FEK: Official Legislation Documents (regardless of topic).
     """
-    # 1. Gather all data points
     title = normalize_text(str(row.get('title', '')))
-    content = normalize_text(str(row.get('content', ''))) # AI Summary
+    content = normalize_text(str(row.get('content', '')))
     source = normalize_text(str(row.get('source', '')))
     ai_category = str(row.get('category', '')).upper()
     
-    tags = set() # Use Set to avoid duplicates
+    tags = set()
 
-    # --- DIMENSION 1: LEGISLATION (ΝΟΜΟΘΕΣΙΑ/ΦΕΚ) ---
-    # Κάθε τι που είναι Νόμος, ΦΕΚ, Απόφαση, Εγκύκλιος
+    # --- 1. DETECTING "PURE" ENGINEERING / TECHNICAL ---
+    # Keywords that specifically mean "Technical Engineering/Real Estate"
+    eng_keywords_strict = [
+        "μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", 
+        "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", 
+        "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"
+    ]
+    
+    is_eng = False
+    # Check Source Bias first
+    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]):
+        is_eng = True
+    # Check Content
+    elif any(kw in title for kw in eng_keywords_strict) or "ENG" in ai_category or "REAL_ESTATE" in ai_category:
+        is_eng = True
+    
+    if is_eng:
+        tags.add("ENG")
+
+    # --- 2. DETECTING "PURE" LEGAL / JUSTICE (THE FILTER) ---
+    # Keywords that specifically mean "Justice System / Lawyers / Courts"
+    law_keywords_strict = [
+        "δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", 
+        "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", 
+        "δικαιοσυνη", "δικονομ", "δικη", "εφετει"
+    ]
+    
+    is_law = False
+    # Check Source Bias first
+    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]):
+        is_law = True
+    # Check Content
+    elif any(kw in title for kw in law_keywords_strict) or "LAW" in ai_category:
+        is_law = True
+
+    # --- CRITICAL FILTER: PREVENT CONTAMINATION ---
+    # A technical law (e.g. "Nomos gia aythaireta") is ENG+FEK, NOT LAW.
+    # Only tag LAW if it explicitly involves Courts/Lawyers/Justice System.
+    if is_law:
+        # If it was flagged LAW only because of a generic word like "Nomos" (Law)
+        # but contains technical keywords, REMOVE LAW tag unless it mentions courts.
+        if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]):
+            is_law = False 
+    
+    if is_law:
+        tags.add("LAW")
+
+    # --- 3. DETECTING OFFICIAL LEGISLATION (FEK) ---
+    # This is a DOCUMENT TYPE, not a topic. Can apply to ENG or LAW.
     leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε."]
+    
     if any(kw in title for kw in leg_keywords) or "FEK" in ai_category:
         tags.add("FEK")
-    if "e-nomothesia" in source or "taxheaven" in source: # Trusted sources
+    if "e-nomothesia" in source or "taxheaven" in source:
         tags.add("FEK")
 
-    # --- DIMENSION 2: ENGINEERING / REAL ESTATE (ΜΗΧΑΝΙΚΟΙ) ---
-    eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate"]
-    eng_sources = ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]
-    
-    if any(s in source for s in eng_sources):
-        tags.add("ENG")
-    elif any(kw in title for kw in eng_keywords) or any(kw in content for kw in eng_keywords):
-        tags.add("ENG")
-    elif "ENG" in ai_category or "REAL_ESTATE" in ai_category:
-        tags.add("ENG")
-
-    # --- DIMENSION 3: LEGAL / JUSTICE (ΝΟΜΙΚΑ) ---
-    law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "νομικ"]
-    law_sources = ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]
-    
-    if any(s in source for s in law_sources):
-        tags.add("LAW")
-    elif any(kw in title for kw in law_keywords) or any(kw in content for kw in law_keywords):
-        tags.add("LAW")
-    elif "LAW" in ai_category:
-        tags.add("LAW")
-
-    # --- DIMENSION 4: SOS ---
+    # --- 4. SOS ---
     if "sos" in title: tags.add("SOS")
 
     # Fallback
@@ -148,7 +175,6 @@ def load_data():
         df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
         records = df.to_dict('records')
-        # Apply the new DEEP analysis
         for r in records: r['smart_tags'] = analyze_content_deep(r)
         return records
     except: return []
