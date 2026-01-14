@@ -5,7 +5,7 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 import requests
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import dateutil.parser
 import json
 import os
@@ -15,7 +15,12 @@ import sys
 GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
 SPREADSHEET_NAME = "laws_database"
-DAYS_LIMIT = 3
+
+# 1. FETCH LIMIT: Πόσο πίσω να κοιτάμε στα RSS για ΝΕΑ άρθρα (για να μην καίμε AI)
+FETCH_DAYS_LIMIT = 3 
+
+# 2. RETENTION LIMIT: Πόσο καιρό να κρατάμε τα άρθρα στη Βάση (Διαγραφή μετά από 31 μέρες)
+DB_RETENTION_DAYS = 31
 
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -62,15 +67,11 @@ def get_date_obj(entry):
     try:
         dt = datetime.now()
         if entry.get('published_parsed'):
-            # Το feedparser επιστρέφει UTC. Το μετατρέπουμε σε datetime.
             dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
         elif entry.get('updated_parsed'):
             dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
-        
-        # ΠΡΟΣΘΗΚΗ 2 ΩΡΩΝ ΓΙΑ ΕΛΛΑΔΑ (Server is UTC)
-        return dt + timedelta(hours=2)
+        return dt + timedelta(hours=2) # Server UTC -> Greece
     except: pass
-    # Αν αποτύχουν όλα, επιστρέφει τρέχουσα ώρα Ελλάδας
     return datetime.utcnow() + timedelta(hours=2)
 
 def scrape_full_text(url):
@@ -141,34 +142,53 @@ def analyze_with_ai(model, title, content, original_summary):
         print("⚠️ AI Busy/Quota Exceeded. Using Fallback.")
         return fallback_classify(title, ""), (original_summary if len(original_summary) > 10 else "Δεν υπάρχει διαθέσιμη περίληψη.")
 
-def sort_entire_database(worksheet):
-    print("🧹 Sorting entire database chronologically...")
+# --- ΝΕΑ ΣΥΝΑΡΤΗΣΗ: ΤΑΞΙΝΟΜΗΣΗ & ΔΙΑΓΡΑΦΗ ΠΑΛΙΩΝ (>31 ΗΜΕΡΕΣ) ---
+def sort_and_clean_database(worksheet):
+    print("🧹 Sorting & Cleaning Database (30-day Retention)...")
     try:
         all_values = worksheet.get_all_values()
         if len(all_values) < 2: return 
+        
         header = all_values[0]
         data = all_values[1:]
-        data.sort(key=lambda x: x[5] if len(x) > 5 else "")
+        
+        # 1. Υπολογισμός Ημερομηνίας Λήξης (Τώρα - 31 μέρες)
+        # Χρησιμοποιούμε ώρα Ελλάδας (Server UTC + 2) για συνέπεια
+        cutoff_date = datetime.utcnow() + timedelta(hours=2) - timedelta(days=DB_RETENTION_DAYS)
+        
+        cleaned_data = []
+        deleted_count = 0
+        
+        for row in data:
+            try:
+                # Η ημερομηνία είναι στη στήλη F (Index 5)
+                # Format: YYYY-MM-DD HH:MM:SS
+                row_date_str = row[5]
+                row_date_obj = datetime.strptime(row_date_str, "%Y-%m-%d %H:%M:%S")
+                
+                # Αν η ημερομηνία του άρθρου είναι ΜΕΤΑ την ημερομηνία λήξης -> ΤΟ ΚΡΑΤΑΜΕ
+                if row_date_obj > cutoff_date:
+                    cleaned_data.append(row)
+                else:
+                    deleted_count += 1
+            except:
+                # Αν δεν μπορεί να διαβάσει την ημερομηνία, το κρατάμε για ασφάλεια
+                cleaned_data.append(row)
+
+        # 2. Ταξινόμηση των εναπομεινάντων (Παλιά πάνω -> Νέα κάτω)
+        cleaned_data.sort(key=lambda x: x[5] if len(x) > 5 else "")
+        
+        # 3. Επανεγγραφή
         worksheet.clear()
         worksheet.append_row(header)
-        worksheet.append_rows(data)
-        print("✅ Database Sorted & Cleaned.")
+        worksheet.append_rows(cleaned_data)
+        
+        print(f"✅ Database Processed: Kept {len(cleaned_data)} | Deleted {deleted_count} old items.")
     except Exception as e:
-        print(f"⚠️ Sort Error: {e}")
-
-def cleanup_database_safe(worksheet):
-    try:
-        all_values = worksheet.get_all_values()
-        if len(all_values) > 900:
-            header = all_values[0]
-            data_to_keep = all_values[-700:]
-            worksheet.clear()
-            worksheet.append_row(header)
-            worksheet.append_rows(data_to_keep)
-    except: pass
+        print(f"⚠️ Clean/Sort Error: {e}")
 
 def run_scraper():
-    print(f"🚀 Bot v45 (Greek Time Zone Fix) Started...")
+    print(f"🚀 Bot v46 (Auto-Delete >31 Days) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -176,7 +196,7 @@ def run_scraper():
     except: existing_links = set()
 
     new_rows = []
-    # Χρήση Ώρας Ελλάδας για τον "Φρουρό"
+    # Τρέχουσα ώρα Ελλάδας
     current_time = datetime.utcnow() + timedelta(hours=2)
     
     for source_name, feed_url in RSS_FEEDS.items():
@@ -189,7 +209,8 @@ def run_scraper():
                 if link in existing_links: continue
                 
                 article_dt = get_date_obj(entry)
-                if (current_time - article_dt).days > DAYS_LIMIT:
+                # Φίλτρο Εισαγωγής (3 ημέρες)
+                if (current_time - article_dt).days > FETCH_DAYS_LIMIT:
                     continue
 
                 title = entry.get('title', 'No Title')
@@ -224,8 +245,8 @@ def run_scraper():
             print(f"💾 Saved {len(new_rows)} items.")
         except: sys.exit(1)
     
-    sort_entire_database(worksheet)
-    cleanup_database_safe(worksheet)
+    # ΤΕΛΙΚΟ ΣΤΑΔΙΟ: ΚΑΘΑΡΙΣΜΟΣ ΠΑΛΙΩΝ ΑΡΘΡΩΝ (>31 ΗΜΕΡΕΣ) & ΤΑΞΙΝΟΜΗΣΗ
+    sort_and_clean_database(worksheet)
 
 if __name__ == "__main__":
     run_scraper()
