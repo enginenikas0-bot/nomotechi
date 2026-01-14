@@ -22,23 +22,26 @@ USER_AGENTS = [
 ]
 
 RSS_FEEDS = {
-    "Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
-    "TEE": "https://web.tee.gr/feed/",
-    "Ypodomes": "https://ypodomes.com/feed/",
-    "B2Green": "https://news.b2green.gr/feed",
-    "POMIDA": "https://www.pomida.gr/feed/",
-    "PEDMEDE": "https://www.pedmede.gr/feed/",
-    "ELINYAE": "https://www.elinyae.gr/rss.xml",
-    "E-Themis": "https://www.ethemis.gr/feed/",
-    "Dikastiko": "https://www.dikastiko.gr/feed/",
-    "Dikastiko Rep": "https://www.dikastikoreportaz.gr/feed/",
-    "Lawspot": "https://www.lawspot.gr/rss",
-    "Syntagma Watch": "https://www.syntagmawatch.gr/feed/",
-    "LawNet": "https://www.lawnet.gr/feed/",
-    "DSA": "https://www.dsa.gr/rss.xml",
-    "E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
-    "Taxheaven": "https://www.taxheaven.gr/rss",
-    "Capital": "https://www.capital.gr/rss/roi"
+    # --- ΜΗΧΑΝΙΚΟΙ ---
+    "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
+    "🏗️ TEE": "https://web.tee.gr/feed/",
+    "🏗️ Ypodomes": "https://ypodomes.com/feed/",
+    "🏗️ B2Green": "https://news.b2green.gr/feed",
+    "🏗️ POMIDA": "https://www.pomida.gr/feed/",
+    "🏗️ PEDMEDE": "https://www.pedmede.gr/feed/",
+    "🏗️ ELINYAE": "https://www.elinyae.gr/rss.xml",
+    # --- ΝΟΜΙΚΑ ---
+    "⚖️ E-Themis": "https://www.ethemis.gr/feed/",
+    "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
+    "⚖️ Dikastiko Rep": "https://www.dikastikoreportaz.gr/feed/",
+    "⚖️ Lawspot": "https://www.lawspot.gr/rss",
+    "⚖️ Syntagma": "https://www.syntagmawatch.gr/feed/",
+    "⚖️ LawNet": "https://www.lawnet.gr/feed/",
+    "⚖️ DSA": "https://www.dsa.gr/rss.xml",
+    # --- ΝΟΜΟΘΕΣΙΑ ---
+    "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
+    "📜 Taxheaven": "https://www.taxheaven.gr/rss",
+    "💰 Capital": "https://www.capital.gr/rss/roi"
 }
 
 def setup_ai():
@@ -191,3 +194,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
