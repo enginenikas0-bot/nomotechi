@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (MSN STYLE & COMPACT TYPOGRAPHY) ---
+# --- 2. CSS (PERFECT ALIGNMENT & 4PX GAP) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -52,8 +52,16 @@ st.markdown("""
     div[data-baseweb="input"] { background-color: #0f172a !important; border: 1px solid #334155 !important; border-radius: 4px; }
     .search-container div[data-baseweb="input"] input { color: #e2e8f0 !important; caret-color: #3b82f6; font-weight: 500; }
 
-    /* SLIDER */
-    .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; margin-bottom: 10px; }
+    /* SLIDER (CALCULATED HEIGHT: 460px to match 4 items + header) */
+    .hero-wrapper { 
+        position: relative; 
+        height: 460px; /* ALIGNMENT FIX */
+        overflow: hidden; 
+        border-radius: 4px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        z-index: 1; 
+        margin-bottom: 10px; 
+    }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
     .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
@@ -62,13 +70,13 @@ st.markdown("""
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* --- MINI CARD (COMPACT TEXT UPDATE) --- */
+    /* --- MINI CARD (PERFECT ALIGNMENT) --- */
     .mini-card { 
         background: #111827; 
         border: 1px solid #374151; 
         border-radius: 8px; 
         margin-bottom: 8px; 
-        height: 95px; 
+        height: 98px; /* CALCULATED HEIGHT */
         display: flex;
         flex-direction: row; 
         overflow: hidden;
@@ -78,10 +86,10 @@ st.markdown("""
     
     .mini-text-content {
         flex: 1; 
-        padding: 8px 10px; /* Reduced vertical padding */
+        padding: 10px 10px;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start; /* Push content to top (no gaps) */
+        justify-content: flex-start;
     }
     
     .mini-source {
@@ -89,7 +97,7 @@ st.markdown("""
         color: #9ca3af;
         text-transform: uppercase;
         font-weight: 700;
-        margin-bottom: 2px; /* Minimal gap */
+        margin-bottom: 4px; /* EXACTLY 4px GAP */
         letter-spacing: 0.5px;
         line-height: 1;
     }
@@ -98,13 +106,12 @@ st.markdown("""
         color: #f3f4f6 !important; 
         text-decoration: none; 
         font-weight: 600; 
-        font-size: 0.78rem; /* Smaller font for more text */
-        line-height: 1.2;   /* Tighter line height */
+        font-size: 0.78rem; 
+        line-height: 1.2;   
         display: -webkit-box;
-        -webkit-line-clamp: 3; /* Allow 3 lines of text */
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        margin-top: 0;
     }
     
     .mini-image-box {
@@ -360,15 +367,17 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # MSN STYLE LAYOUT
-        c_hero, c_right = st.columns([2, 1])
+        # PERFECT ALIGNMENT LAYOUT
+        # Slider width ~2.2x Right Column
+        c_hero, c_right = st.columns([2.2, 1])
         
         # SLIDER (Left/Center)
         with c_hero:
             show_hero_slider(curr)
             
-            # BOTTOM ITEMS (Indices 9 to 14) -> 6 items
-            bottom_items = curr.iloc[9:15]
+            # BOTTOM ITEMS (Indices 4 to 12) -> 9 items (3 rows of 3)
+            # This fills the space below comfortably
+            bottom_items = curr.iloc[4:13]
             if not bottom_items.empty:
                 rows_b = (len(bottom_items) + 2) // 3
                 for i in range(rows_b):
@@ -392,10 +401,10 @@ def render_tab(tab_name):
                                 </div>
                                 """, unsafe_allow_html=True)
 
-        # RIGHT COLUMN (Indices 0 to 8) -> 9 items
+        # RIGHT COLUMN (Indices 0 to 3) -> 4 items (Matches Slider Height)
         with c_right:
             st.markdown("##### ΡΟΗ")
-            for i, r in curr.head(9).iterrows():
+            for i, r in curr.head(4).iterrows():
                 src_label = str(r['source']).upper()[:12]
                 img_url = get_image(r)
                 st.markdown(f"""
@@ -414,7 +423,7 @@ def render_tab(tab_name):
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
-    start = 15 if (tab_name == "HOME" and not search_query) else 0 # Offset by 15 items
+    start = 13 if (tab_name == "HOME" and not search_query) else 0 # Offset by 13 items
     
     grid_items = curr.iloc[start:]
     if not grid_items.empty:
