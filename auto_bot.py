@@ -5,7 +5,7 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 import requests
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import sys
@@ -43,7 +43,7 @@ RSS_FEEDS = {
     # --- ΝΟΜΟΘΕΣΙΑ & ΟΙΚΟΝΟΜΙΑ ---
     "E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "Taxheaven": "https://www.taxheaven.gr/rss",
-    "Capital": "https://www.capital.gr/rss/oikonomia"
+    "Capital": "https://www.capital.gr/rss/roi" # Γενική Ροή (Όλο το site)
 }
 
 # --- 3. SETUP ---
@@ -57,13 +57,11 @@ def setup_ai():
 
 def setup_db():
     try:
-        # Check environment variable first (Cloud)
         json_creds = os.environ.get("GCP_CREDENTIALS")
         if json_creds:
             creds_dict = json.loads(json_creds)
             gc = gspread.service_account_from_dict(creds_dict)
         elif os.path.exists(SERVICE_ACCOUNT_FILE):
-            # Check local file (Local PC)
             gc = gspread.service_account(filename=SERVICE_ACCOUNT_FILE)
         else:
             print("❌ No Credentials found!")
@@ -91,7 +89,7 @@ def scrape_full_text(url):
                 tag.extract()
             paragraphs = soup.find_all('p')
             full_text = " ".join([p.get_text() for p in paragraphs])
-            return full_text.strip()[:5000] # Safe limit
+            return full_text.strip()[:6000]
     except: 
         return ""
     return ""
@@ -109,18 +107,47 @@ def fetch_article_image(url):
         return ""
     return ""
 
-def get_ai_summary(model, title, content):
-    if not model: return "AI unavailable."
+def analyze_with_ai(model, title, content):
+    """
+    STRICT AI CATEGORIZATION & SUMMARY
+    Returns: (Category_Tag, Summary_Text)
+    """
+    if not model: return "GEN", "AI unavailable."
     try:
+        # STRICT PROMPT
         prompt = f"""
-        Γράψε περίληψη (max 30 λέξεις) στα Ελληνικά. 
-        Τίτλος: {title}
-        Κείμενο: {content[:1500]}
+        Act as a strict Classifier for a Greek Technical & Legal Portal.
+        1. CLASSIFY this article into exactly ONE category:
+           - ENG (Engineering, Construction, Energy, Infrastructure, Urban Planning, Technical)
+           - LAW (Courts, Justice, Lawyers, Legal Procedures)
+           - FEK (Official Government Gazette, Legislation, Laws, Decisions)
+           - REAL_ESTATE (Property, Taxes, Airbnb, Golden Visa)
+           - GEN (General News, Economy)
+        
+        2. SUMMARIZE in Greek (max 25 words).
+
+        INPUT:
+        Title: {title}
+        Text: {content[:1500]}
+
+        OUTPUT FORMAT:
+        CATEGORY ||| SUMMARY
         """
         response = model.generate_content(prompt)
-        return response.text.strip()
+        text = response.text.strip()
+        
+        if "|||" in text:
+            parts = text.split("|||")
+            cat = parts[0].strip().upper()
+            summary = parts[1].strip()
+            # Safety check for valid tags
+            valid_tags = ["ENG", "LAW", "FEK", "REAL_ESTATE", "GEN"]
+            if not any(v in cat for v in valid_tags): cat = "GEN"
+            return cat, summary
+        else:
+            return "GEN", text
     except:
-        return "Περίληψη μη διαθέσιμη."
+        return "GEN", "Περίληψη μη διαθέσιμη."
 
 # --- 5. CLEANUP ---
 def cleanup_database_safe(worksheet):
@@ -128,8 +155,8 @@ def cleanup_database_safe(worksheet):
     try:
         all_values = worksheet.get_all_values()
         total_rows = len(all_values)
-        MAX_ROWS = 700 # Αυξημένο όριο λόγω των 10 άρθρων
-        KEEP_ROWS = 600
+        MAX_ROWS = 800 # Αυξήσαμε το όριο λόγω των 15 άρθρων
+        KEEP_ROWS = 650
         
         if total_rows > MAX_ROWS:
             print(f"⚠️ Limit reached ({total_rows}). Trimming to {KEEP_ROWS}...")
@@ -153,7 +180,7 @@ def run_scraper():
     
     if not worksheet:
         print("❌ CRITICAL: No DB Connection. Exiting.")
-        sys.exit(1) # Force Error for GitHub Actions to see
+        sys.exit(1)
 
     try:
         existing_links = set(worksheet.col_values(5)) 
@@ -168,8 +195,8 @@ def run_scraper():
             feed = feedparser.parse(feed_url)
             count = 0
             
-            # Επαναφορά στο 10 (Max Volume)
-            for entry in feed.entries[:10]:
+            # UPGRADED LIMIT: 15 ARTICLES
+            for entry in feed.entries[:15]:
                 link = entry.get('link', '')
                 
                 if link in existing_links:
@@ -183,8 +210,13 @@ def run_scraper():
                         full_text = clean_html(entry.get('summary', '') or entry.get('description', ''))
                     
                     real_image_url = fetch_article_image(link)
-                    ai_summary = get_ai_summary(model, title, full_text)
-                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # STRICT AI ANALYSIS
+                    cat_tag, ai_summary = analyze_with_ai(model, title, full_text)
+                    
+                    # TIME FIX: +2 Hours for Greece Time (GitHub is UTC)
+                    now_obj = datetime.utcnow() + timedelta(hours=2) 
+                    now_str = now_obj.strftime("%Y-%m-%d %H:%M:%S")
                     
                     new_row = [
                         str(hash(link)),
@@ -192,8 +224,8 @@ def run_scraper():
                         title,
                         ai_summary,
                         link,
-                        now_str,
-                        source_name, 
+                        now_str,    # Corrected Time
+                        cat_tag,    # AI Strict Category
                         real_image_url
                     ]
                     
@@ -211,16 +243,14 @@ def run_scraper():
     if new_rows:
         try:
             worksheet.append_rows(new_rows)
-            print(f"💾 SUCCESS: Saved {len(new_rows)} new articles.")
+            print(f"💾 SAVED {len(new_rows)} ARTICLES.")
         except Exception as e:
-            print(f"❌ DB Write Error: {e}")
+            print(f"❌ DB Error: {e}")
     else:
-        print("💤 No new content found.")
+        print("💤 No new content.")
 
     cleanup_database_safe(worksheet)
-    print("🏁 Job Finished Successfully.")
+    print("🏁 Finished.")
 
-# --- 7. EXECUTION (NO LOOP) ---
 if __name__ == "__main__":
-    # Τρέχει ΜΙΑ φορά και σταματάει (Ιδανικό για GitHub Actions με όριο 10 άρθρα)
     run_scraper()
