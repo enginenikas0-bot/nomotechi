@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (CLEAN TIME STYLE - NO FRAMES) ---
+# --- 2. CSS (NO FRAMES - CLEAN TEXT) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -51,14 +51,18 @@ st.markdown("""
     .mini-card:hover { transform: scale(1.02); border-color: #3b82f6; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
     
-    /* CLEAN TIME CSS - NO FRAME */
+    /* --- FIXED CSS FOR TIME (NO BOX) --- */
     .mini-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
+    
     .mini-ago { 
-        font-size: 0.7rem; 
-        color: #60a5fa; /* Nice Blue */
-        font-weight: 600; 
-        /* REMOVED BACKGROUND & BORDER */
+        font-size: 0.75rem; 
+        color: #3b82f6; /* Bright Blue */
+        font-weight: 700; 
+        background: transparent !important; /* NO BACKGROUND */
+        border: none !important; /* NO BORDER */
+        padding: 0 !important;
+        text-align: right;
     }
 
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -127,28 +131,30 @@ def get_db_client():
 
 def get_relative_time(date_obj):
     """
-    Shows '2h ago' correctly. Updates with server time.
+    Returns '2h ago', '15m ago'.
+    Calculates live against current server time.
     """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
+    # Handle slight server time skews (negative seconds)
     if seconds < 0: 
-        if seconds > -3600: return "Τώρα"
-        return "Σήμερα" # Future date glitch fix
+        if seconds > -3600: return "Τώρα" # Within an hour future = Now
+        return date_obj.strftime("%d/%m") # Too far future = Date
 
-    if seconds < 60: return "Μόλις τώρα"
+    if seconds < 60: return "Τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
-        return f"πριν {mins}λ"
+        return f"{mins}λ πριν"
     elif seconds < 86400: # Less than 24h
         hours = int(seconds // 3600)
-        return f"πριν {hours}ώ"
+        return f"{hours}ώ πριν"
     elif seconds < 172800:
         return "Χθες"
     else:
-        return f"πριν {diff.days}ημ"
+        return f"{diff.days}μ πριν"
 
 @st.cache_data(ttl=0) 
 def load_data():
@@ -158,6 +164,7 @@ def load_data():
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
+        # FILTER 30 DAYS
         cutoff = datetime.now() - timedelta(days=30)
         df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
@@ -167,7 +174,11 @@ def load_data():
     except: return []
 
 def format_smart_date(date_obj):
-    """Grid Date: Shows Time if today, Date if older"""
+    """
+    Grid Date: 
+    - Today: "14:30"
+    - Older: "25/10/24"
+    """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     if date_obj.date() == now.date():
@@ -288,7 +299,6 @@ tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟ
 def render_live_flow(curr_df):
     if curr_df.empty: return
     
-    # Logic for Slider State
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
@@ -297,6 +307,7 @@ def render_live_flow(curr_df):
     row = curr_df.iloc[idx]
     
     badges = render_badges(row)
+    # SLIDER FULL DATE
     date_d = format_smart_date(row['datetime_obj'])
 
     dots_html = ""
@@ -307,7 +318,6 @@ def render_live_flow(curr_df):
     # 12-GRID LAYOUT
     c_hero, c_right = st.columns([2.2, 1])
     
-    # HERO + BOTTOM
     with c_hero:
         # SLIDER
         st.markdown(f"""
@@ -403,7 +413,6 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # CALL THE LIVE FRAGMENT
         render_live_flow(curr)
 
     st.subheader("Ειδήσεις & Αποφάσεις")
@@ -419,6 +428,7 @@ def render_tab(tab_name):
                 idx = i * 3 + j
                 if idx < len(grid_items):
                     r = grid_items.iloc[idx]
+                    # GRID SHOWS TIME ONLY FOR TODAY
                     d = format_smart_date(r['datetime_obj'])
                     b = render_badges(r)
                     with col:
@@ -457,6 +467,4 @@ with tabs[4]:
         date_counts = df.groupby(df['datetime_obj'].dt.date).size()
         st.bar_chart(date_counts)
     st.metric("Σύνολο Αρχειοθετημένων Άρθρων", len(df))
-    if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
-        if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
-        st.dataframe(df)
+    if st.secrets.get("admin
