@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (MSN STYLE & DARK THEME) ---
+# --- 2. CSS (MSN STYLE & COMPACT TYPOGRAPHY) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -62,26 +62,26 @@ st.markdown("""
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* --- MSN STYLE MINI CARD (THE FIX) --- */
+    /* --- MINI CARD (COMPACT TEXT UPDATE) --- */
     .mini-card { 
-        background: #111827; /* Dark BG */
+        background: #111827; 
         border: 1px solid #374151; 
         border-radius: 8px; 
         margin-bottom: 8px; 
-        height: 95px; /* Fixed Height for consistency */
+        height: 95px; 
         display: flex;
-        flex-direction: row; /* Side by side */
+        flex-direction: row; 
         overflow: hidden;
         transition: transform 0.2s;
     }
     .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
     
     .mini-text-content {
-        flex: 1; /* Take remaining space */
-        padding: 10px;
+        flex: 1; 
+        padding: 8px 10px; /* Reduced vertical padding */
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start; /* Push content to top (no gaps) */
     }
     
     .mini-source {
@@ -89,25 +89,26 @@ st.markdown("""
         color: #9ca3af;
         text-transform: uppercase;
         font-weight: 700;
-        margin-bottom: 3px;
+        margin-bottom: 2px; /* Minimal gap */
         letter-spacing: 0.5px;
+        line-height: 1;
     }
     
     .mini-title a { 
         color: #f3f4f6 !important; 
         text-decoration: none; 
         font-weight: 600; 
-        font-size: 0.85rem; 
-        line-height: 1.25;
-        /* Limit to 2 lines */
+        font-size: 0.78rem; /* Smaller font for more text */
+        line-height: 1.2;   /* Tighter line height */
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3; /* Allow 3 lines of text */
         -webkit-box-orient: vertical;
         overflow: hidden;
+        margin-top: 0;
     }
     
     .mini-image-box {
-        width: 110px; /* Fixed width image */
+        width: 110px; 
         height: 100%;
         background-size: cover;
         background-position: center;
@@ -115,7 +116,7 @@ st.markdown("""
         border-left: 1px solid #374151;
     }
 
-    /* STANDARD GRID CARD */
+    /* GRID CARD */
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
     .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
@@ -126,7 +127,7 @@ st.markdown("""
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* DARK MODE OVERRIDES */
+    /* DARK MODE */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         .grid-card { background: #262730 !important; border: none !important; }
@@ -304,7 +305,7 @@ def show_hero_slider(curr_df):
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
-    slide_len = min(15, len(curr_df)) # Expanded to 15
+    slide_len = min(15, len(curr_df)) 
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     
@@ -312,7 +313,7 @@ def show_hero_slider(curr_df):
     date_d = format_smart_date(row['last_update'])
 
     dots_html = ""
-    for i in range(min(10, slide_len)): # Dots for first 10
+    for i in range(min(10, slide_len)):
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
