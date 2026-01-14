@@ -59,9 +59,9 @@ def setup_db():
 
 def scrape_full_text(url):
     try:
-        time.sleep(random.uniform(2, 4))
+        time.sleep(random.uniform(1, 3))
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=20)
+        response = requests.get(url, headers=headers, timeout=15)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form", "iframe"]): tag.extract()
@@ -88,52 +88,38 @@ def analyze_with_ai(model, title, content):
 
     if not model: return "GEN", "No AI."
     
-    for attempt in range(2): 
-        try:
-            # --- MULTI-TAG PROMPT ---
-            prompt = f"""
-            ROLE: Senior Analyst for a Greek Technical & Legal Portal.
-            
-            TASK 1 (CLASSIFY): 
-            Select ALL applicable categories (comma-separated).
-            
-            Definitions:
-            - ENG: Engineering, Real Estate, Urban Planning (NOK/GOK), Public Works, Energy, Construction.
-            - LAW: Courts, Justice, Lawyers, Crime, Civil/Penal Law.
-            - FEK: ANY Official Government Act, Law, Circular, Decision, Gazette (FEK), or Bill.
-            - GEN: Economy, Politics (General).
-            - TRASH: Sports, Gambling, Showbiz.
-
-            Examples:
-            - "New Law on Unauthorized Buildings" -> ENG, FEK
-            - "Supreme Court Decision on Lawyers' Funds" -> LAW, FEK
-            - "StE Decision on Building Heights (NOK)" -> ENG, FEK
-            - "New Tax Law for Freelancers" -> GEN, FEK
-
-            TASK 2 (ANALYZE): 
-            Write a PROFESSIONAL SUMMARY in Greek (80-120 words).
-            - Include amounts (€) and dates.
-            
-            DATA:
-            Title: {title}
-            Content: {content[:2000] if content else "Title only."}
-
-            Output Format: CATEGORY1, CATEGORY2 ||| [SUMMARY]
-            """
-            response = model.generate_content(prompt)
-            text = response.text.strip()
-            if "|||" in text:
-                parts = text.split("|||")
-                # Επιστρέφουμε τις κατηγορίες όπως τις έδωσε (π.χ. "ENG, FEK")
-                return parts[0].strip().upper(), parts[1].strip()
-            return "GEN", text
+    try:
+        # --- LOGIC MASTERPLAN v2.0 (Multi-Tag) ---
+        prompt = f"""
+        ROLE: Senior Analyst for a Greek Technical & Legal Portal.
         
-        except Exception as e:
-            print(f"⚠️ AI Error (Attempt {attempt+1}): {e}")
-            if attempt == 0:
-                time.sleep(60)
-            else:
-                return "GEN", "AI Busy."
+        TASK 1 (CLASSIFY): 
+        Select ALL applicable categories (comma-separated).
+        Definitions:
+        - ENG: Engineering, Real Estate, Urban Planning (NOK/GOK), Public Works, Energy.
+        - LAW: Courts, Justice, Lawyers, Crime, Civil/Penal Law.
+        - FEK: ANY Official Government Act, Law, Circular, Decision, Gazette (FEK).
+        - GEN: Economy, Politics.
+        - TRASH: Sports, Gambling, Showbiz.
+
+        TASK 2 (ANALYZE): 
+        Write a PROFESSIONAL SUMMARY in Greek (80-120 words).
+        - Include amounts (€) and dates.
+        
+        DATA:
+        Title: {title}
+        Content: {content[:2000] if content else "Title only."}
+
+        Output Format: CATEGORY1, CATEGORY2 ||| [SUMMARY]
+        """
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        if "|||" in text:
+            parts = text.split("|||")
+            return parts[0].strip().upper(), parts[1].strip()
+        return "GEN", text
+    except: 
+        return "GEN", "AI Busy."
 
 def get_greek_time_str(entry):
     try:
@@ -166,7 +152,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v34 (Multi-Tagging) Started...")
+    print("🚀 Bot v35 (Unblocker - 5 items) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -180,7 +166,8 @@ def run_scraper():
         try:
             feed = feedparser.parse(feed_url)
             count = 0
-            for entry in feed.entries[:15]:
+            # --- 5 ARTHRA MONO GIA NA GEMISEI H BASH ---
+            for entry in feed.entries[:5]: 
                 link = entry.get('link', '')
                 if link in existing_links: continue
                 
@@ -191,7 +178,7 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
-                    time.sleep(6) 
+                    time.sleep(6) # 6 Sec Delay (ΑΠΑΡΑΙΤΗΤΟ)
                     
                     cat_tag, ai_article = analyze_with_ai(model, title, full_text)
                     
