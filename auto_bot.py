@@ -16,12 +16,14 @@ GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
 SPREADSHEET_NAME = "laws_database"
 
+# ΑΥΣΤΗΡΟ ΟΡΙΟ: Αγνοούμε άρθρα παλιότερα από 2 ημέρες
+DAYS_LIMIT = 2
+
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
-# --- 2. LIST OF SOURCES ---
 RSS_FEEDS = {
     "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
     "🏗️ TEE": "https://web.tee.gr/feed/",
@@ -46,7 +48,6 @@ def setup_ai():
     if not GEMINI_API_KEY: return None
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        # ΑΛΛΑΓΗ ΕΔΩ: Χρησιμοποιούμε το 1.5 Flash που είναι πιο σταθερό
         return genai.GenerativeModel('gemini-1.5-flash')
     except: return None
 
@@ -58,11 +59,22 @@ def setup_db():
         return gc.open(SPREADSHEET_NAME).sheet1
     except: sys.exit(1)
 
+def get_date_obj(entry):
+    """Εξάγει την ημερομηνία με ασφάλεια"""
+    try:
+        if entry.get('published_parsed'):
+            return datetime.fromtimestamp(time.mktime(entry.published_parsed))
+        date_str = entry.get('published') or entry.get('pubDate') or entry.get('updated')
+        if date_str:
+            return dateutil.parser.parse(date_str, fuzzy=True).replace(tzinfo=None)
+    except: pass
+    return datetime.now() 
+
 def scrape_full_text(url):
     try:
-        time.sleep(random.uniform(1, 3))
+        time.sleep(random.uniform(1, 2))
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form", "iframe"]): tag.extract()
@@ -82,77 +94,59 @@ def fetch_article_image(url):
     except: return ""
     return ""
 
-def analyze_with_ai(model, title, content):
-    trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
+# --- BACKUP LOGIC: ΑΝ ΤΟ AI ΑΠΟΤΥΧΕΙ ---
+def fallback_classify(title, source):
+    """Απλή κατηγοριοποίηση χωρίς AI"""
+    t = title.lower()
+    if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ"]): return "LAW"
+    if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση"]): return "ENG"
+    if any(k in t for k in ["φεκ", "νομος", "αποφαση"]): return "FEK"
+    if "michanikos" in source.lower(): return "ENG"
+    if "dikastiko" in source.lower(): return "LAW"
+    return "GEN"
+
+def analyze_with_ai(model, title, content, original_summary):
+    # Trash Filter
+    trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip"]
     if any(kw in title.lower() for kw in trash_keywords):
         return "TRASH", "Rejected"
 
-    if not model: return "GEN", "No AI."
+    if not model: 
+        return fallback_classify(title, ""), original_summary
     
     try:
         prompt = f"""
-        ROLE: Senior Analyst for a Greek Technical & Legal Portal.
+        ROLE: Senior Analyst.
+        TASK: Classify and Summarize in Greek.
         
-        TASK 1 (CLASSIFY): 
-        Select ALL applicable categories (comma-separated).
-        Definitions:
-        - ENG: Engineering, Real Estate, Urban Planning (NOK/GOK), Public Works, Energy.
-        - LAW: Courts, Justice, Lawyers, Crime, Civil/Penal Law.
-        - FEK: ANY Official Government Act, Law, Circular, Decision, Gazette (FEK).
-        - GEN: Economy, Politics.
-        - TRASH: Sports, Gambling, Showbiz.
-
-        TASK 2 (ANALYZE): 
-        Write a PROFESSIONAL SUMMARY in Greek (80-120 words).
-        - Include amounts (€) and dates.
+        CATEGORIES (Select ALL that apply, comma-separated):
+        - ENG: Engineering/Real Estate.
+        - LAW: Legal/Courts.
+        - FEK: Legislation/Gazette.
+        - GEN: General/Economy.
+        
+        SUMMARY: Professional, 80-100 words, with dates/amounts.
         
         DATA:
         Title: {title}
-        Content: {content[:2000] if content else "Title only."}
-
-        Output Format: CATEGORY1, CATEGORY2 ||| [SUMMARY]
+        Content: {content[:2000]}
+        
+        Format: CAT1, CAT2 ||| [SUMMARY]
         """
         response = model.generate_content(prompt)
         text = response.text.strip()
         if "|||" in text:
             parts = text.split("|||")
             return parts[0].strip().upper(), parts[1].strip()
-        return "GEN", text
-    except: 
-        return "GEN", "AI Busy."
-
-def get_greek_time_str(entry):
-    try:
-        date_str = entry.get('published') or entry.get('pubDate') or entry.get('updated')
-        dt = None
-        if date_str:
-            try: dt = dateutil.parser.parse(date_str)
-            except: pass
+        return fallback_classify(title, ""), text # Αν απαντήσει χωρίς format
         
-        if not dt and entry.get('published_parsed'):
-            dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), timezone.utc)
-
-        if dt:
-            if dt.tzinfo:
-                dt = dt.astimezone(timezone.utc)
-                dt = dt.replace(tzinfo=None) + timedelta(hours=2)
-            return dt.strftime("%Y-%m-%d %H:%M:%S")
-    except: pass
-    return (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
-
-def cleanup_database_safe(worksheet):
-    try:
-        all_values = worksheet.get_all_values()
-        if len(all_values) > 900:
-            header = all_values[0]
-            data_to_keep = all_values[-700:]
-            worksheet.clear()
-            worksheet.append_row(header)
-            worksheet.append_rows(data_to_keep)
-    except: pass
+    except Exception:
+        # FALLBACK: ΑΝ ΤΟ AI ΕΙΝΑΙ BUSY, ΚΡΑΤΑΜΕ ΤΟ RSS SUMMARY ΚΑΙ ΒΑΖΟΥΜΕ ΕΤΙΚΕΤΑ ΧΕΙΡΟΚΙΝΗΤΑ
+        print("⚠️ AI Busy/Quota Exceeded. Using Fallback.")
+        return fallback_classify(title, ""), (original_summary if len(original_summary) > 10 else "Δεν υπάρχει διαθέσιμη περίληψη.")
 
 def run_scraper():
-    print("🚀 Bot v36 (Gemini 1.5 Stable) Started...")
+    print(f"🚀 Bot v38 (Smart Filter & Fallback) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -160,39 +154,52 @@ def run_scraper():
     except: existing_links = set()
 
     new_rows = []
+    current_time = datetime.now()
     
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
             feed = feedparser.parse(feed_url)
             count = 0
-            # Κρατάμε τα 5 άρθρα για ασφάλεια στο πρώτο τρέξιμο
-            for entry in feed.entries[:5]: 
+            
+            # Ελέγχουμε τα 10 πρώτα, αλλά κρατάμε ΜΟΝΟ τα φρέσκα
+            for entry in feed.entries[:10]:
                 link = entry.get('link', '')
                 if link in existing_links: continue
                 
+                # 1. ΕΛΕΓΧΟΣ ΗΜΕΡΟΜΗΝΙΑΣ (Ο ΑΥΣΤΗΡΟΣ ΦΡΟΥΡΟΣ)
+                article_dt = get_date_obj(entry)
+                if (current_time - article_dt).days > DAYS_LIMIT:
+                    # Προσπερνάμε αθόρυβα τα παλιά
+                    continue
+
+                # 2. ΠΡΟΕΤΟΙΜΑΣΙΑ
                 title = entry.get('title', 'No Title')
-                pub_date = get_greek_time_str(entry)
+                pub_date_str = article_dt.strftime("%Y-%m-%d %H:%M:%S")
+                rss_summary = entry.get('summary', '') or entry.get('description', '') or title
 
                 try:
                     full_text = scrape_full_text(link)
-                    if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
+                    if len(full_text) < 50: full_text = rss_summary
                     
-                    time.sleep(6) 
+                    time.sleep(6) # Delay
                     
-                    cat_tag, ai_article = analyze_with_ai(model, title, full_text)
+                    # 3. ΑΝΑΛΥΣΗ (ΜΕ FALLBACK ΑΣΦΑΛΕΙΑΣ)
+                    cat_tag, ai_article = analyze_with_ai(model, title, full_text, rss_summary)
                     
                     if "TRASH" in cat_tag:
                         existing_links.add(link)
                         print(f"🗑️ Trash: {title}")
                         continue
                     
-                    new_row = [str(hash(link)), source_name, title, ai_article, link, pub_date, cat_tag, fetch_article_image(link)]
+                    new_row = [str(hash(link)), source_name, title, ai_article, link, pub_date_str, cat_tag, fetch_article_image(link)]
                     new_rows.append(new_row)
                     existing_links.add(link)
                     count += 1
-                except: continue
-            print(f"✅ {count}")
+                except Exception as e: 
+                    print(f"Skipping due to error: {e}")
+                    continue
+            print(f"✅ {count} (Fresh)")
         except: print("❌")
 
     if new_rows:
