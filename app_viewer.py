@@ -77,16 +77,16 @@ st.markdown("""
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* --- MOBILE REORDER FIX --- */
+    /* --- RESPONSIVE VISIBILITY --- */
+    /* Mobile: Hide desktop-only elements */
     @media (max-width: 900px) {
-        /* Αντιστροφή σειράς ΜΟΝΟ στο κινητό για το κεντρικό block */
-        [data-testid="stHorizontalBlock"] {
-            flex-direction: column-reverse;
-        }
-        /* Επαναφορά της κανονικής σειράς για τα εσωτερικά grids (κάρτες) */
-        [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {
-            flex-direction: row;
-        }
+        .desktop-show { display: none !important; }
+        .mobile-show { display: block !important; }
+    }
+    /* Desktop: Hide mobile-only elements */
+    @media (min-width: 901px) {
+        .mobile-show { display: none !important; }
+        .desktop-show { display: block !important; }
     }
     
     @media (prefers-color-scheme: dark) {
@@ -326,10 +326,30 @@ def render_live_flow(curr_df):
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
-    # Σημείωση: Στο κινητό το CSS "flex-direction: column-reverse" 
-    # θα αντιστρέψει τη σειρά, βάζοντας τη Ροή (c_right) πάνω από το Hero (c_hero).
+    # --- HTML GENERATOR FOR FLOW ITEMS ---
+    flow_html = '<h5>ΡΟΗ</h5>'
+    for i, r in curr_df.head(6).iterrows():
+        src_label = str(r['source']).upper()[:12]
+        img_url = get_image(r)
+        rel_time = get_relative_time(r['datetime_obj'])
+        flow_html += f"""
+        <div class="mini-card">
+            <div class="mini-text-content">
+                <div class="mini-meta-row">
+                    <div class="mini-source">{src_label}</div>
+                    <div class="mini-ago">{rel_time}</div>
+                </div>
+                <div class="mini-title">
+                    <a href="{r['link']}" target="_blank">{r['title']}</a>
+                </div>
+            </div>
+            <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
+        </div>
+        """
+
     c_hero, c_right = st.columns([2.2, 1])
     with c_hero:
+        # 1. HERO IMAGE (Always Visible)
         st.markdown(f"""
         <div class="hero-wrapper">
             <img src="{get_image(row)}" class="hero-image">
@@ -341,6 +361,10 @@ def render_live_flow(curr_df):
         </div>
         """, unsafe_allow_html=True)
         
+        # 2. MOBILE FLOW (Visible ONLY on Mobile) - Μπαίνει ανάμεσα σε Hero και Κάτω Στήλες
+        st.markdown(f'<div class="mobile-show">{flow_html}</div>', unsafe_allow_html=True)
+
+        # 3. BOTTOM GRID (Visible Everywhere)
         bottom_items = curr_df.iloc[6:12]
         if not bottom_items.empty:
             rows_b = (len(bottom_items) + 2) // 3 
@@ -370,25 +394,9 @@ def render_live_flow(curr_df):
                             """, unsafe_allow_html=True)
 
     with c_right:
-        st.markdown("##### ΡΟΗ")
-        for i, r in curr_df.head(6).iterrows():
-            src_label = str(r['source']).upper()[:12]
-            img_url = get_image(r)
-            rel_time = get_relative_time(r['datetime_obj'])
-            st.markdown(f"""
-            <div class="mini-card">
-                <div class="mini-text-content">
-                    <div class="mini-meta-row">
-                        <div class="mini-source">{src_label}</div>
-                        <div class="mini-ago">{rel_time}</div>
-                    </div>
-                    <div class="mini-title">
-                        <a href="{r['link']}" target="_blank">{r['title']}</a>
-                    </div>
-                </div>
-                <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
-            </div>
-            """, unsafe_allow_html=True)
+        # 4. DESKTOP FLOW (Visible ONLY on Desktop) - Πλάγια στήλη
+        st.markdown(f'<div class="desktop-show">{flow_html}</div>', unsafe_allow_html=True)
+        
     st.markdown("---")
 
 def render_tab(tab_name):
