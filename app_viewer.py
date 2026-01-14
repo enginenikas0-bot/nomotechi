@@ -15,12 +15,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (FINAL DARK THEME) ---
+# --- 2. CSS (REFINED DARK AESTHETICS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     
+    /* HEADER */
     .header-container { 
         background-color: #1e293b !important; padding: 20px 0 25px 0; border-bottom: 1px solid #334155; 
         text-align: center; margin-bottom: 0px; border-radius: 0;
@@ -29,6 +30,7 @@ st.markdown("""
     .powered-text { font-size: 0.75rem; color: #94a3b8 !important; letter-spacing: 1px; }
     .sub-text { font-size: 0.75rem; color: #cbd5e1 !important; margin-top: 5px; }
 
+    /* TICKER */
     .ticker-container { 
         width: 100%; overflow: hidden; background-color: #1e293b !important; 
         border-top: 1px solid #334155; border-bottom: 1px solid #334155; 
@@ -38,6 +40,7 @@ st.markdown("""
     .ticker-text { font-family: 'Segoe UI', sans-serif; font-weight: 600; color: #f1f5f9 !important; font-size: 0.9rem; }
     @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
+    /* SIDEBAR */
     [data-testid="stSidebar"] { background-color: #111827 !important; border-right: 1px solid #374151; }
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #ffffff !important; font-weight: 500; }
     .sidebar-header { color: #ffffff !important; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 10px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; display: inline-block; }
@@ -45,10 +48,20 @@ st.markdown("""
     .sidebar-logo { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; filter: brightness(1.1); }
     .sidebar-btn { display: block; width: 100%; background-color: #000000; color: white !important; text-decoration: none; padding: 10px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 700; margin-top: 15px; transition: 0.2s; border: 1px solid #333; }
     
-    div[data-baseweb="input"] { background-color: #f0f2f6 !important; border: 1px solid #ccc; border-radius: 4px; }
-    .search-container div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; }
-    .search-container div[data-baseweb="input"] input { color: white !important; caret-color: white; }
+    /* SEARCH BAR - DISCREET & DARK */
+    div[data-baseweb="input"] { 
+        background-color: #0f172a !important; /* Very Dark Slate (Almost Black-Blue) */
+        border: 1px solid #334155 !important; /* Subtle Border */
+        border-radius: 4px; 
+    }
+    .search-container div[data-baseweb="input"] input { 
+        color: #e2e8f0 !important; /* Light text */
+        caret-color: #3b82f6; 
+        font-weight: 500;
+    }
+    /* Hide the search icon if present in input by streamlit default styling adjustments */
 
+    /* SLIDER & CARDS */
     .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
@@ -64,20 +77,19 @@ st.markdown("""
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
     .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
+    /* BADGES */
     .badge-sos { background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-law { background: #003366; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-real { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
+    /* DARK MODE OVERRIDES */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         .grid-card { background: #262730 !important; border: none !important; }
         .article-meta { border-top-color: #334155 !important; color: #94a3b8 !important; }
         .header-container, .ticker-container { background-color: #1e293b !important; }
-        div[data-baseweb="input"] { background-color: #262730 !important; border-color: #444 !important; }
-        div[data-baseweb="input"] input { color: white !important; }
-        .search-container div[data-baseweb="input"] { background-color: #003366 !important; } 
         [data-testid="collapsedControl"] { color: white !important; }
     }
 </style>
@@ -90,24 +102,20 @@ def normalize_text(text):
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content_strict(row):
-    # Αυτή η συνάρτηση τώρα ΔΙΑΒΑΖΕΙ ΤΗΝ ΚΑΤΗΓΟΡΙΑ ΤΟΥ AI (στήλη 'category')
     ai_tag = str(row.get('category', '')).upper()
     tags = []
 
-    # Αν το AI έχει ήδη αποφασίσει, το σεβόμαστε
     if "ENG" in ai_tag: tags.append("ENG")
     elif "LAW" in ai_tag: tags.append("LAW")
     elif "FEK" in ai_tag: tags.append("FEK")
-    elif "REAL_ESTATE" in ai_tag or "REAL ESTATE" in ai_tag: tags.append("ENG") # Real estate -> ENG/General group
+    elif "REAL_ESTATE" in ai_tag or "REAL ESTATE" in ai_tag: tags.append("ENG") 
     
-    # Fallback μόνο αν δεν υπάρχει tag (για παλιά άρθρα)
     if not tags:
         full_text = (str(row.get('title')) + " " + str(row.get('content'))).upper()
         if "ΜΗΧΑΝΙΚ" in full_text or "ΕΡΓΑ" in full_text: tags.append("ENG")
         elif "ΔΙΚΑΣΤ" in full_text or "ΝΟΜΟΣ" in full_text: tags.append("LAW")
         else: tags.append("GENERAL")
     
-    # Extra badges (SOS etc)
     if "SOS" in str(row.get('title', '')).upper(): tags.append("SOS")
     
     return tags
@@ -120,7 +128,6 @@ def load_data():
     sh = get_db_client()
     if not sh: return []
     try: 
-        # Φέρνουμε ΟΛΕΣ τις στήλες. Η στήλη 6 είναι το 'category' που γράφει το Bot.
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
         df = df[df['title'].str.lower() != 'title']
@@ -137,7 +144,6 @@ def format_smart_date(date_str):
     try:
         dt = pd.to_datetime(date_str)
         now = datetime.now()
-        # Ελέγχουμε αν είναι σημερινό (αγνοούμε μικροδιαφορές ώρας)
         if dt.date() == now.date(): 
             return f"{dt.strftime('%d/%m/%y')} - {dt.strftime('%H:%M')}"
         return dt.strftime("%d/%m/%y")
@@ -161,12 +167,9 @@ def render_badges(row):
     tags = row.get('smart_tags', [])
     badges_html = ""
     if "SOS" in tags: badges_html += '<span class="badge-sos">🚨 SOS</span>'
-    
-    # Strict rendering based on Tag
     if "ENG" in tags: badges_html += '<span class="badge-tech">🏗️ ΤΕΧΝΙΚΟ</span>'
-    if "LAW" in tags: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΙΟΣΥΝΗ</span>'
+    if "LAW" in tags: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>' # RENAMED
     if "FEK" in tags: badges_html += '<span class="badge-fek">📜 ΝΟΜΟΘΕΣΙΑ</span>'
-    
     return badges_html
 
 def save_subscriber(email):
@@ -228,7 +231,7 @@ if not raw_data: st.warning("⏳ Φόρτωση..."); st.stop()
 df = pd.DataFrame(raw_data)
 
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-search_query = st.text_input("", placeholder="🔍 Αναζήτηση...")
+search_query = st.text_input("", placeholder="Αναζήτηση...", label_visibility="collapsed") # No emoji
 st.markdown('</div>', unsafe_allow_html=True)
 
 if search_query:
@@ -251,7 +254,7 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
-@st.fragment(run_every=6)
+@st.fragment(run_every=4) 
 def show_hero_slider(curr_df):
     if curr_df.empty: return
     
@@ -299,7 +302,7 @@ def render_tab(tab_name):
     if curr.empty: st.info("Δεν βρέθηκαν άρθρα."); return
 
     if tab_name == "HOME" and not search_query:
-        # JS WIDGET FOR MOBILE
+        # JS WIDGET
         components.html("""
         <div id="tv-widget-container"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
@@ -318,8 +321,10 @@ def render_tab(tab_name):
             show_hero_slider(curr) 
         
         with c_list:
-            st.markdown("### Top Stories")
-            for i, r in curr.head(5).iterrows():
+            # NO EMOJI IN HEADER
+            st.markdown("### ΡΟΗ")
+            # Top 10 items
+            for i, r in curr.head(10).iterrows():
                 d = format_smart_date(r['last_update'])
                 st.markdown(f"""
                 <div class="list-item">
@@ -371,7 +376,23 @@ with tabs[1]: render_tab("ENG")
 with tabs[2]: render_tab("LAW")
 with tabs[3]: render_tab("FEK")
 with tabs[4]: 
-    st.metric("Total Articles", len(df))
+    # --- RICH STATISTICS SECTION ---
+    st.subheader("📊 Στατιστικά Βάσης Δεδομένων")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Άρθρα ανά Πηγή**")
+        source_counts = df['source'].value_counts()
+        st.bar_chart(source_counts)
+    
+    with col2:
+        st.markdown("**Ροή Ειδήσεων (Τελευταίες 30 ημέρες)**")
+        # Group by date only
+        date_counts = df.groupby(df['datetime_obj'].dt.date).size()
+        st.bar_chart(date_counts)
+
+    st.metric("Σύνολο Αρχειοθετημένων Άρθρων", len(df))
+    
     if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
         if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
         st.dataframe(df)
