@@ -15,108 +15,66 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (UNIFIED DARK THEME) ---
+# --- 2. CSS (FINAL DARK THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
-    
     html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     
-    /* --- HEADER (MATCHING TICKER COLOR) --- */
     .header-container { 
-        background-color: #1e293b !important; /* DARK SLATE BLUE (Same as Ticker) */
-        padding: 20px 0 25px 0; 
-        border-bottom: 1px solid #334155; /* Subtle border match */
-        text-align: center; 
-        margin-bottom: 0px; 
-        border-radius: 0 0 0 0;
+        background-color: #1e293b !important; padding: 20px 0 25px 0; border-bottom: 1px solid #334155; 
+        text-align: center; margin-bottom: 0px; border-radius: 0;
     }
-    /* Force White Text */
-    .header-logo { 
-        font-family: 'Merriweather', serif; 
-        font-size: 2.5rem; 
-        font-weight: 900; 
-        color: #ffffff !important; 
-        letter-spacing: -1px; 
-        line-height: 1.2; 
-    }
+    .header-logo { font-family: 'Merriweather', serif; font-size: 2.5rem; font-weight: 900; color: #ffffff !important; letter-spacing: -1px; line-height: 1.2; }
     .powered-text { font-size: 0.75rem; color: #94a3b8 !important; letter-spacing: 1px; }
     .sub-text { font-size: 0.75rem; color: #cbd5e1 !important; margin-top: 5px; }
 
-    /* --- TICKER (ALWAYS DARK SLATE) --- */
     .ticker-container { 
-        width: 100%; 
-        overflow: hidden; 
-        background-color: #1e293b !important; /* Matches Header */
-        border-top: 1px solid #334155; 
-        border-bottom: 1px solid #334155; 
-        white-space: nowrap; 
-        height: 42px; 
-        display: flex; 
-        align-items: center; 
-        margin-bottom: 20px;
+        width: 100%; overflow: hidden; background-color: #1e293b !important; 
+        border-top: 1px solid #334155; border-bottom: 1px solid #334155; 
+        white-space: nowrap; height: 42px; display: flex; align-items: center; margin-bottom: 20px;
     }
     .ticker-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 80s linear infinite; }
-    .ticker-content:hover { animation-play-state: paused; }
-    .ticker-text { 
-        font-family: 'Segoe UI', sans-serif; 
-        font-weight: 600; 
-        color: #f1f5f9 !important; /* White-ish text */
-        font-size: 0.9rem; 
-    }
+    .ticker-text { font-family: 'Segoe UI', sans-serif; font-weight: 600; color: #f1f5f9 !important; font-size: 0.9rem; }
     @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* --- SIDEBAR (ALWAYS DARK) --- */
     [data-testid="stSidebar"] { background-color: #111827 !important; border-right: 1px solid #374151; }
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #ffffff !important; font-weight: 500; }
     .sidebar-header { color: #ffffff !important; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 10px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; display: inline-block; }
     .sidebar-card { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; }
     .sidebar-logo { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; filter: brightness(1.1); }
     .sidebar-btn { display: block; width: 100%; background-color: #000000; color: white !important; text-decoration: none; padding: 10px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 700; margin-top: 15px; transition: 0.2s; border: 1px solid #333; }
-    .sidebar-btn:hover { background-color: #333333; color: white !important; border-color: #fff; }
-
-    /* --- SEARCH BAR --- */
+    
     div[data-baseweb="input"] { background-color: #f0f2f6 !important; border: 1px solid #ccc; border-radius: 4px; }
     .search-container div[data-baseweb="input"] { background-color: #003366 !important; border: 1px solid #004080; }
     .search-container div[data-baseweb="input"] input { color: white !important; caret-color: white; }
 
-    /* --- SLIDER --- */
     .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
     .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
-
-    /* Visual Dots */
+    
     .msn-dots-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; pointer-events: none; }
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* Cards */
     .list-item { background: #1e293b; padding: 15px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #3b82f6; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .list-title a { color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
     .list-date { color: #cbd5e1 !important; font-size: 0.75rem; margin-top: 5px; }
-    
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
     .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
-    /* Badges */
     .badge-sos { background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-law { background: #003366; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-real { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
-    /* Dark Mode (System) Overrides */
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         .grid-card { background: #262730 !important; border: none !important; }
         .article-meta { border-top-color: #334155 !important; color: #94a3b8 !important; }
-        
-        /* Force Header/Ticker Consistency in Dark Mode */
-        .header-container { background-color: #1e293b !important; }
-        .ticker-container { background-color: #1e293b !important; }
-        
-        /* Inputs in dark mode */
+        .header-container, .ticker-container { background-color: #1e293b !important; }
         div[data-baseweb="input"] { background-color: #262730 !important; border-color: #444 !important; }
         div[data-baseweb="input"] input { color: white !important; }
         .search-container div[data-baseweb="input"] { background-color: #003366 !important; } 
@@ -126,43 +84,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 3. LOGIC ---
-SOURCE_HINTS = {
-    "ENG": ["pomida", "ypodomes", "b2green", "tee", "pedmede", "michanikos", "elinyae"],
-    "LAW": ["dikastiko", "lawspot", "syntagma", "lawnet", "dsa", "ethemis"],
-    "FEK": ["e-nomothesia", "taxheaven", "capital"]
-}
-
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
-def analyze_content(row):
-    title = str(row.get('title', '')).upper()
-    content = str(row.get('content', '')).upper()
-    source = str(row.get('source', '')).lower()
-    full_text = title + " " + content
+def analyze_content_strict(row):
+    # Αυτή η συνάρτηση τώρα ΔΙΑΒΑΖΕΙ ΤΗΝ ΚΑΤΗΓΟΡΙΑ ΤΟΥ AI (στήλη 'category')
+    ai_tag = str(row.get('category', '')).upper()
     tags = []
 
-    kw_eng = ['ΜΗΧΑΝΙΚ', 'ΕΡΓΑ', 'ΑΚΙΝΗΤ', 'REAL ESTATE', 'ΕΞΟΙΚΟΝΟΜΩ', 'ΑΝΑΚΑΙΝΙΖΩ', 'ΚΤΗΜΑΤΟΛΟΓΙΟ', 'ΑΥΘΑΙΡΕΤΑ', 'ΔΟΜΗΣΗ', 'ΥΠΟΔΟΜΕΣ', 'ΕΝΕΡΓΕΙΑ', 'ΠΕΑ', 'BUILDING', 'ΝΟΚ', 'ΟΙΚΟΔΟΜ', 'ΠΕΧΩΔΕ', 'ΥΠΕΝ', 'ΑΔΕΙΕΣ', 'ΚΑΤΑΣΚΕΥ', 'ΕΡΓΟΛΗΠΤ']
-    kw_law = ['ΔΙΚΑΣΤ', 'ΑΡΕΙΟΣ ΠΑΓΟΣ', 'ΣΤΕ', 'ΔΙΚΗΓΟΡ', 'ΣΥΝΤΑΓΜΑ', 'ΔΙΚΗ', 'COURT', 'ΕΙΣΑΓΓΕΛ', 'ΑΓΩΓΗ', 'ΕΦΕΤΕΙΟ', 'ΠΡΩΤΟΔΙΚΕΙΟ', 'ΠΟΙΝΙΚ', 'ΑΣΤΙΚΟ', 'ΝΟΜΟΛΟΓΙΑ']
-    kw_fek = ['ΦΕΚ', 'ΝΟΜΟΣ', 'ΑΠΟΦΑΣΗ', 'ΕΓΚΥΚΛΙΟΣ', 'ΔΙΑΤΑΞΗ', 'ΤΡΟΠΟΛΟΓΙΑ', 'ΥΠΟΥΡΓΙΚΗ', 'ΠΡΟΕΔΡΙΚΟ ΔΙΑΤΑΓΜΑ']
-
-    has_eng = any(k in full_text for k in kw_eng)
-    has_law = any(k in full_text for k in kw_law)
-    has_fek = any(k in full_text for k in kw_fek)
+    # Αν το AI έχει ήδη αποφασίσει, το σεβόμαστε
+    if "ENG" in ai_tag: tags.append("ENG")
+    elif "LAW" in ai_tag: tags.append("LAW")
+    elif "FEK" in ai_tag: tags.append("FEK")
+    elif "REAL_ESTATE" in ai_tag or "REAL ESTATE" in ai_tag: tags.append("ENG") # Real estate -> ENG/General group
     
-    src_type = "GEN"
-    for cat, keywords in SOURCE_HINTS.items():
-        if any(k in source for k in keywords):
-            src_type = cat
-            break
-
-    if has_fek or src_type == "FEK": tags.append("FEK")
-    if src_type == "ENG" or has_eng: tags.append("ENG")
-    if (src_type == "LAW" or has_law) and not has_eng: tags.append("LAW")
-    if "SOS" in title or "ΠΡΟΘΕΣΜΙΑ" in title: tags.append("SOS")
-    if not tags: tags.append("GENERAL")
+    # Fallback μόνο αν δεν υπάρχει tag (για παλιά άρθρα)
+    if not tags:
+        full_text = (str(row.get('title')) + " " + str(row.get('content'))).upper()
+        if "ΜΗΧΑΝΙΚ" in full_text or "ΕΡΓΑ" in full_text: tags.append("ENG")
+        elif "ΔΙΚΑΣΤ" in full_text or "ΝΟΜΟΣ" in full_text: tags.append("LAW")
+        else: tags.append("GENERAL")
+    
+    # Extra badges (SOS etc)
+    if "SOS" in str(row.get('title', '')).upper(): tags.append("SOS")
     
     return tags
 
@@ -174,6 +120,7 @@ def load_data():
     sh = get_db_client()
     if not sh: return []
     try: 
+        # Φέρνουμε ΟΛΕΣ τις στήλες. Η στήλη 6 είναι το 'category' που γράφει το Bot.
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
         df = df[df['title'].str.lower() != 'title']
@@ -182,7 +129,7 @@ def load_data():
         df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
         records = df.to_dict('records')
-        for r in records: r['smart_tags'] = analyze_content(r)
+        for r in records: r['smart_tags'] = analyze_content_strict(r)
         return records
     except: return []
 
@@ -190,7 +137,9 @@ def format_smart_date(date_str):
     try:
         dt = pd.to_datetime(date_str)
         now = datetime.now()
-        if dt.date() == now.date(): return f"{dt.strftime('%d/%m/%y')} - {dt.strftime('%H:%M')}"
+        # Ελέγχουμε αν είναι σημερινό (αγνοούμε μικροδιαφορές ώρας)
+        if dt.date() == now.date(): 
+            return f"{dt.strftime('%d/%m/%y')} - {dt.strftime('%H:%M')}"
         return dt.strftime("%d/%m/%y")
     except: return str(date_str)
 
@@ -210,14 +159,14 @@ def get_image(row):
 
 def render_badges(row):
     tags = row.get('smart_tags', [])
-    text = (str(row.get('title')) + " " + str(row.get('content'))).upper()
     badges_html = ""
     if "SOS" in tags: badges_html += '<span class="badge-sos">🚨 SOS</span>'
-    if "ENG" in tags:
-        if "REAL ESTATE" in text or "ΑΚΙΝΗΤ" in text: badges_html += '<span class="badge-real">🏠 REAL ESTATE</span>'
-        else: badges_html += '<span class="badge-tech">🏗️ ΤΕΧΝΙΚΟ</span>'
+    
+    # Strict rendering based on Tag
+    if "ENG" in tags: badges_html += '<span class="badge-tech">🏗️ ΤΕΧΝΙΚΟ</span>'
     if "LAW" in tags: badges_html += '<span class="badge-law">⚖️ ΔΙΚΑΙΟΣΥΝΗ</span>'
     if "FEK" in tags: badges_html += '<span class="badge-fek">📜 ΝΟΜΟΘΕΣΙΑ</span>'
+    
     return badges_html
 
 def save_subscriber(email):
