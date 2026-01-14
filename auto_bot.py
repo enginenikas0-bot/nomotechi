@@ -5,7 +5,7 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 import requests
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 import sys
@@ -20,9 +20,8 @@ USER_AGENTS = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
-# --- 2. LIST OF SOURCES ---
 RSS_FEEDS = {
-    # --- ΜΗΧΑΝΙΚΟΙ / ΚΑΤΑΣΚΕΥΕΣ ---
+    # --- ΜΗΧΑΝΙΚΟΙ ---
     "Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
     "TEE": "https://web.tee.gr/feed/",
     "Ypodomes": "https://ypodomes.com/feed/",
@@ -30,8 +29,7 @@ RSS_FEEDS = {
     "POMIDA": "https://www.pomida.gr/feed/",
     "PEDMEDE": "https://www.pedmede.gr/feed/",
     "ELINYAE": "https://www.elinyae.gr/rss.xml",
-
-    # --- ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ ---
+    # --- ΝΟΜΙΚΑ ---
     "E-Themis": "https://www.ethemis.gr/feed/",
     "Dikastiko": "https://www.dikastiko.gr/feed/",
     "Dikastiko Rep": "https://www.dikastikoreportaz.gr/feed/",
@@ -39,14 +37,12 @@ RSS_FEEDS = {
     "Syntagma Watch": "https://www.syntagmawatch.gr/feed/",
     "LawNet": "https://www.lawnet.gr/feed/",
     "DSA": "https://www.dsa.gr/rss.xml",
-
-    # --- ΝΟΜΟΘΕΣΙΑ & ΟΙΚΟΝΟΜΙΑ ---
+    # --- ΝΟΜΟΘΕΣΙΑ ---
     "E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "Taxheaven": "https://www.taxheaven.gr/rss",
     "Capital": "https://www.capital.gr/rss/roi"
 }
 
-# --- 3. SETUP ---
 def setup_ai():
     if not GEMINI_API_KEY: return None
     try:
@@ -62,19 +58,13 @@ def setup_db():
         return gc.open(SPREADSHEET_NAME).sheet1
     except: sys.exit(1)
 
-# --- 4. HELPERS ---
-def clean_html(html_text):
-    if not html_text: return ""
-    soup = BeautifulSoup(html_text, "html.parser")
-    return soup.get_text(separator=" ").strip()
-
 def scrape_full_text(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            for tag in soup(["script", "style", "nav", "footer", "aside", "header"]): tag.extract()
+            for tag in soup(["script", "style", "nav", "footer", "header"]): tag.extract()
             return soup.get_text(separator=" ").strip()[:6000]
     except: return ""
     return ""
@@ -94,8 +84,8 @@ def analyze_with_ai(model, title, content):
     if not model: return "GEN", "No AI Summary."
     try:
         prompt = f"""
-        Classify into ONE: ENG (Technical/Real Estate), LAW (Legal/Justice), FEK (Legislation), GEN (General).
-        Then Summarize in Greek (max 25 words).
+        Classify: ENG (Technical/Real Estate), LAW (Legal/Justice), FEK (Legislation), GEN (General).
+        Summarize (Greek, max 25 words).
         Input: {title} | {content[:1000]}
         Output: CATEGORY ||| SUMMARY
         """
@@ -107,7 +97,31 @@ def analyze_with_ai(model, title, content):
         return "GEN", text
     except: return "GEN", "AI Busy."
 
-# --- 5. CLEANUP ---
+def parse_published_date(entry):
+    """
+    Extracts the REAL publication time from RSS tags.
+    Returns string: YYYY-MM-DD HH:MM:SS (Greek Time)
+    """
+    try:
+        # 1. Try 'published_parsed' (Standard RSS)
+        struct_time = entry.get('published_parsed') or entry.get('updated_parsed')
+        
+        if struct_time:
+            # RSS times are usually UTC. We convert struct_time to datetime object
+            dt_utc = datetime(*struct_time[:6])
+            
+            # Add 2 hours for Greece (Winter) or 3 (Summer). Let's stick to +2 for now as base.
+            # A more robust way is just ensuring we are consistent.
+            dt_greece = dt_utc + timedelta(hours=2)
+            
+            return dt_greece.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        pass
+    
+    # 2. Fallback: Current time (If feed has NO date)
+    # Using UTC+2 to match Greek time
+    return (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+
 def cleanup_database_safe(worksheet):
     try:
         all_values = worksheet.get_all_values()
@@ -119,9 +133,8 @@ def cleanup_database_safe(worksheet):
             worksheet.append_rows(data_to_keep)
     except: pass
 
-# --- 6. MAIN JOB ---
 def run_scraper():
-    print("🚀 Bot v21 Started...")
+    print("🚀 Bot v22 (Time Hunter) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -141,27 +154,16 @@ def run_scraper():
                 
                 title = entry.get('title', 'No Title')
                 
-                # --- TIME EXTRACTION (REAL PUBLISHED TIME) ---
-                try:
-                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                        # Convert RSS struct_time to datetime
-                        dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
-                        # Add 2 hours because usually feeds are UTC and we want GR time
-                        dt = dt + timedelta(hours=2)
-                        now_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-                    else:
-                        # Fallback if no date in RSS
-                        now_str = (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
-                except:
-                    now_str = (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+                # --- GET REAL TIME ---
+                pub_date_str = parse_published_date(entry)
 
                 try:
                     full_text = scrape_full_text(link)
-                    if len(full_text) < 50: full_text = clean_html(entry.get('summary', ''))
+                    if len(full_text) < 50: full_text = entry.get('summary', '')
                     
                     cat_tag, ai_summary = analyze_with_ai(model, title, full_text)
                     
-                    new_row = [str(hash(link)), source_name, title, ai_summary, link, now_str, cat_tag, fetch_article_image(link)]
+                    new_row = [str(hash(link)), source_name, title, ai_summary, link, pub_date_str, cat_tag, fetch_article_image(link)]
                     new_rows.append(new_row)
                     existing_links.add(link)
                     count += 1
