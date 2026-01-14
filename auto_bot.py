@@ -59,7 +59,7 @@ def setup_db():
 
 def scrape_full_text(url):
     try:
-        time.sleep(random.uniform(1, 3)) 
+        time.sleep(random.uniform(2, 4))
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         response = requests.get(url, headers=headers, timeout=20)
         if response.status_code == 200:
@@ -82,50 +82,58 @@ def fetch_article_image(url):
     return ""
 
 def analyze_with_ai(model, title, content):
-    # TRASH FILTER
     trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
     if any(kw in title.lower() for kw in trash_keywords):
         return "TRASH", "Rejected"
 
     if not model: return "GEN", "No AI."
     
-    # RETRY LOGIC
     for attempt in range(2): 
         try:
+            # --- MULTI-TAG PROMPT ---
             prompt = f"""
-            ROLE: Expert Technical & Legal Journalist.
+            ROLE: Senior Analyst for a Greek Technical & Legal Portal.
             
-            TASK 1 (CLASSIFY): Pick ONE category based on content:
-            - ENG: Engineering, Real Estate, Public Works, Energy, Urban Planning, Civil engineer, Construction, Construction works, Immovable asset .
-            - LAW: Courts, Justice, Lawyers, Decisions, Supreme Court, Law, Appeal, Legal, Attorney.
-            - FEK: Legislation, Gazettes, Circulars, Decisions, Laws.
-            - GEN: Economy, Taxes (General).
-            - TRASH: Sports, Lifestyle, Irrelevant.
+            TASK 1 (CLASSIFY): 
+            Select ALL applicable categories (comma-separated).
+            
+            Definitions:
+            - ENG: Engineering, Real Estate, Urban Planning (NOK/GOK), Public Works, Energy, Construction.
+            - LAW: Courts, Justice, Lawyers, Crime, Civil/Penal Law.
+            - FEK: ANY Official Government Act, Law, Circular, Decision, Gazette (FEK), or Bill.
+            - GEN: Economy, Politics (General).
+            - TRASH: Sports, Gambling, Showbiz.
+
+            Examples:
+            - "New Law on Unauthorized Buildings" -> ENG, FEK
+            - "Supreme Court Decision on Lawyers' Funds" -> LAW, FEK
+            - "StE Decision on Building Heights (NOK)" -> ENG, FEK
+            - "New Tax Law for Freelancers" -> GEN, FEK
 
             TASK 2 (ANALYZE): 
-            Write a DETAILED PROFESSIONAL SUMMARY in Greek (approx 80-120 words).
-            - Include specific dates, amounts (€), and technical/legal terms.
-            - Use professional tone.
-
+            Write a PROFESSIONAL SUMMARY in Greek (80-120 words).
+            - Include amounts (€) and dates.
+            
             DATA:
             Title: {title}
-            Content: {content[:2000] if content else "Title only available."}
+            Content: {content[:2000] if content else "Title only."}
 
-            Output Format: CATEGORY ||| [SUMMARY TEXT]
+            Output Format: CATEGORY1, CATEGORY2 ||| [SUMMARY]
             """
             response = model.generate_content(prompt)
             text = response.text.strip()
             if "|||" in text:
                 parts = text.split("|||")
+                # Επιστρέφουμε τις κατηγορίες όπως τις έδωσε (π.χ. "ENG, FEK")
                 return parts[0].strip().upper(), parts[1].strip()
             return "GEN", text
         
         except Exception as e:
             print(f"⚠️ AI Error (Attempt {attempt+1}): {e}")
             if attempt == 0:
-                time.sleep(60) # Αν αποτύχει, περιμένει 1 λεπτό
+                time.sleep(60)
             else:
-                return "GEN", "AI Busy (Skipped after retry)."
+                return "GEN", "AI Busy."
 
 def get_greek_time_str(entry):
     try:
@@ -158,7 +166,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v32 (6s Delay) Started...")
+    print("🚀 Bot v34 (Multi-Tagging) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -183,7 +191,6 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
-                    # --- Η ΡΥΘΜΙΣΗ ΠΟΥ ΖΗΤΗΣΕΣ ---
                     time.sleep(6) 
                     
                     cat_tag, ai_article = analyze_with_ai(model, title, full_text)
