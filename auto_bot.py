@@ -21,9 +21,8 @@ USER_AGENTS = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
-# --- 2. LIST OF SOURCES (ΜΕ EMOJIS) ---
+# --- 2. LIST OF SOURCES ---
 RSS_FEEDS = {
-    # --- ΜΗΧΑΝΙΚΟΙ ---
     "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
@@ -31,7 +30,6 @@ RSS_FEEDS = {
     "🏗️ POMIDA": "https://www.pomida.gr/feed/",
     "🏗️ PEDMEDE": "https://www.pedmede.gr/feed/",
     "🏗️ ELINYAE": "https://www.elinyae.gr/rss.xml",
-    # --- ΝΟΜΙΚΑ ---
     "⚖️ E-Themis": "https://www.ethemis.gr/feed/",
     "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ Dikastiko Rep": "https://www.dikastikoreportaz.gr/feed/",
@@ -39,7 +37,6 @@ RSS_FEEDS = {
     "⚖️ Syntagma": "https://www.syntagmawatch.gr/feed/",
     "⚖️ LawNet": "https://www.lawnet.gr/feed/",
     "⚖️ DSA": "https://www.dsa.gr/rss.xml",
-    # --- ΝΟΜΟΘΕΣΙΑ ---
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "📜 Taxheaven": "https://www.taxheaven.gr/rss",
     "💰 Capital": "https://www.capital.gr/rss/roi"
@@ -62,15 +59,14 @@ def setup_db():
 
 def scrape_full_text(url):
     try:
-        # Random Delay πριν το αίτημα στο site για να μην φάμε ban
-        time.sleep(random.uniform(1, 3))
+        time.sleep(random.uniform(1, 2))
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         response = requests.get(url, headers=headers, timeout=15)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form", "iframe"]): tag.extract()
             text = soup.get_text(separator=" ").strip()
-            return text[:6000] if len(text) > 50 else ""
+            return text[:7000] if len(text) > 50 else ""
     except: return ""
     return ""
 
@@ -94,21 +90,26 @@ def analyze_with_ai(model, title, content):
     if not model: return "GEN", "No AI."
     
     try:
+        # --- PROFESSIONAL ANALYST PROMPT ---
         prompt = f"""
-        ACT AS A STRICT CLASSIFIER for a Professional Portal.
+        ROLE: Expert Technical & Legal Analyst.
         
-        TASK 1: CLASSIFY into ONE category based ONLY on content/title:
-        - ENG: Engineering, Technical Projects, Real Estate, Energy, Public Works, Urban Planning.
-        - LAW: Courts, Justice, Lawyers, Criminal/Civil Law, Supreme Court Decisions.
-        - FEK: Official Legislation, Gazettes (FEK), Circulars, Ministries Decisions.
-        - GEN: Economy, Taxes, Politics (General news).
-        - TRASH: Sports, Gambling, Lifestyle, Showbiz, Irrelevant.
+        TASK 1 (CLASSIFY): Pick ONE category based on content:
+        - ENG: Engineering, Real Estate, Public Works, Energy, Urban Planning.
+        - LAW: Courts, Justice, Lawyers, Decisions, Supreme Court.
+        - FEK: Legislation, Gazettes, Circulars, Decisions.
+        - GEN: Economy, Taxes (General).
+        - TRASH: Sports, Lifestyle, Irrelevant.
 
-        TASK 2: SUMMARIZE in Greek (max 25 words).
+        TASK 2 (SUMMARIZE): 
+        Write a DETAILED PROFESSIONAL SUMMARY in Greek (approx 80-120 words).
+        - MUST include specific amounts (€), dates, and technical terms if present.
+        - Capture the full essence so the user doesn't need to read the source.
+        - Use professional, objective language.
 
         DATA:
         Title: {title}
-        Content: {content[:1500] if content else "NO CONTENT - JUDGE BY TITLE ONLY"}
+        Content: {content[:1500] if content else "Title only available."}
 
         Output Format: CATEGORY ||| SUMMARY
         """
@@ -152,7 +153,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v28 (Anti-Busy Delay) Started...")
+    print("🚀 Bot v30 (Professional Analyst) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -177,24 +178,19 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
-                    # --- CRITICAL FIX: SLOW DOWN AI ---
-                    # Περιμένουμε 4 δευτερόλεπτα ΠΡΙΝ καλέσουμε το AI για να μην φάμε "AI Busy"
-                    time.sleep(4) 
+                    time.sleep(4) # Safety delay
                     
                     cat_tag, ai_summary = analyze_with_ai(model, title, full_text)
                     
                     if "TRASH" in cat_tag:
                         existing_links.add(link)
-                        print(f"🗑️ Trash: {title}")
                         continue
                     
                     new_row = [str(hash(link)), source_name, title, ai_summary, link, pub_date, cat_tag, fetch_article_image(link)]
                     new_rows.append(new_row)
                     existing_links.add(link)
                     count += 1
-                except Exception as e:
-                    print(f"⚠️ Skip: {e}")
-                    continue
+                except: continue
             print(f"✅ {count}")
         except: print("❌")
 
