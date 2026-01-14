@@ -54,15 +54,15 @@ st.markdown("""
     .mini-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
     
-    /* TIME STYLE */
     .mini-ago { 
-        font-size: 0.7rem; 
-        color: #60a5fa; 
+        font-size: 0.75rem; 
+        color: #3b82f6; 
         font-weight: 700; 
         background: transparent !important; 
         border: none !important; 
         padding: 0 !important;
         text-align: right;
+        min-width: 60px; /* Ensure space */
     }
 
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -94,21 +94,18 @@ def normalize_text(text):
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content_deep(row):
-    """ SURGICAL SEPARATION LOGIC """
     title = normalize_text(str(row.get('title', '')))
     content = normalize_text(str(row.get('content', '')))
     source = normalize_text(str(row.get('source', '')))
     ai_category = str(row.get('category', '')).upper()
     tags = set()
 
-    # ENG
     eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"]
     is_eng = False
     if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): is_eng = True
     elif any(kw in title for kw in eng_keywords) or "ENG" in ai_category or "REAL_ESTATE" in ai_category: is_eng = True
     if is_eng: tags.add("ENG")
 
-    # LAW
     law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", "δικαιοσυνη", "δικονομ", "δικη", "εφετει"]
     is_law = False
     if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): is_law = True
@@ -117,7 +114,6 @@ def analyze_content_deep(row):
         if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]): is_law = False 
     if is_law: tags.add("LAW")
 
-    # FEK
     leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε."]
     if any(kw in title for kw in leg_keywords) or "FEK" in ai_category: tags.add("FEK")
     if "e-nomothesia" in source or "taxheaven" in source: tags.add("FEK")
@@ -131,15 +127,20 @@ def get_db_client():
     except: return None
 
 def get_relative_time(date_obj):
-    """ Returns '2h ago', '15m ago'. """
+    """
+    AGGRESSIVE RELATIVE TIME:
+    Forces 'Xm ago' even if time is slightly in future due to server drift.
+    """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
-    if seconds < 0: 
-        if seconds > -3600: return "Τώρα"
-        return date_obj.strftime("%d/%m") 
+    # If article is from the future (e.g. server time drift), treat as "Just now"
+    # Unless it's > 24 hours in the future (bad date)
+    if seconds < 0:
+        if seconds > -86400: return "Μόλις τώρα"
+        return date_obj.strftime("%d/%m")
 
     if seconds < 60: return "Μόλις τώρα"
     if seconds < 3600:
@@ -153,7 +154,7 @@ def get_relative_time(date_obj):
     else:
         return f"πριν {diff.days}ημ"
 
-@st.cache_data(ttl=60) # Data Refresh 60s
+@st.cache_data(ttl=0) 
 def load_data():
     sh = get_db_client()
     if not sh: return []
@@ -230,7 +231,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ", use_container_width=True):
+    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ (LIVE)", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     
@@ -304,7 +305,6 @@ def render_live_flow(curr_df):
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
-    # 12-GRID LAYOUT
     c_hero, c_right = st.columns([2.2, 1])
     
     with c_hero:
@@ -320,7 +320,6 @@ def render_live_flow(curr_df):
         </div>
         """, unsafe_allow_html=True)
         
-        # BOTTOM ITEMS (6-12)
         bottom_items = curr_df.iloc[6:12]
         if not bottom_items.empty:
             rows_b = (len(bottom_items) + 2) // 3 
