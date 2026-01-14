@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (PERFECT 12-GRID GEOMETRY) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -48,23 +48,9 @@ st.markdown("""
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
     .mini-card { background: #111827; border: 1px solid #374151; border-radius: 8px; margin-bottom: 8px; height: 95px; display: flex; flex-direction: row; overflow: hidden; transition: transform 0.2s; }
-    .mini-card:hover { transform: scale(1.02); border-color: #3b82f6; }
+    .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
-    
-    .mini-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
-    
-    .mini-ago { 
-        font-size: 0.75rem; 
-        color: #3b82f6; 
-        font-weight: 700; 
-        background: transparent !important; 
-        border: none !important; 
-        padding: 0 !important;
-        text-align: right;
-        min-width: 60px; /* Ensure space */
-    }
-
+    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; line-height: 1; }
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .mini-image-box { width: 100px; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; border-left: 1px solid #374151; flex-shrink: 0; }
 
@@ -87,73 +73,77 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC ---
+# --- 3. LOGIC (SURGICAL SEPARATION) ---
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content_deep(row):
+    """
+    STRICT FILTER LOGIC (v79 RETAINED):
+    Separates Engineering vs Law vs FEK surgically.
+    """
     title = normalize_text(str(row.get('title', '')))
     content = normalize_text(str(row.get('content', '')))
     source = normalize_text(str(row.get('source', '')))
     ai_category = str(row.get('category', '')).upper()
+    
     tags = set()
 
-    eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"]
+    # --- 1. DETECTING "PURE" ENGINEERING / TECHNICAL ---
+    eng_keywords_strict = [
+        "μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", 
+        "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", 
+        "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"
+    ]
+    
     is_eng = False
-    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): is_eng = True
-    elif any(kw in title for kw in eng_keywords) or "ENG" in ai_category or "REAL_ESTATE" in ai_category: is_eng = True
+    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]):
+        is_eng = True
+    elif any(kw in title for kw in eng_keywords_strict) or "ENG" in ai_category or "REAL_ESTATE" in ai_category:
+        is_eng = True
+    
     if is_eng: tags.add("ENG")
 
-    law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", "δικαιοσυνη", "δικονομ", "δικη", "εφετει"]
+    # --- 2. DETECTING "PURE" LEGAL / JUSTICE ---
+    law_keywords_strict = [
+        "δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", 
+        "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", 
+        "δικαιοσυνη", "δικονομ", "δικη", "εφετει"
+    ]
+    
     is_law = False
-    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): is_law = True
-    elif any(kw in title for kw in law_keywords) or "LAW" in ai_category: is_law = True
+    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]):
+        is_law = True
+    elif any(kw in title for kw in law_keywords_strict) or "LAW" in ai_category:
+        is_law = True
+
+    # FILTER: Prevent technical laws from polluting Pure Law
     if is_law:
-        if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]): is_law = False 
+        if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]):
+            is_law = False 
+    
     if is_law: tags.add("LAW")
 
+    # --- 3. DETECTING OFFICIAL LEGISLATION (FEK) ---
     leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε."]
-    if any(kw in title for kw in leg_keywords) or "FEK" in ai_category: tags.add("FEK")
-    if "e-nomothesia" in source or "taxheaven" in source: tags.add("FEK")
+    
+    if any(kw in title for kw in leg_keywords) or "FEK" in ai_category:
+        tags.add("FEK")
+    if "e-nomothesia" in source or "taxheaven" in source:
+        tags.add("FEK")
 
     if "sos" in title: tags.add("SOS")
     if not tags: tags.add("GENERAL")
+    
     return list(tags)
 
 def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
     except: return None
 
-def get_relative_time(date_obj):
-    """
-    AGGRESSIVE RELATIVE TIME:
-    Forces 'Xm ago' even if time is slightly in future due to server drift.
-    """
-    if pd.isnull(date_obj): return ""
-    now = datetime.now()
-    diff = now - date_obj
-    seconds = diff.total_seconds()
-    
-    # If article is from the future (e.g. server time drift), treat as "Just now"
-    # Unless it's > 24 hours in the future (bad date)
-    if seconds < 0:
-        if seconds > -86400: return "Μόλις τώρα"
-        return date_obj.strftime("%d/%m")
-
-    if seconds < 60: return "Μόλις τώρα"
-    if seconds < 3600:
-        mins = int(seconds // 60)
-        return f"πριν {mins}λ"
-    elif seconds < 86400:
-        hours = int(seconds // 3600)
-        return f"πριν {hours}ώ"
-    elif seconds < 172800:
-        return "Χθες"
-    else:
-        return f"πριν {diff.days}ημ"
-
+# --- CACHE KILLER: TTL=0 (LIVE DATA) ---
 @st.cache_data(ttl=0) 
 def load_data():
     sh = get_db_client()
@@ -161,20 +151,29 @@ def load_data():
     try: 
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
+        
+        # ROBUST DATE PARSING
+        # 1. Try standard format
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
-        cutoff = datetime.now() - timedelta(days=30)
-        df = df[df['datetime_obj'] > cutoff]
+        
+        # 2. Sort by date (descending) - Puts NaT at end usually, but we want newest first
         df = df.sort_values(by='datetime_obj', ascending=False)
+        
         records = df.to_dict('records')
         for r in records: r['smart_tags'] = analyze_content_deep(r)
         return records
-    except: return []
+    except Exception as e: 
+        # Fallback empty
+        return []
 
-def format_smart_date(date_obj):
-    if pd.isnull(date_obj): return ""
-    now = datetime.now()
-    if date_obj.date() == now.date(): return f"{date_obj.strftime('%H:%M')}"
-    return date_obj.strftime("%d/%m/%y")
+def format_smart_date(date_str):
+    try:
+        dt = pd.to_datetime(date_str)
+        now = datetime.now()
+        if dt.date() == now.date(): 
+            return f"{dt.strftime('%d/%m/%y')} - {dt.strftime('%H:%M')}"
+        return dt.strftime("%d/%m/%y")
+    except: return str(date_str)
 
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200"],
@@ -231,6 +230,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
+    # REFRESH BUTTON (Forces Rerun)
     if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ (LIVE)", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
@@ -257,6 +257,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# LOAD DATA WITHOUT CACHE
 raw_data = load_data()
 if not raw_data: st.warning("⏳ Φόρτωση ή Κενή Βάση..."); st.stop()
 df = pd.DataFrame(raw_data)
@@ -285,91 +286,39 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
-# --- 5s SLIDER + LIVE FLOW ---
-@st.fragment(run_every=5) 
-def render_live_flow(curr_df):
+# --- UPDATED SLIDER WITH SYNCED CONTENT (12 ITEMS) ---
+@st.fragment(run_every=4) 
+def show_hero_slider(curr_df):
     if curr_df.empty: return
     
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
-    slide_len = min(12, len(curr_df)) 
+    slide_len = min(12, len(curr_df)) # Limit to 12
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     
     badges = render_badges(row)
-    date_d = format_smart_date(row['datetime_obj'])
+    date_d = format_smart_date(row['last_update'])
 
     dots_html = ""
     for i in range(min(10, slide_len)):
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
-    c_hero, c_right = st.columns([2.2, 1])
-    
-    with c_hero:
-        st.markdown(f"""
-        <div class="hero-wrapper">
-            <img src="{get_image(row)}" class="hero-image">
-            <div class="hero-overlay">
-                <div style="margin-bottom:5px;">{badges}</div>
-                <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
-                <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{date_d}</div>
-            </div>
-            <div class="msn-dots-container">{dots_html}</div>
+    st.markdown(f"""
+    <div class="hero-wrapper">
+        <img src="{get_image(row)}" class="hero-image">
+        <div class="hero-overlay">
+            <div style="margin-bottom:5px;">{badges}</div>
+            <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
+            <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{date_d}</div>
         </div>
-        """, unsafe_allow_html=True)
-        
-        bottom_items = curr_df.iloc[6:12]
-        if not bottom_items.empty:
-            rows_b = (len(bottom_items) + 2) // 3 
-            for i in range(rows_b):
-                cols_b = st.columns(3) 
-                for j, col_b in enumerate(cols_b):
-                    idx_b = i * 3 + j
-                    if idx_b < len(bottom_items):
-                        r = bottom_items.iloc[idx_b]
-                        src_label = str(r['source']).upper()[:12]
-                        img_url = get_image(r)
-                        rel_time = get_relative_time(r['datetime_obj'])
-                        with col_b:
-                            st.markdown(f"""
-                            <div class="mini-card">
-                                <div class="mini-text-content">
-                                    <div class="mini-meta-row">
-                                        <div class="mini-source">{src_label}</div>
-                                        <div class="mini-ago">{rel_time}</div>
-                                    </div>
-                                    <div class="mini-title">
-                                        <a href="{r['link']}" target="_blank">{r['title']}</a>
-                                    </div>
-                                </div>
-                                <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
-                            </div>
-                            """, unsafe_allow_html=True)
-
-    with c_right:
-        st.markdown("##### ΡΟΗ")
-        for i, r in curr_df.head(6).iterrows():
-            src_label = str(r['source']).upper()[:12]
-            img_url = get_image(r)
-            rel_time = get_relative_time(r['datetime_obj'])
-            st.markdown(f"""
-            <div class="mini-card">
-                <div class="mini-text-content">
-                    <div class="mini-meta-row">
-                        <div class="mini-source">{src_label}</div>
-                        <div class="mini-ago">{rel_time}</div>
-                    </div>
-                    <div class="mini-title">
-                        <a href="{r['link']}" target="_blank">{r['title']}</a>
-                    </div>
-                </div>
-                <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    st.markdown("---")
+        <div class="msn-dots-container">
+            {dots_html}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def render_tab(tab_name):
     if tab_name == "HOME": 
@@ -399,11 +348,61 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        render_live_flow(curr)
+        # --- ALIGNMENT STRATEGY (12 ITEMS: 6 RIGHT, 6 BOTTOM in 3 COLS) ---
+        c_hero, c_right = st.columns([2.2, 1])
+        
+        # LEFT COLUMN (Slider + Bottom Grid)
+        with c_hero:
+            show_hero_slider(curr)
+            
+            # BOTTOM ITEMS: 6 Items (Indices 6 to 11)
+            bottom_items = curr.iloc[6:12]
+            if not bottom_items.empty:
+                rows_b = (len(bottom_items) + 2) // 3 
+                for i in range(rows_b):
+                    cols_b = st.columns(3) # 3 Wider columns
+                    for j, col_b in enumerate(cols_b):
+                        idx_b = i * 3 + j
+                        if idx_b < len(bottom_items):
+                            r = bottom_items.iloc[idx_b]
+                            src_label = str(r['source']).upper()[:12]
+                            img_url = get_image(r)
+                            with col_b:
+                                st.markdown(f"""
+                                <div class="mini-card">
+                                    <div class="mini-text-content">
+                                        <div class="mini-source">{src_label}</div>
+                                        <div class="mini-title">
+                                            <a href="{r['link']}" target="_blank">{r['title']}</a>
+                                        </div>
+                                    </div>
+                                    <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
+                                </div>
+                                """, unsafe_allow_html=True)
+
+        # RIGHT COLUMN: 6 Items (Indices 0 to 5)
+        with c_right:
+            st.markdown("##### ΡΟΗ")
+            for i, r in curr.head(6).iterrows():
+                src_label = str(r['source']).upper()[:12]
+                img_url = get_image(r)
+                st.markdown(f"""
+                <div class="mini-card">
+                    <div class="mini-text-content">
+                        <div class="mini-source">{src_label}</div>
+                        <div class="mini-title">
+                            <a href="{r['link']}" target="_blank">{r['title']}</a>
+                        </div>
+                    </div>
+                    <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+        st.markdown("---")
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
-    start = 12 if (tab_name == "HOME" and not search_query) else 0 
+    start = 12 if (tab_name == "HOME" and not search_query) else 0 # Offset by 12
     
     grid_items = curr.iloc[start:]
     if not grid_items.empty:
@@ -414,7 +413,7 @@ def render_tab(tab_name):
                 idx = i * 3 + j
                 if idx < len(grid_items):
                     r = grid_items.iloc[idx]
-                    d = format_smart_date(r['datetime_obj'])
+                    d = format_smart_date(r['last_update'])
                     b = render_badges(r)
                     with col:
                         st.markdown('<div class="grid-card">', unsafe_allow_html=True)
@@ -453,8 +452,5 @@ with tabs[4]:
         st.bar_chart(date_counts)
     st.metric("Σύνολο Αρχειοθετημένων Άρθρων", len(df))
     if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
-        if st.button("🔴 RESET DATABASE"): 
-            reset_database()
-            st.cache_data.clear()
-            st.rerun()
+        if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
         st.dataframe(df)
