@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (REFINED DARK AESTHETICS) ---
+# --- 2. CSS (REFINED DARK AESTHETICS & MINI CARDS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -48,21 +48,12 @@ st.markdown("""
     .sidebar-logo { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; filter: brightness(1.1); }
     .sidebar-btn { display: block; width: 100%; background-color: #000000; color: white !important; text-decoration: none; padding: 10px 0; border-radius: 4px; font-size: 0.8rem; font-weight: 700; margin-top: 15px; transition: 0.2s; border: 1px solid #333; }
     
-    /* SEARCH BAR - DISCREET & DARK */
-    div[data-baseweb="input"] { 
-        background-color: #0f172a !important; /* Very Dark Slate (Almost Black-Blue) */
-        border: 1px solid #334155 !important; /* Subtle Border */
-        border-radius: 4px; 
-    }
-    .search-container div[data-baseweb="input"] input { 
-        color: #e2e8f0 !important; /* Light text */
-        caret-color: #3b82f6; 
-        font-weight: 500;
-    }
-    /* Hide the search icon if present in input by streamlit default styling adjustments */
+    /* SEARCH BAR */
+    div[data-baseweb="input"] { background-color: #0f172a !important; border: 1px solid #334155 !important; border-radius: 4px; }
+    .search-container div[data-baseweb="input"] input { color: #e2e8f0 !important; caret-color: #3b82f6; font-weight: 500; }
 
-    /* SLIDER & CARDS */
-    .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
+    /* SLIDER */
+    .hero-wrapper { position: relative; height: 450px; overflow: hidden; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; margin-bottom: 10px; }
     .hero-image { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65); transition: 0.5s; }
     .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 60px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); pointer-events: none; }
     .hero-title { font-family: 'Merriweather', serif; color: white !important; font-size: 1.8rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 5px black; text-decoration: none; cursor: pointer; pointer-events: auto; }
@@ -71,9 +62,24 @@ st.markdown("""
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    .list-item { background: #1e293b; padding: 15px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #3b82f6; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .list-title a { color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
-    .list-date { color: #cbd5e1 !important; font-size: 0.75rem; margin-top: 5px; }
+    /* MINI CARD (FLOW ITEM) */
+    .mini-card { 
+        background: #111827; 
+        padding: 10px 12px; 
+        border-radius: 4px; 
+        margin-bottom: 6px; 
+        border: 1px solid #374151; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2); 
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .mini-card:hover { border-color: #60a5fa; }
+    .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.9rem; line-height: 1.3; }
+    .mini-date { color: #9ca3af !important; font-size: 0.7rem; margin-top: 4px; text-align: right; }
+
+    /* STANDARD GRID CARD */
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
     .article-meta { font-size: 0.75rem; color: #888; text-align: right; margin-top: auto; padding-top: 10px; border-top: 1px solid #f9f9f9; }
 
@@ -168,7 +174,7 @@ def render_badges(row):
     badges_html = ""
     if "SOS" in tags: badges_html += '<span class="badge-sos">🚨 SOS</span>'
     if "ENG" in tags: badges_html += '<span class="badge-tech">🏗️ ΤΕΧΝΙΚΟ</span>'
-    if "LAW" in tags: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>' # RENAMED
+    if "LAW" in tags: badges_html += '<span class="badge-law">⚖️ ΝΟΜΙΚΟ</span>'
     if "FEK" in tags: badges_html += '<span class="badge-fek">📜 ΝΟΜΟΘΕΣΙΑ</span>'
     return badges_html
 
@@ -231,7 +237,7 @@ if not raw_data: st.warning("⏳ Φόρτωση..."); st.stop()
 df = pd.DataFrame(raw_data)
 
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-search_query = st.text_input("", placeholder="Αναζήτηση...", label_visibility="collapsed") # No emoji
+search_query = st.text_input("", placeholder="Αναζήτηση...", label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
 
 if search_query:
@@ -254,6 +260,7 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
+# --- UPDATED SLIDER WITH SYNCED CONTENT ---
 @st.fragment(run_every=4) 
 def show_hero_slider(curr_df):
     if curr_df.empty: return
@@ -261,7 +268,8 @@ def show_hero_slider(curr_df):
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
-    slide_len = min(5, len(curr_df))
+    # INCREASED TO 10 TO MATCH FLOW
+    slide_len = min(10, len(curr_df))
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     
@@ -316,29 +324,55 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        c_hero, c_list = st.columns([1.8, 1.2])
-        with c_hero:
-            show_hero_slider(curr) 
+        # COMPACT LAYOUT (RIGHT & BOTTOM OF SLIDER)
+        c_hero, c_right = st.columns([2, 1])
         
-        with c_list:
-            # NO EMOJI IN HEADER
+        # SLIDER (Left/Center)
+        with c_hero:
+            show_hero_slider(curr)
+            
+            # Additional Rows UNDER the slider (e.g. 6 items)
             st.markdown("### ΡΟΗ")
-            # Top 10 items
-            for i, r in curr.head(10).iterrows():
+            # Items 5 to 10 (Next 6 items)
+            bottom_items = curr.iloc[4:10]
+            if not bottom_items.empty:
+                rows_b = (len(bottom_items) + 2) // 3
+                for i in range(rows_b):
+                    cols_b = st.columns(3)
+                    for j, col_b in enumerate(cols_b):
+                        idx_b = i * 3 + j
+                        if idx_b < len(bottom_items):
+                            r = bottom_items.iloc[idx_b]
+                            d = format_smart_date(r['last_update'])
+                            with col_b:
+                                st.markdown(f"""
+                                <div class="mini-card">
+                                    <div class="mini-title">
+                                        <a href="{r['link']}" target="_blank">{r['title']}</a>
+                                    </div>
+                                    <div class="mini-date">{d}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+
+        # RIGHT COLUMN (Top 4 items)
+        with c_right:
+            st.markdown("##### ΤΩΡΑ")
+            for i, r in curr.head(4).iterrows():
                 d = format_smart_date(r['last_update'])
                 st.markdown(f"""
-                <div class="list-item">
-                    <div class="list-title">
+                <div class="mini-card">
+                    <div class="mini-title">
                         <a href="{r['link']}" target="_blank">{r['title']}</a>
                     </div>
-                    <div class="list-date">{d}</div>
+                    <div class="mini-date">{d}</div>
                 </div>
                 """, unsafe_allow_html=True)
+                
         st.markdown("---")
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
-    start = 5 if (tab_name == "HOME" and not search_query) else 0
+    start = 10 if (tab_name == "HOME" and not search_query) else 0 # Offset by 10
     
     grid_items = curr.iloc[start:]
     if not grid_items.empty:
@@ -376,23 +410,17 @@ with tabs[1]: render_tab("ENG")
 with tabs[2]: render_tab("LAW")
 with tabs[3]: render_tab("FEK")
 with tabs[4]: 
-    # --- RICH STATISTICS SECTION ---
     st.subheader("📊 Στατιστικά Βάσης Δεδομένων")
-    
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**Άρθρα ανά Πηγή**")
         source_counts = df['source'].value_counts()
         st.bar_chart(source_counts)
-    
     with col2:
         st.markdown("**Ροή Ειδήσεων (Τελευταίες 30 ημέρες)**")
-        # Group by date only
         date_counts = df.groupby(df['datetime_obj'].dt.date).size()
         st.bar_chart(date_counts)
-
     st.metric("Σύνολο Αρχειοθετημένων Άρθρων", len(df))
-    
     if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
         if st.button("🔴 RESET DATABASE"): reset_database(); st.cache_data.clear(); st.rerun()
         st.dataframe(df)
