@@ -130,25 +130,20 @@ def get_db_client():
     except: return None
 
 def get_relative_time(date_obj):
-    """
-    Returns '2h ago', '15m ago'.
-    Calculates live against current server time.
-    """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
-    # Handle slight server time skews (negative seconds)
     if seconds < 0: 
-        if seconds > -3600: return "Τώρα" # Within an hour future = Now
-        return date_obj.strftime("%d/%m") # Too far future = Date
+        if seconds > -3600: return "Τώρα"
+        return "Σήμερα" 
 
-    if seconds < 60: return "Τώρα"
+    if seconds < 60: return "Μόλις τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
         return f"{mins}λ πριν"
-    elif seconds < 86400: # Less than 24h
+    elif seconds < 86400:
         hours = int(seconds // 3600)
         return f"{hours}ώ πριν"
     elif seconds < 172800:
@@ -164,7 +159,6 @@ def load_data():
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
-        # FILTER 30 DAYS
         cutoff = datetime.now() - timedelta(days=30)
         df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
@@ -174,15 +168,9 @@ def load_data():
     except: return []
 
 def format_smart_date(date_obj):
-    """
-    Grid Date: 
-    - Today: "14:30"
-    - Older: "25/10/24"
-    """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
-    if date_obj.date() == now.date():
-        return f"{date_obj.strftime('%H:%M')}" # Just time for today
+    if date_obj.date() == now.date(): return f"{date_obj.strftime('%H:%M')}"
     return date_obj.strftime("%d/%m/%y")
 
 IMAGE_POOL = {
@@ -294,7 +282,7 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
-# --- LIVE UPDATING FLOW (AUTO RERUN EVERY 60 SEC) ---
+# --- LIVE UPDATING FLOW ---
 @st.fragment(run_every=60) 
 def render_live_flow(curr_df):
     if curr_df.empty: return
@@ -307,7 +295,6 @@ def render_live_flow(curr_df):
     row = curr_df.iloc[idx]
     
     badges = render_badges(row)
-    # SLIDER FULL DATE
     date_d = format_smart_date(row['datetime_obj'])
 
     dots_html = ""
@@ -319,7 +306,6 @@ def render_live_flow(curr_df):
     c_hero, c_right = st.columns([2.2, 1])
     
     with c_hero:
-        # SLIDER
         st.markdown(f"""
         <div class="hero-wrapper">
             <img src="{get_image(row)}" class="hero-image">
@@ -361,7 +347,6 @@ def render_live_flow(curr_df):
                             </div>
                             """, unsafe_allow_html=True)
 
-    # RIGHT COLUMN (0-5)
     with c_right:
         st.markdown("##### ΡΟΗ")
         for i, r in curr_df.head(6).iterrows():
@@ -428,7 +413,6 @@ def render_tab(tab_name):
                 idx = i * 3 + j
                 if idx < len(grid_items):
                     r = grid_items.iloc[idx]
-                    # GRID SHOWS TIME ONLY FOR TODAY
                     d = format_smart_date(r['datetime_obj'])
                     b = render_badges(r)
                     with col:
@@ -467,4 +451,9 @@ with tabs[4]:
         date_counts = df.groupby(df['datetime_obj'].dt.date).size()
         st.bar_chart(date_counts)
     st.metric("Σύνολο Αρχειοθετημένων Άρθρων", len(df))
-    if st.secrets.get("admin
+    if st.secrets.get("admin_password") and st.text_input("Pass", type="password") == st.secrets["admin_password"]:
+        if st.button("🔴 RESET DATABASE"): 
+            reset_database()
+            st.cache_data.clear()
+            st.rerun()
+        st.dataframe(df)
