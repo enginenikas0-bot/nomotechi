@@ -48,7 +48,8 @@ def setup_ai():
     if not GEMINI_API_KEY: return None
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        return genai.GenerativeModel('gemini-1.5-flash')
+        # ΕΠΙΣΤΡΟΦΗ ΣΤΟ 2.0 FLASH
+        return genai.GenerativeModel('gemini-2.0-flash')
     except: return None
 
 def setup_db():
@@ -94,15 +95,19 @@ def fetch_article_image(url):
     except: return ""
     return ""
 
-# --- BACKUP LOGIC: ΑΝ ΤΟ AI ΑΠΟΤΥΧΕΙ ---
+# --- BACKUP LOGIC ---
 def fallback_classify(title, source):
-    """Απλή κατηγοριοποίηση χωρίς AI"""
     t = title.lower()
+    s = source.lower()
+    
+    if "michanikos" in s or "b2green" in s or "ypodomes" in s or "tee" in s: return "ENG"
+    if "dikastiko" in s or "lawspot" in s or "dsa" in s: return "LAW"
+    if "nomothesia" in s or "taxheaven" in s: return "FEK"
+    
     if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ"]): return "LAW"
-    if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση"]): return "ENG"
-    if any(k in t for k in ["φεκ", "νομος", "αποφαση"]): return "FEK"
-    if "michanikos" in source.lower(): return "ENG"
-    if "dikastiko" in source.lower(): return "LAW"
+    if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση", "ενεργεια"]): return "ENG"
+    if any(k in t for k in ["φεκ", "νομος", "αποφαση", "εγκυκλιος"]): return "FEK"
+    
     return "GEN"
 
 def analyze_with_ai(model, title, content, original_summary):
@@ -138,15 +143,25 @@ def analyze_with_ai(model, title, content, original_summary):
         if "|||" in text:
             parts = text.split("|||")
             return parts[0].strip().upper(), parts[1].strip()
-        return fallback_classify(title, ""), text # Αν απαντήσει χωρίς format
+        return fallback_classify(title, ""), text 
         
     except Exception:
-        # FALLBACK: ΑΝ ΤΟ AI ΕΙΝΑΙ BUSY, ΚΡΑΤΑΜΕ ΤΟ RSS SUMMARY ΚΑΙ ΒΑΖΟΥΜΕ ΕΤΙΚΕΤΑ ΧΕΙΡΟΚΙΝΗΤΑ
         print("⚠️ AI Busy/Quota Exceeded. Using Fallback.")
         return fallback_classify(title, ""), (original_summary if len(original_summary) > 10 else "Δεν υπάρχει διαθέσιμη περίληψη.")
 
+def cleanup_database_safe(worksheet):
+    try:
+        all_values = worksheet.get_all_values()
+        if len(all_values) > 900:
+            header = all_values[0]
+            data_to_keep = all_values[-700:]
+            worksheet.clear()
+            worksheet.append_row(header)
+            worksheet.append_rows(data_to_keep)
+    except: pass
+
 def run_scraper():
-    print(f"🚀 Bot v38 (Smart Filter & Fallback) Started...")
+    print(f"🚀 Bot v40 (Gemini 2.0 & Fixes) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -162,18 +177,15 @@ def run_scraper():
             feed = feedparser.parse(feed_url)
             count = 0
             
-            # Ελέγχουμε τα 10 πρώτα, αλλά κρατάμε ΜΟΝΟ τα φρέσκα
             for entry in feed.entries[:10]:
                 link = entry.get('link', '')
                 if link in existing_links: continue
                 
-                # 1. ΕΛΕΓΧΟΣ ΗΜΕΡΟΜΗΝΙΑΣ (Ο ΑΥΣΤΗΡΟΣ ΦΡΟΥΡΟΣ)
+                # DATE FILTER (2 Days)
                 article_dt = get_date_obj(entry)
                 if (current_time - article_dt).days > DAYS_LIMIT:
-                    # Προσπερνάμε αθόρυβα τα παλιά
                     continue
 
-                # 2. ΠΡΟΕΤΟΙΜΑΣΙΑ
                 title = entry.get('title', 'No Title')
                 pub_date_str = article_dt.strftime("%Y-%m-%d %H:%M:%S")
                 rss_summary = entry.get('summary', '') or entry.get('description', '') or title
@@ -182,11 +194,13 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = rss_summary
                     
-                    time.sleep(6) # Delay
+                    time.sleep(6) 
                     
-                    # 3. ΑΝΑΛΥΣΗ (ΜΕ FALLBACK ΑΣΦΑΛΕΙΑΣ)
                     cat_tag, ai_article = analyze_with_ai(model, title, full_text, rss_summary)
                     
+                    if cat_tag == "GEN" or cat_tag == "":
+                         cat_tag = fallback_classify(title, source_name)
+
                     if "TRASH" in cat_tag:
                         existing_links.add(link)
                         print(f"🗑️ Trash: {title}")
@@ -197,7 +211,7 @@ def run_scraper():
                     existing_links.add(link)
                     count += 1
                 except Exception as e: 
-                    print(f"Skipping due to error: {e}")
+                    print(f"Skipping: {e}")
                     continue
             print(f"✅ {count} (Fresh)")
         except: print("❌")
