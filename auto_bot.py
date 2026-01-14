@@ -11,10 +11,8 @@ import os
 import sys
 
 # --- 1. CONFIGURATION ---
-# Παίρνουμε τα κλειδιά από τα Secrets του GitHub
 GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
-
 SPREADSHEET_NAME = "laws_database"
 
 USER_AGENTS = [
@@ -50,32 +48,19 @@ RSS_FEEDS = {
 
 # --- 3. SETUP ---
 def setup_ai():
-    if not GEMINI_API_KEY:
-        print("⚠️ WARNING: Gemini API Key missing. Summaries will be empty.")
-        return None
+    if not GEMINI_API_KEY: return None
     try:
         genai.configure(api_key=GEMINI_API_KEY)
         return genai.GenerativeModel('gemini-2.0-flash')
-    except Exception as e:
-        print(f"⚠️ AI Error: {e}")
-        return None
+    except: return None
 
 def setup_db():
-    print("🔌 Connecting to Google Sheets...")
-    if not GCP_CREDENTIALS:
-        print("❌ CRITICAL ERROR: GCP_CREDENTIALS Secret is missing!")
-        sys.exit(1) # ΣΤΑΜΑΤΑΕΙ ΤΟ RUN ΜΕ ΚΟΚΚΙΝΟ
-    
+    if not GCP_CREDENTIALS: sys.exit(1)
     try:
         creds_dict = json.loads(GCP_CREDENTIALS)
         gc = gspread.service_account_from_dict(creds_dict)
-        sh = gc.open(SPREADSHEET_NAME)
-        print("✅ Connected to Spreadsheet successfully.")
-        return sh.sheet1
-    except Exception as e:
-        print(f"❌ DATABASE CONNECTION FAILED: {e}")
-        print("💡 HINT: Check if your JSON in GitHub Secrets is correct.")
-        sys.exit(1) # ΣΤΑΜΑΤΑΕΙ ΤΟ RUN ΜΕ ΚΟΚΚΙΝΟ
+        return gc.open(SPREADSHEET_NAME).sheet1
+    except: sys.exit(1)
 
 # --- 4. HELPERS ---
 def clean_html(html_text):
@@ -86,17 +71,12 @@ def clean_html(html_text):
 def scrape_full_text(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=10) # Increased timeout
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            # Remove scripts and styles
-            for tag in soup(["script", "style", "nav", "footer", "aside", "header"]): 
-                tag.extract()
-            paragraphs = soup.find_all('p')
-            full_text = " ".join([p.get_text() for p in paragraphs])
-            return full_text.strip()[:6000]
-    except: 
-        return ""
+            for tag in soup(["script", "style", "nav", "footer", "aside", "header"]): tag.extract()
+            return soup.get_text(separator=" ").strip()[:6000]
+    except: return ""
     return ""
 
 def fetch_article_image(url):
@@ -106,155 +86,96 @@ def fetch_article_image(url):
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             og_image = soup.find("meta", property="og:image")
-            if og_image and og_image.get("content"): 
-                return og_image["content"]
-    except: 
-        return ""
+            if og_image and og_image.get("content"): return og_image["content"]
+    except: return ""
     return ""
 
 def analyze_with_ai(model, title, content):
-    """
-    STRICT AI TAGGING
-    """
-    if not model: return "GEN", "Περίληψη μη διαθέσιμη (No AI)."
+    if not model: return "GEN", "No AI Summary."
     try:
         prompt = f"""
-        Act as a classifier for a Greek Technical & Legal Portal.
-        1. CLASSIFY this article into ONE category:
-           - ENG (Engineering, Construction, Real Estate, Technical Projects)
-           - LAW (Courts, Justice, Lawyers, Criminal/Civil Law)
-           - FEK (Official Government Gazette, Legislation, Decisions)
-           - GEN (General News, Economy)
-        
-        2. SUMMARIZE in Greek (max 25 words).
-
-        INPUT:
-        Title: {title}
-        Text: {content[:1500]}
-
-        OUTPUT FORMAT:
-        CATEGORY ||| SUMMARY
+        Classify into ONE: ENG (Technical/Real Estate), LAW (Legal/Justice), FEK (Legislation), GEN (General).
+        Then Summarize in Greek (max 25 words).
+        Input: {title} | {content[:1000]}
+        Output: CATEGORY ||| SUMMARY
         """
         response = model.generate_content(prompt)
         text = response.text.strip()
-        
         if "|||" in text:
             parts = text.split("|||")
-            cat = parts[0].strip().upper()
-            summary = parts[1].strip()
-            valid_tags = ["ENG", "LAW", "FEK", "GEN"]
-            if not any(v in cat for v in valid_tags): cat = "GEN"
-            return cat, summary
-        else:
-            return "GEN", text
-    except:
-        return "GEN", "AI Busy."
+            return parts[0].strip().upper(), parts[1].strip()
+        return "GEN", text
+    except: return "GEN", "AI Busy."
 
 # --- 5. CLEANUP ---
 def cleanup_database_safe(worksheet):
-    # Κρατάει τη βάση καθαρή αλλά δεν σβήνει τα πάντα
     try:
         all_values = worksheet.get_all_values()
         if len(all_values) > 900:
-            print("🧹 Trimming database...")
             header = all_values[0]
-            data_to_keep = all_values[-700:] # Keep last 700
+            data_to_keep = all_values[-700:]
             worksheet.clear()
             worksheet.append_row(header)
             worksheet.append_rows(data_to_keep)
-    except Exception as e:
-        print(f"⚠️ Cleanup Warning: {e}")
+    except: pass
 
 # --- 6. MAIN JOB ---
 def run_scraper():
-    print(f"🚀 Job Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
-    # 1. Setup Phase
+    print("🚀 Bot v21 Started...")
     model = setup_ai()
-    worksheet = setup_db() # Αυτό θα κρασάρει αν δεν συνδεθεί (σωστό!)
-
-    # 2. Load Existing Links to avoid duplicates
-    try:
-        existing_links = set(worksheet.col_values(5)) 
-        print(f"📚 Loaded {len(existing_links)} existing articles from DB.")
-    except:
-        existing_links = set()
-        print("⚠️ Could not load existing links. Starting fresh check.")
+    worksheet = setup_db()
+    
+    try: existing_links = set(worksheet.col_values(5))
+    except: existing_links = set()
 
     new_rows = []
     
-    # 3. Scanning Loop
     for source_name, feed_url in RSS_FEEDS.items():
-        print(f"📡 Scanning {source_name}...", end=" ", flush=True)
+        print(f"📡 {source_name}...", end=" ", flush=True)
         try:
             feed = feedparser.parse(feed_url)
             count = 0
-            
-            # Scan 15 articles per source
             for entry in feed.entries[:15]:
                 link = entry.get('link', '')
-                
-                # DUPLICATE CHECK
-                if link in existing_links:
-                    continue 
+                if link in existing_links: continue
                 
                 title = entry.get('title', 'No Title')
                 
+                # --- TIME EXTRACTION (REAL PUBLISHED TIME) ---
                 try:
-                    # Get Content
+                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                        # Convert RSS struct_time to datetime
+                        dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
+                        # Add 2 hours because usually feeds are UTC and we want GR time
+                        dt = dt + timedelta(hours=2)
+                        now_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+                    else:
+                        # Fallback if no date in RSS
+                        now_str = (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+                except:
+                    now_str = (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+
+                try:
                     full_text = scrape_full_text(link)
-                    if len(full_text) < 50: 
-                        full_text = clean_html(entry.get('summary', '') or entry.get('description', ''))
+                    if len(full_text) < 50: full_text = clean_html(entry.get('summary', ''))
                     
-                    real_image_url = fetch_article_image(link)
-                    
-                    # AI Analysis
                     cat_tag, ai_summary = analyze_with_ai(model, title, full_text)
                     
-                    # Time Fix (+2 hours for Greece)
-                    now_obj = datetime.utcnow() + timedelta(hours=2) 
-                    now_str = now_obj.strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    # Prepare Row
-                    # ID | Source | Title | Content | Link | Time | Category | Image
-                    new_row = [
-                        str(hash(link)),
-                        source_name,
-                        title,
-                        ai_summary,
-                        link,
-                        now_str,
-                        cat_tag,
-                        real_image_url
-                    ]
-                    
+                    new_row = [str(hash(link)), source_name, title, ai_summary, link, now_str, cat_tag, fetch_article_image(link)]
                     new_rows.append(new_row)
-                    existing_links.add(link) # Add to local set immediately
+                    existing_links.add(link)
                     count += 1
-                except Exception as e:
-                    # Skip problematic article, move to next
-                    continue
-                
-            print(f"✅ Found {count} new.")
-                
-        except Exception as e:
-            print(f"❌ Feed Error: {e}")
+                except: continue
+            print(f"✅ {count}")
+        except: print("❌")
 
-    # 4. Saving Phase
     if new_rows:
-        print(f"💾 Saving {len(new_rows)} articles to Google Sheets...")
         try:
             worksheet.append_rows(new_rows)
-            print("✅ SUCCESS: Database Updated!")
-        except Exception as e:
-            print(f"❌ WRITE ERROR: Could not write to Google Sheets. {e}")
-            sys.exit(1) # ΚΟΚΚΙΝΟ αν αποτύχει η εγγραφή
-    else:
-        print("💤 No new content found in any source.")
-
-    # 5. Cleanup Phase
+            print(f"💾 Saved {len(new_rows)} items.")
+        except: sys.exit(1)
+    
     cleanup_database_safe(worksheet)
-    print("🏁 Finished.")
 
 if __name__ == "__main__":
     run_scraper()
