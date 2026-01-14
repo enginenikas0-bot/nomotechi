@@ -50,12 +50,9 @@ st.markdown("""
     .mini-card { background: #111827; border: 1px solid #374151; border-radius: 8px; margin-bottom: 8px; height: 95px; display: flex; flex-direction: row; overflow: hidden; transition: transform 0.2s; }
     .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
-    
-    /* Metadata Row in Mini Card */
+    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; line-height: 1; }
+    .mini-ago { font-size: 0.65rem; color: #60a5fa; font-weight: 600; }
     .mini-meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
-    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
-    .mini-ago { font-size: 0.65rem; color: #60a5fa; font-weight: 600; } /* Blueish relative time */
-
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .mini-image-box { width: 100px; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; border-left: 1px solid #374151; flex-shrink: 0; }
 
@@ -78,7 +75,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC ---
+# --- 3. LOGIC (SURGICAL SEPARATION) ---
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
@@ -86,13 +83,12 @@ def normalize_text(text):
 
 def analyze_content_deep(row):
     """
-    SURGICAL SEPARATION (v79 LOGIC)
+    STRICT FILTER LOGIC (v79 RETAINED)
     """
     title = normalize_text(str(row.get('title', '')))
     content = normalize_text(str(row.get('content', '')))
     source = normalize_text(str(row.get('source', '')))
     ai_category = str(row.get('category', '')).upper()
-    
     tags = set()
 
     # --- ENG ---
@@ -107,8 +103,6 @@ def analyze_content_deep(row):
     is_law = False
     if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): is_law = True
     elif any(kw in title for kw in law_keywords) or "LAW" in ai_category: is_law = True
-    
-    # Filter overlap
     if is_law:
         if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]): is_law = False 
     if is_law: tags.add("LAW")
@@ -127,16 +121,18 @@ def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
     except: return None
 
-# --- NEW HELPERS FOR TIME ---
 def get_relative_time(date_obj):
-    """Calculates '2h ago', '15m ago'"""
+    """Calculates '2h ago' correctly"""
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
-    if seconds < 0: return "Τώρα" # Future dates fix
-    
+    # Tolerable skew (e.g. server difference)
+    if seconds < 0 and seconds > -3600: return "Τώρα" 
+    if seconds < 0: return date_obj.strftime("%d/%m") # Future date? show date
+
+    if seconds < 60: return "Τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
         return f"πριν {mins}λ"
@@ -148,15 +144,6 @@ def get_relative_time(date_obj):
     else:
         return f"πριν {diff.days}ημ"
 
-def format_smart_date(date_obj):
-    """Shows Time for Today, Date for others"""
-    if pd.isnull(date_obj): return ""
-    now = datetime.now()
-    if date_obj.date() == now.date():
-        return f"Σήμερα, {date_obj.strftime('%H:%M')}"
-    return date_obj.strftime("%d/%m/%y")
-
-# --- LOAD DATA (RETENTION 30 DAYS) ---
 @st.cache_data(ttl=0) 
 def load_data():
     sh = get_db_client()
@@ -164,22 +151,20 @@ def load_data():
     try: 
         raw = sh.sheet1.get_all_records()
         df = pd.DataFrame(raw)
-        
-        # 1. Parse Dates
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
-        
-        # 2. FILTER: KEEP ONLY LAST 30 DAYS
-        cutoff_date = datetime.now() - timedelta(days=30)
-        df = df[df['datetime_obj'] > cutoff_date]
-        
-        # 3. Sort Descending
+        cutoff = datetime.now() - timedelta(days=30)
+        df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
-        
         records = df.to_dict('records')
         for r in records: r['smart_tags'] = analyze_content_deep(r)
         return records
-    except Exception as e: 
-        return []
+    except: return []
+
+def format_smart_date(date_obj):
+    if pd.isnull(date_obj): return ""
+    now = datetime.now()
+    if date_obj.date() == now.date(): return f"Σήμερα, {date_obj.strftime('%H:%M')}"
+    return date_obj.strftime("%d/%m/%y")
 
 IMAGE_POOL = {
     "ENG": ["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200"],
@@ -303,7 +288,6 @@ def show_hero_slider(curr_df):
     row = curr_df.iloc[idx]
     
     badges = render_badges(row)
-    # Full date for Slider
     date_d = format_smart_date(row['datetime_obj'])
 
     dots_html = ""
@@ -353,28 +337,25 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # --- ALIGNMENT STRATEGY (12 ITEMS) ---
+        # --- ALIGNMENT STRATEGY (12 ITEMS: 6 RIGHT, 6 BOTTOM in 3 COLS) ---
         c_hero, c_right = st.columns([2.2, 1])
         
         # LEFT COLUMN (Slider + Bottom Grid)
         with c_hero:
             show_hero_slider(curr)
             
-            # BOTTOM ITEMS: 6 Items (Indices 6 to 11)
             bottom_items = curr.iloc[6:12]
             if not bottom_items.empty:
                 rows_b = (len(bottom_items) + 2) // 3 
                 for i in range(rows_b):
-                    cols_b = st.columns(3) 
+                    cols_b = st.columns(3) # 3 Wider columns
                     for j, col_b in enumerate(cols_b):
                         idx_b = i * 3 + j
                         if idx_b < len(bottom_items):
                             r = bottom_items.iloc[idx_b]
                             src_label = str(r['source']).upper()[:12]
                             img_url = get_image(r)
-                            # Relative Time Calculation
                             rel_time = get_relative_time(r['datetime_obj'])
-                            
                             with col_b:
                                 st.markdown(f"""
                                 <div class="mini-card">
@@ -397,9 +378,7 @@ def render_tab(tab_name):
             for i, r in curr.head(6).iterrows():
                 src_label = str(r['source']).upper()[:12]
                 img_url = get_image(r)
-                # Relative Time Calculation
                 rel_time = get_relative_time(r['datetime_obj'])
-                
                 st.markdown(f"""
                 <div class="mini-card">
                     <div class="mini-text-content">
