@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (NO FRAMES - CLEAN TEXT) ---
+# --- 2. CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -51,16 +51,16 @@ st.markdown("""
     .mini-card:hover { transform: scale(1.02); border-color: #3b82f6; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
     
-    /* --- FIXED CSS FOR TIME (NO BOX) --- */
     .mini-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
     
+    /* TIME STYLE */
     .mini-ago { 
-        font-size: 0.75rem; 
-        color: #3b82f6; /* Bright Blue */
+        font-size: 0.7rem; 
+        color: #60a5fa; 
         font-weight: 700; 
-        background: transparent !important; /* NO BACKGROUND */
-        border: none !important; /* NO BORDER */
+        background: transparent !important; 
+        border: none !important; 
         padding: 0 !important;
         text-align: right;
     }
@@ -94,6 +94,7 @@ def normalize_text(text):
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content_deep(row):
+    """ SURGICAL SEPARATION LOGIC """
     title = normalize_text(str(row.get('title', '')))
     content = normalize_text(str(row.get('content', '')))
     source = normalize_text(str(row.get('source', '')))
@@ -130,6 +131,7 @@ def get_db_client():
     except: return None
 
 def get_relative_time(date_obj):
+    """ Returns '2h ago', '15m ago'. """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
@@ -137,21 +139,21 @@ def get_relative_time(date_obj):
     
     if seconds < 0: 
         if seconds > -3600: return "Τώρα"
-        return "Σήμερα" 
+        return date_obj.strftime("%d/%m") 
 
     if seconds < 60: return "Μόλις τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
-        return f"{mins}λ πριν"
+        return f"πριν {mins}λ"
     elif seconds < 86400:
         hours = int(seconds // 3600)
-        return f"{hours}ώ πριν"
+        return f"πριν {hours}ώ"
     elif seconds < 172800:
         return "Χθες"
     else:
-        return f"{diff.days}μ πριν"
+        return f"πριν {diff.days}ημ"
 
-@st.cache_data(ttl=0) 
+@st.cache_data(ttl=60) # Data Refresh 60s
 def load_data():
     sh = get_db_client()
     if not sh: return []
@@ -228,7 +230,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ (LIVE)", use_container_width=True):
+    if st.button("🔄 ΕΛΕΓΧΟΣ ΓΙΑ ΝΕΑ", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     
@@ -282,8 +284,8 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
-# --- LIVE UPDATING FLOW ---
-@st.fragment(run_every=60) 
+# --- 5s SLIDER + LIVE FLOW ---
+@st.fragment(run_every=5) 
 def render_live_flow(curr_df):
     if curr_df.empty: return
     
