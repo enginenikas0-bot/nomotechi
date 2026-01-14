@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import requests
 import random
 from datetime import datetime, timedelta, timezone
+import email.utils # Η λύση για τα RSS dates
 import json
 import os
 import sys
@@ -97,29 +98,43 @@ def analyze_with_ai(model, title, content):
         return "GEN", text
     except: return "GEN", "AI Busy."
 
-def parse_published_date(entry):
+def parse_date_hardcore(entry):
     """
-    Extracts the REAL publication time from RSS tags.
-    Returns string: YYYY-MM-DD HH:MM:SS (Greek Time)
+    Προσπαθεί με κάθε τρόπο να βρει την ΠΡΑΓΜΑΤΙΚΗ ώρα δημοσίευσης.
     """
-    try:
-        # 1. Try 'published_parsed' (Standard RSS)
-        struct_time = entry.get('published_parsed') or entry.get('updated_parsed')
-        
-        if struct_time:
-            # RSS times are usually UTC. We convert struct_time to datetime object
-            dt_utc = datetime(*struct_time[:6])
-            
-            # Add 2 hours for Greece (Winter) or 3 (Summer). Let's stick to +2 for now as base.
-            # A more robust way is just ensuring we are consistent.
-            dt_greece = dt_utc + timedelta(hours=2)
-            
-            return dt_greece.strftime("%Y-%m-%d %H:%M:%S")
-    except:
-        pass
+    dt_final = None
     
-    # 2. Fallback: Current time (If feed has NO date)
-    # Using UTC+2 to match Greek time
+    # 1. Προσπάθεια μέσω της βιβλιοθήκης email.utils (για RFC 822)
+    # Ψάχνουμε τα πεδία 'published', 'pubDate', 'updated'
+    date_str = entry.get('published') or entry.get('pubDate') or entry.get('updated')
+    
+    if date_str:
+        try:
+            # Parse the string into a tuple
+            parsed_tuple = email.utils.parsedate_tz(date_str)
+            if parsed_tuple:
+                # Convert to timestamp
+                timestamp = email.utils.mktime_tz(parsed_tuple)
+                # Convert to datetime object (UTC)
+                dt_final = datetime.fromtimestamp(timestamp, timezone.utc)
+        except:
+            pass
+
+    # 2. Αν αποτύχει, δοκιμάζουμε το struct_time του feedparser
+    if not dt_final:
+        struct_time = entry.get('published_parsed') or entry.get('updated_parsed')
+        if struct_time:
+            dt_final = datetime(*struct_time[:6], tzinfo=timezone.utc)
+
+    # 3. Αν βρέθηκε ημερομηνία, τη μετατρέπουμε σε ώρα Ελλάδας
+    if dt_final:
+        # Η Ελλάδα είναι UTC+2 (Χειμώνα) / UTC+3 (Καλοκαίρι).
+        # Για απλότητα και σταθερότητα, προσθέτουμε 2 ώρες στο UTC.
+        # Αφαιρούμε το timezone info για να είναι naive (συμβατό με excel/sheets)
+        dt_greece = dt_final.replace(tzinfo=None) + timedelta(hours=2)
+        return dt_greece.strftime("%Y-%m-%d %H:%M:%S")
+
+    # 4. Fallback: Αν δεν υπάρχει ΤΙΠΟΤΑ, αναγκαστικά τρέχουσα ώρα
     return (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
 
 def cleanup_database_safe(worksheet):
@@ -134,7 +149,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v22 (Time Hunter) Started...")
+    print("🚀 Bot v23 (Universal Time) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -154,8 +169,8 @@ def run_scraper():
                 
                 title = entry.get('title', 'No Title')
                 
-                # --- GET REAL TIME ---
-                pub_date_str = parse_published_date(entry)
+                # --- NEW HARDCORE TIME PARSING ---
+                pub_date_str = parse_date_hardcore(entry)
 
                 try:
                     full_text = scrape_full_text(link)
@@ -181,3 +196,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+    
