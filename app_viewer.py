@@ -77,6 +77,18 @@ st.markdown("""
     .badge-fek { background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
+    /* --- MOBILE REORDER FIX --- */
+    @media (max-width: 900px) {
+        /* Αντιστροφή σειράς ΜΟΝΟ στο κινητό για το κεντρικό block */
+        [data-testid="stHorizontalBlock"] {
+            flex-direction: column-reverse;
+        }
+        /* Επαναφορά της κανονικής σειράς για τα εσωτερικά grids (κάρτες) */
+        [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {
+            flex-direction: row;
+        }
+    }
+    
     @media (prefers-color-scheme: dark) {
         html, body, [class*="css"] { background-color: #0e1117 !important; color: #fafafa !important; }
         .grid-card { background: #262730 !important; border: none !important; }
@@ -163,7 +175,6 @@ def load_data():
         return clean_records
     except: return []
 
-# --- MISSING FUNCTION ADDED HERE ---
 def get_relative_time(dt):
     if pd.isnull(dt): return ""
     now = datetime.now()
@@ -178,7 +189,6 @@ def get_relative_time(dt):
         return f"{minutes}λ. πριν"
     hours = int(minutes // 60)
     return f"{hours}ώ. πριν"
-# -----------------------------------
 
 def format_smart_date(date_obj):
     if pd.isnull(date_obj): return ""
@@ -316,6 +326,8 @@ def render_live_flow(curr_df):
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
+    # Σημείωση: Στο κινητό το CSS "flex-direction: column-reverse" 
+    # θα αντιστρέψει τη σειρά, βάζοντας τη Ροή (c_right) πάνω από το Hero (c_hero).
     c_hero, c_right = st.columns([2.2, 1])
     with c_hero:
         st.markdown(f"""
