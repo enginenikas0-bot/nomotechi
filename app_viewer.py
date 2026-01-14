@@ -78,12 +78,10 @@ st.markdown("""
     .badge-tech { background: #e67e22; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700; margin-right: 5px; }
 
     /* --- RESPONSIVE VISIBILITY --- */
-    /* Mobile: Hide desktop-only elements */
     @media (max-width: 900px) {
         .desktop-show { display: none !important; }
         .mobile-show { display: block !important; }
     }
-    /* Desktop: Hide mobile-only elements */
     @media (min-width: 901px) {
         .mobile-show { display: none !important; }
         .desktop-show { display: block !important; }
@@ -115,35 +113,14 @@ def analyze_content_deep(row):
     trash_keywords = ["ολυμπιακος", "παναθηναικος", "αεκ", "παοκ", "αρης", "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "κληρωση", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
     if any(kw in title for kw in trash_keywords): return ["TRASH"]
 
-    # --- 1. ENGINEERING (ENG) ---
-    eng_keywords = [
-        "μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", 
-        "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", 
-        "διαγωνισμ", "αναδοχ", "μελετ", "nok", "gok", "οικοδομ", "τακτοποιηση"
-    ]
-    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): 
-        tags.add("ENG")
-    elif any(kw in title for kw in eng_keywords) or "ENG" in ai_category: 
-        tags.add("ENG")
+    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): tags.add("ENG")
+    elif "ENG" in ai_category: tags.add("ENG")
 
-    # --- 2. LAW (LAW) ---
-    law_keywords = [
-        "δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", 
-        "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", "δικαιοσυνη", "δικονομ", 
-        "δικη", "εφετει", "παραβατικ", "αστυνομ"
-    ]
-    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): 
-        tags.add("LAW")
-    elif any(kw in title for kw in law_keywords) or "LAW" in ai_category: 
-        tags.add("LAW")
-
-    # --- 3. FEK / NOMOTHESIA (FEK) ---
-    leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε.", "στε", "συμβουλιο επικρατειας"]
+    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): tags.add("LAW")
+    elif "LAW" in ai_category: tags.add("LAW")
     
-    if any(kw in title for kw in leg_keywords) or "FEK" in ai_category: 
-        tags.add("FEK")
-    if "e-nomothesia" in source or "taxheaven" in source: 
-        tags.add("FEK")
+    if "e-nomothesia" in source or "taxheaven" in source: tags.add("FEK")
+    elif "FEK" in ai_category: tags.add("FEK")
 
     if "sos" in title: tags.add("SOS")
     if not tags: tags.add("GENERAL")
@@ -165,7 +142,6 @@ def load_data():
         df = df[df['datetime_obj'] > cutoff]
         df = df.sort_values(by='datetime_obj', ascending=False)
         records = df.to_dict('records')
-        
         clean_records = []
         for r in records: 
             tags = analyze_content_deep(r)
@@ -179,14 +155,11 @@ def get_relative_time(dt):
     if pd.isnull(dt): return ""
     now = datetime.now()
     diff = now - dt
-    if diff.days > 0:
-        return f"{diff.days}ημ. πριν"
+    if diff.days > 0: return f"{diff.days}ημ. πριν"
     seconds = diff.total_seconds()
-    if seconds < 60:
-        return "Τώρα"
+    if seconds < 60: return "Τώρα"
     minutes = int(seconds // 60)
-    if minutes < 60:
-        return f"{minutes}λ. πριν"
+    if minutes < 60: return f"{minutes}λ. πριν"
     hours = int(minutes // 60)
     return f"{hours}ώ. πριν"
 
@@ -327,25 +300,25 @@ def render_live_flow(curr_df):
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
     # --- HTML GENERATOR FOR FLOW ITEMS ---
+    # ΔΙΟΡΘΩΣΗ: Αφαιρέσαμε τα κενά (indentation) για να μην το βλέπει το Markdown ως Code Block
     flow_html = '<h5>ΡΟΗ</h5>'
     for i, r in curr_df.head(6).iterrows():
         src_label = str(r['source']).upper()[:12]
         img_url = get_image(r)
         rel_time = get_relative_time(r['datetime_obj'])
         flow_html += f"""
-        <div class="mini-card">
-            <div class="mini-text-content">
-                <div class="mini-meta-row">
-                    <div class="mini-source">{src_label}</div>
-                    <div class="mini-ago">{rel_time}</div>
-                </div>
-                <div class="mini-title">
-                    <a href="{r['link']}" target="_blank">{r['title']}</a>
-                </div>
-            </div>
-            <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
-        </div>
-        """
+<div class="mini-card">
+<div class="mini-text-content">
+<div class="mini-meta-row">
+<div class="mini-source">{src_label}</div>
+<div class="mini-ago">{rel_time}</div>
+</div>
+<div class="mini-title">
+<a href="{r['link']}" target="_blank">{r['title']}</a>
+</div>
+</div>
+<div class="mini-image-box" style="background-image: url('{img_url}');"></div>
+</div>"""
 
     c_hero, c_right = st.columns([2.2, 1])
     with c_hero:
@@ -361,7 +334,7 @@ def render_live_flow(curr_df):
         </div>
         """, unsafe_allow_html=True)
         
-        # 2. MOBILE FLOW (Visible ONLY on Mobile) - Μπαίνει ανάμεσα σε Hero και Κάτω Στήλες
+        # 2. MOBILE FLOW (Visible ONLY on Mobile)
         st.markdown(f'<div class="mobile-show">{flow_html}</div>', unsafe_allow_html=True)
 
         # 3. BOTTOM GRID (Visible Everywhere)
@@ -394,7 +367,7 @@ def render_live_flow(curr_df):
                             """, unsafe_allow_html=True)
 
     with c_right:
-        # 4. DESKTOP FLOW (Visible ONLY on Desktop) - Πλάγια στήλη
+        # 4. DESKTOP FLOW (Visible ONLY on Desktop)
         st.markdown(f'<div class="desktop-show">{flow_html}</div>', unsafe_allow_html=True)
         
     st.markdown("---")
