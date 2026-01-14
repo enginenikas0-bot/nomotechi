@@ -46,7 +46,8 @@ def setup_ai():
     if not GEMINI_API_KEY: return None
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        return genai.GenerativeModel('gemini-2.0-flash')
+        # ΑΛΛΑΓΗ ΕΔΩ: Χρησιμοποιούμε το 1.5 Flash που είναι πιο σταθερό
+        return genai.GenerativeModel('gemini-1.5-flash')
     except: return None
 
 def setup_db():
@@ -89,7 +90,6 @@ def analyze_with_ai(model, title, content):
     if not model: return "GEN", "No AI."
     
     try:
-        # --- LOGIC MASTERPLAN v2.0 (Multi-Tag) ---
         prompt = f"""
         ROLE: Senior Analyst for a Greek Technical & Legal Portal.
         
@@ -152,7 +152,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v35 (Unblocker - 5 items) Started...")
+    print("🚀 Bot v36 (Gemini 1.5 Stable) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -166,7 +166,7 @@ def run_scraper():
         try:
             feed = feedparser.parse(feed_url)
             count = 0
-            # --- 5 ARTHRA MONO GIA NA GEMISEI H BASH ---
+            # Κρατάμε τα 5 άρθρα για ασφάλεια στο πρώτο τρέξιμο
             for entry in feed.entries[:5]: 
                 link = entry.get('link', '')
                 if link in existing_links: continue
@@ -178,7 +178,7 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
-                    time.sleep(6) # 6 Sec Delay (ΑΠΑΡΑΙΤΗΤΟ)
+                    time.sleep(6) 
                     
                     cat_tag, ai_article = analyze_with_ai(model, title, full_text)
                     
