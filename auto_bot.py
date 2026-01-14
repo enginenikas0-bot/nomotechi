@@ -16,7 +16,7 @@ GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
 SPREADSHEET_NAME = "laws_database"
 
-# ΑΥΣΤΗΡΟ ΟΡΙΟ: Αγνοούμε άρθρα παλιότερα από 2 ημέρες
+# ΗΜΕΡΕΣ ΑΝΑΔΡΟΜΗΣ: 2 Μέρες (για να μην καίμε τζάμπα AI)
 DAYS_LIMIT = 2
 
 USER_AGENTS = [
@@ -137,19 +137,31 @@ def analyze_with_ai(model, title, content, original_summary):
         print("⚠️ AI Busy/Quota Exceeded. Using Fallback.")
         return fallback_classify(title, ""), (original_summary if len(original_summary) > 10 else "Δεν υπάρχει διαθέσιμη περίληψη.")
 
-def cleanup_database_safe(worksheet):
+# --- Η ΝΕΑ ΣΥΝΑΡΤΗΣΗ ΤΑΞΙΝΟΜΗΣΗΣ ---
+def sort_entire_database(worksheet):
+    """Διαβάζει ΟΛΑ τα δεδομένα, τα ταξινομεί χρονολογικά και τα ξαναγράφει"""
+    print("🧹 Sorting entire database chronologically...")
     try:
         all_values = worksheet.get_all_values()
-        if len(all_values) > 900:
-            header = all_values[0]
-            data_to_keep = all_values[-700:]
-            worksheet.clear()
-            worksheet.append_row(header)
-            worksheet.append_rows(data_to_keep)
-    except: pass
+        if len(all_values) < 2: return # Κενή βάση ή μόνο header
+
+        header = all_values[0]
+        data = all_values[1:]
+
+        # Ταξινόμηση βάσει της στήλης Ημερομηνία (Index 5 -> F column)
+        # Χρησιμοποιούμε safe key για να μην κρασάρει αν λείπει η ημερομηνία
+        data.sort(key=lambda x: x[5] if len(x) > 5 else "")
+
+        # Καθαρισμός και Επανεγγραφή
+        worksheet.clear()
+        worksheet.append_row(header)
+        worksheet.append_rows(data)
+        print("✅ Database Sorted & Cleaned.")
+    except Exception as e:
+        print(f"⚠️ Sort Error: {e}")
 
 def run_scraper():
-    print(f"🚀 Bot v42 (Sorted & Masterplan) Started...")
+    print(f"🚀 Bot v43 (Auto-Sort & Fix) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -196,14 +208,27 @@ def run_scraper():
         except: print("❌")
 
     if new_rows:
-        # --- TAΞΙΝΟΜΗΣΗ: Παλιά πάνω -> Νέα κάτω ---
-        new_rows.sort(key=lambda x: x[5]) 
         try:
             worksheet.append_rows(new_rows)
-            print(f"💾 Saved {len(new_rows)} items (Sorted).")
+            print(f"💾 Saved {len(new_rows)} new items.")
         except: sys.exit(1)
     
-    cleanup_database_safe(worksheet)
+    # ΤΕΛΙΚΟ ΒΗΜΑ: ΤΑΞΙΝΟΜΗΣΗ ΟΛΗΣ ΤΗΣ ΒΑΣΗΣ (ΠΑΛΙΑ + ΝΕΑ)
+    sort_entire_database(worksheet)
+
+    # Διατήρηση μεγέθους (κρατάει τα τελευταία 700)
+    # Η sort_entire_database έχει ήδη κάνει clear/rewrite, οπότε μπορούμε να κόψουμε αν θέλουμε
+    # Αλλά για ασφάλεια, ας αφήσουμε το cleanup να τρέξει μετά
+    try:
+        all_vals = worksheet.get_all_values()
+        if len(all_vals) > 900:
+            header = all_vals[0]
+            # Κρατάμε τα 700 τελευταία (που είναι τα πιο πρόσφατα μετά το sort)
+            keep = all_vals[-700:] 
+            worksheet.clear()
+            worksheet.append_row(header)
+            worksheet.append_rows(keep)
+    except: pass
 
 if __name__ == "__main__":
     run_scraper()
