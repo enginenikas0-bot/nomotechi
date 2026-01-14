@@ -59,14 +59,14 @@ def setup_db():
 
 def scrape_full_text(url):
     try:
-        time.sleep(random.uniform(1, 2))
+        time.sleep(random.uniform(2, 4)) 
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=20)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form", "iframe"]): tag.extract()
             text = soup.get_text(separator=" ").strip()
-            return text[:7000] if len(text) > 50 else ""
+            return text[:8000] if len(text) > 50 else ""
     except: return ""
     return ""
 
@@ -82,45 +82,49 @@ def fetch_article_image(url):
     return ""
 
 def analyze_with_ai(model, title, content):
-    # TRASH FILTER
     trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
     if any(kw in title.lower() for kw in trash_keywords):
         return "TRASH", "Rejected"
 
     if not model: return "GEN", "No AI."
     
-    try:
-        # --- PROFESSIONAL ANALYST PROMPT ---
-        prompt = f"""
-        ROLE: Expert Technical & Legal Analyst.
+    # RETRY LOGIC (Αν φάει πόρτα, ξαναδοκιμάζει)
+    for attempt in range(2): 
+        try:
+            prompt = f"""
+            ROLE: Expert Technical & Legal Journalist.
+            
+            TASK 1 (CLASSIFY): Pick ONE category based on content:
+            - ENG: Engineering, Real Estate, Public Works, Energy, Urban Planning.
+            - LAW: Courts, Justice, Lawyers, Decisions, Supreme Court.
+            - FEK: Legislation, Gazettes, Circulars, Decisions.
+            - GEN: Economy, Taxes (General).
+            - TRASH: Sports, Lifestyle, Irrelevant.
+
+            TASK 2 (ANALYZE): 
+            Write a DETAILED PROFESSIONAL SUMMARY in Greek (approx 80-120 words).
+            - Include specific dates, amounts (€), and technical/legal terms.
+            - Use professional tone.
+
+            DATA:
+            Title: {title}
+            Content: {content[:2000] if content else "Title only available."}
+
+            Output Format: CATEGORY ||| [SUMMARY TEXT]
+            """
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+            if "|||" in text:
+                parts = text.split("|||")
+                return parts[0].strip().upper(), parts[1].strip()
+            return "GEN", text
         
-        TASK 1 (CLASSIFY): Pick ONE category based on content:
-        - ENG: Engineering, Real Estate, Public Works, Energy, Urban Planning.
-        - LAW: Courts, Justice, Lawyers, Decisions, Supreme Court.
-        - FEK: Legislation, Gazettes, Circulars, Decisions.
-        - GEN: Economy, Taxes (General).
-        - TRASH: Sports, Lifestyle, Irrelevant.
-
-        TASK 2 (SUMMARIZE): 
-        Write a DETAILED PROFESSIONAL SUMMARY in Greek (approx 80-120 words).
-        - MUST include specific amounts (€), dates, and technical terms if present.
-        - Capture the full essence so the user doesn't need to read the source.
-        - Use professional, objective language.
-
-        DATA:
-        Title: {title}
-        Content: {content[:1500] if content else "Title only available."}
-
-        Output Format: CATEGORY ||| SUMMARY
-        """
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        if "|||" in text:
-            parts = text.split("|||")
-            return parts[0].strip().upper(), parts[1].strip()
-        return "GEN", text
-    except: 
-        return "GEN", "AI Busy."
+        except Exception as e:
+            print(f"⚠️ AI Error (Attempt {attempt+1}): {e}")
+            if attempt == 0:
+                time.sleep(60) # Περιμένει 1 λεπτό αν αποτύχει
+            else:
+                return "GEN", "AI Busy (Skipped after retry)."
 
 def get_greek_time_str(entry):
     try:
@@ -153,7 +157,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v30 (Professional Analyst) Started...")
+    print("🚀 Bot v31 (Slow & Steady) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -178,15 +182,17 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
-                    time.sleep(4) # Safety delay
+                    # --- ΤΟ ΜΥΣΤΙΚΟ: 12 ΔΕΥΤΕΡΟΛΕΠΤΑ ΑΝΑΜΟΝΗ ---
+                    time.sleep(12) 
                     
-                    cat_tag, ai_summary = analyze_with_ai(model, title, full_text)
+                    cat_tag, ai_article = analyze_with_ai(model, title, full_text)
                     
                     if "TRASH" in cat_tag:
                         existing_links.add(link)
+                        print(f"🗑️ Trash: {title}")
                         continue
                     
-                    new_row = [str(hash(link)), source_name, title, ai_summary, link, pub_date, cat_tag, fetch_article_image(link)]
+                    new_row = [str(hash(link)), source_name, title, ai_article, link, pub_date, cat_tag, fetch_article_image(link)]
                     new_rows.append(new_row)
                     existing_links.add(link)
                     count += 1
