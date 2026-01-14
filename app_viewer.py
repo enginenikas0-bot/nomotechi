@@ -151,13 +151,21 @@ def load_data():
         return clean_records
     except: return []
 
+# --- ΔΙΟΡΘΩΣΗ ΩΡΑΣ ΣΤΟ FRONTEND ---
 def get_relative_time(dt):
     if pd.isnull(dt): return ""
-    now = datetime.now()
+    # ΟΡΙΖΟΥΜΕ ΤΟ "ΤΩΡΑ" ΩΣ ΩΡΑ ΕΛΛΑΔΑΣ (UTC + 2)
+    # Επειδή ο server είναι UTC, προσθέτουμε 2 ώρες για να ταιριάζει με το Sheet
+    now = datetime.utcnow() + timedelta(hours=2)
+    
     diff = now - dt
     if diff.days > 0: return f"{diff.days}ημ. πριν"
     seconds = diff.total_seconds()
+    
+    # Αν βγει αρνητικό (π.χ. διαφορά δευτερολέπτων συγχρονισμού), δείξε "Τώρα"
+    if seconds < 0: return "Τώρα"
     if seconds < 60: return "Τώρα"
+    
     minutes = int(seconds // 60)
     if minutes < 60: return f"{minutes}λ. πριν"
     hours = int(minutes // 60)
@@ -165,7 +173,7 @@ def get_relative_time(dt):
 
 def format_smart_date(date_obj):
     if pd.isnull(date_obj): return ""
-    now = datetime.now()
+    now = datetime.utcnow() + timedelta(hours=2) # Και εδώ ώρα Ελλάδας
     if date_obj.date() == now.date(): return f"Σήμερα, {date_obj.strftime('%H:%M')}"
     return date_obj.strftime("%d/%m/%y")
 
@@ -300,7 +308,6 @@ def render_live_flow(curr_df):
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
     # --- HTML GENERATOR FOR FLOW ITEMS ---
-    # ΔΙΟΡΘΩΣΗ: Αφαιρέσαμε τα κενά (indentation) για να μην το βλέπει το Markdown ως Code Block
     flow_html = '<h5>ΡΟΗ</h5>'
     for i, r in curr_df.head(6).iterrows():
         src_label = str(r['source']).upper()[:12]
