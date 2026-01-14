@@ -59,7 +59,7 @@ def setup_db():
 
 def scrape_full_text(url):
     try:
-        time.sleep(random.uniform(2, 4)) 
+        time.sleep(random.uniform(1, 3)) 
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         response = requests.get(url, headers=headers, timeout=20)
         if response.status_code == 200:
@@ -82,22 +82,23 @@ def fetch_article_image(url):
     return ""
 
 def analyze_with_ai(model, title, content):
+    # TRASH FILTER
     trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
     if any(kw in title.lower() for kw in trash_keywords):
         return "TRASH", "Rejected"
 
     if not model: return "GEN", "No AI."
     
-    # RETRY LOGIC (Αν φάει πόρτα, ξαναδοκιμάζει)
+    # RETRY LOGIC
     for attempt in range(2): 
         try:
             prompt = f"""
             ROLE: Expert Technical & Legal Journalist.
             
             TASK 1 (CLASSIFY): Pick ONE category based on content:
-            - ENG: Engineering, Real Estate, Public Works, Energy, Urban Planning.
-            - LAW: Courts, Justice, Lawyers, Decisions, Supreme Court.
-            - FEK: Legislation, Gazettes, Circulars, Decisions.
+            - ENG: Engineering, Real Estate, Public Works, Energy, Urban Planning, Civil engineer, Construction, Construction works, Immovable asset .
+            - LAW: Courts, Justice, Lawyers, Decisions, Supreme Court, Law, Appeal, Legal, Attorney.
+            - FEK: Legislation, Gazettes, Circulars, Decisions, Laws.
             - GEN: Economy, Taxes (General).
             - TRASH: Sports, Lifestyle, Irrelevant.
 
@@ -122,7 +123,7 @@ def analyze_with_ai(model, title, content):
         except Exception as e:
             print(f"⚠️ AI Error (Attempt {attempt+1}): {e}")
             if attempt == 0:
-                time.sleep(60) # Περιμένει 1 λεπτό αν αποτύχει
+                time.sleep(60) # Αν αποτύχει, περιμένει 1 λεπτό
             else:
                 return "GEN", "AI Busy (Skipped after retry)."
 
@@ -157,7 +158,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v31 (Slow & Steady) Started...")
+    print("🚀 Bot v32 (6s Delay) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -182,8 +183,8 @@ def run_scraper():
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
-                    # --- ΤΟ ΜΥΣΤΙΚΟ: 12 ΔΕΥΤΕΡΟΛΕΠΤΑ ΑΝΑΜΟΝΗ ---
-                    time.sleep(12) 
+                    # --- Η ΡΥΘΜΙΣΗ ΠΟΥ ΖΗΤΗΣΕΣ ---
+                    time.sleep(6) 
                     
                     cat_tag, ai_article = analyze_with_ai(model, title, full_text)
                     
