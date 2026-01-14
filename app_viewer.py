@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (VIBRANT TIME) ---
+# --- 2. CSS (CLEAN TIME STYLE - NO FRAMES) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -51,10 +51,15 @@ st.markdown("""
     .mini-card:hover { transform: scale(1.02); border-color: #3b82f6; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
     
-    /* VIBRANT TIME CSS */
+    /* CLEAN TIME CSS - NO FRAME */
     .mini-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
-    .mini-ago { font-size: 0.7rem; color: #60a5fa; font-weight: 700; background: rgba(59, 130, 246, 0.1); padding: 1px 4px; border-radius: 3px; }
+    .mini-ago { 
+        font-size: 0.7rem; 
+        color: #60a5fa; /* Nice Blue */
+        font-weight: 600; 
+        /* REMOVED BACKGROUND & BORDER */
+    }
 
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .mini-image-box { width: 100px; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; border-left: 1px solid #374151; flex-shrink: 0; }
@@ -91,14 +96,14 @@ def analyze_content_deep(row):
     ai_category = str(row.get('category', '')).upper()
     tags = set()
 
-    # --- ENG ---
+    # ENG
     eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"]
     is_eng = False
     if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): is_eng = True
     elif any(kw in title for kw in eng_keywords) or "ENG" in ai_category or "REAL_ESTATE" in ai_category: is_eng = True
     if is_eng: tags.add("ENG")
 
-    # --- LAW ---
+    # LAW
     law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", "δικαιοσυνη", "δικονομ", "δικη", "εφετει"]
     is_law = False
     if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): is_law = True
@@ -107,7 +112,7 @@ def analyze_content_deep(row):
         if is_eng and not any(kw in title for kw in ["δικαστ", "δικηγορ", "στε", "εισαγγελ", "αρεο"]): is_law = False 
     if is_law: tags.add("LAW")
 
-    # --- FEK ---
+    # FEK
     leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε."]
     if any(kw in title for kw in leg_keywords) or "FEK" in ai_category: tags.add("FEK")
     if "e-nomothesia" in source or "taxheaven" in source: tags.add("FEK")
@@ -122,28 +127,28 @@ def get_db_client():
 
 def get_relative_time(date_obj):
     """
-    Returns '2h ago', '15m ago'.
+    Shows '2h ago' correctly. Updates with server time.
     """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
-    # Tolerable skew
-    if seconds < 0 and seconds > -3600: return "Τώρα" 
-    if seconds < 0: return date_obj.strftime("%d/%m") 
+    if seconds < 0: 
+        if seconds > -3600: return "Τώρα"
+        return "Σήμερα" # Future date glitch fix
 
-    if seconds < 60: return "Τώρα"
+    if seconds < 60: return "Μόλις τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
-        return f"{mins}λ πριν"
+        return f"πριν {mins}λ"
     elif seconds < 86400: # Less than 24h
         hours = int(seconds // 3600)
-        return f"{hours}ώ πριν"
+        return f"πριν {hours}ώ"
     elif seconds < 172800:
         return "Χθες"
     else:
-        return f"{diff.days}μ πριν"
+        return f"πριν {diff.days}ημ"
 
 @st.cache_data(ttl=0) 
 def load_data():
@@ -162,9 +167,11 @@ def load_data():
     except: return []
 
 def format_smart_date(date_obj):
+    """Grid Date: Shows Time if today, Date if older"""
     if pd.isnull(date_obj): return ""
     now = datetime.now()
-    if date_obj.date() == now.date(): return f"Σήμερα, {date_obj.strftime('%H:%M')}"
+    if date_obj.date() == now.date():
+        return f"{date_obj.strftime('%H:%M')}" # Just time for today
     return date_obj.strftime("%d/%m/%y")
 
 IMAGE_POOL = {
@@ -276,15 +283,16 @@ if not df.empty:
 
 tabs = st.tabs(["ΚΟΡΥΦΑΙΑ", "ΜΗΧΑΝΙΚΟΙ & ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ & ΔΙΚΑΙΟΣΥΝΗ", "ΝΟΜΟΘΕΣΙΑ/ΦΕΚ", "ΣΤΑΤΙΣΤΙΚΑ"])
 
-# --- UPDATED SLIDER WITH SYNCED CONTENT (12 ITEMS) ---
-@st.fragment(run_every=4) 
-def show_hero_slider(curr_df):
+# --- LIVE UPDATING FLOW (AUTO RERUN EVERY 60 SEC) ---
+@st.fragment(run_every=60) 
+def render_live_flow(curr_df):
     if curr_df.empty: return
     
+    # Logic for Slider State
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
-    slide_len = min(12, len(curr_df)) # Limit to 12
+    slide_len = min(12, len(curr_df)) 
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     
@@ -296,19 +304,76 @@ def show_hero_slider(curr_df):
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
-    st.markdown(f"""
-    <div class="hero-wrapper">
-        <img src="{get_image(row)}" class="hero-image">
-        <div class="hero-overlay">
-            <div style="margin-bottom:5px;">{badges}</div>
-            <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
-            <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{date_d}</div>
+    # 12-GRID LAYOUT
+    c_hero, c_right = st.columns([2.2, 1])
+    
+    # HERO + BOTTOM
+    with c_hero:
+        # SLIDER
+        st.markdown(f"""
+        <div class="hero-wrapper">
+            <img src="{get_image(row)}" class="hero-image">
+            <div class="hero-overlay">
+                <div style="margin-bottom:5px;">{badges}</div>
+                <a href="{row['link']}" target="_blank" class="hero-title">{row['title']}</a>
+                <div style="color:#ddd; margin-top:5px; font-size:0.8rem;">{date_d}</div>
+            </div>
+            <div class="msn-dots-container">{dots_html}</div>
         </div>
-        <div class="msn-dots-container">
-            {dots_html}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        
+        # BOTTOM ITEMS (6-12)
+        bottom_items = curr_df.iloc[6:12]
+        if not bottom_items.empty:
+            rows_b = (len(bottom_items) + 2) // 3 
+            for i in range(rows_b):
+                cols_b = st.columns(3) 
+                for j, col_b in enumerate(cols_b):
+                    idx_b = i * 3 + j
+                    if idx_b < len(bottom_items):
+                        r = bottom_items.iloc[idx_b]
+                        src_label = str(r['source']).upper()[:12]
+                        img_url = get_image(r)
+                        rel_time = get_relative_time(r['datetime_obj'])
+                        with col_b:
+                            st.markdown(f"""
+                            <div class="mini-card">
+                                <div class="mini-text-content">
+                                    <div class="mini-meta-row">
+                                        <div class="mini-source">{src_label}</div>
+                                        <div class="mini-ago">{rel_time}</div>
+                                    </div>
+                                    <div class="mini-title">
+                                        <a href="{r['link']}" target="_blank">{r['title']}</a>
+                                    </div>
+                                </div>
+                                <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+    # RIGHT COLUMN (0-5)
+    with c_right:
+        st.markdown("##### ΡΟΗ")
+        for i, r in curr_df.head(6).iterrows():
+            src_label = str(r['source']).upper()[:12]
+            img_url = get_image(r)
+            rel_time = get_relative_time(r['datetime_obj'])
+            st.markdown(f"""
+            <div class="mini-card">
+                <div class="mini-text-content">
+                    <div class="mini-meta-row">
+                        <div class="mini-source">{src_label}</div>
+                        <div class="mini-ago">{rel_time}</div>
+                    </div>
+                    <div class="mini-title">
+                        <a href="{r['link']}" target="_blank">{r['title']}</a>
+                    </div>
+                </div>
+                <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown("---")
 
 def render_tab(tab_name):
     if tab_name == "HOME": 
@@ -338,61 +403,8 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        c_hero, c_right = st.columns([2.2, 1])
-        
-        with c_hero:
-            show_hero_slider(curr)
-            
-            bottom_items = curr.iloc[6:12]
-            if not bottom_items.empty:
-                rows_b = (len(bottom_items) + 2) // 3 
-                for i in range(rows_b):
-                    cols_b = st.columns(3) 
-                    for j, col_b in enumerate(cols_b):
-                        idx_b = i * 3 + j
-                        if idx_b < len(bottom_items):
-                            r = bottom_items.iloc[idx_b]
-                            src_label = str(r['source']).upper()[:12]
-                            img_url = get_image(r)
-                            rel_time = get_relative_time(r['datetime_obj'])
-                            with col_b:
-                                st.markdown(f"""
-                                <div class="mini-card">
-                                    <div class="mini-text-content">
-                                        <div class="mini-meta-row">
-                                            <div class="mini-source">{src_label}</div>
-                                            <div class="mini-ago">{rel_time}</div>
-                                        </div>
-                                        <div class="mini-title">
-                                            <a href="{r['link']}" target="_blank">{r['title']}</a>
-                                        </div>
-                                    </div>
-                                    <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
-                                </div>
-                                """, unsafe_allow_html=True)
-
-        with c_right:
-            st.markdown("##### ΡΟΗ")
-            for i, r in curr.head(6).iterrows():
-                src_label = str(r['source']).upper()[:12]
-                img_url = get_image(r)
-                rel_time = get_relative_time(r['datetime_obj'])
-                st.markdown(f"""
-                <div class="mini-card">
-                    <div class="mini-text-content">
-                        <div class="mini-meta-row">
-                            <div class="mini-source">{src_label}</div>
-                            <div class="mini-ago">{rel_time}</div>
-                        </div>
-                        <div class="mini-title">
-                            <a href="{r['link']}" target="_blank">{r['title']}</a>
-                        </div>
-                    </div>
-                    <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-        st.markdown("---")
+        # CALL THE LIVE FRAGMENT
+        render_live_flow(curr)
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
