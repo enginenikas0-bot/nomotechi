@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (PERFECT 12-GRID GEOMETRY) ---
+# --- 2. CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -75,16 +75,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIC (SURGICAL SEPARATION) ---
+# --- 3. LOGIC ---
 def normalize_text(text):
     if not isinstance(text, str): return ""
     nfkd_form = unicodedata.normalize('NFKD', text)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
 def analyze_content_deep(row):
-    """
-    STRICT FILTER LOGIC (v79 RETAINED)
-    """
     title = normalize_text(str(row.get('title', '')))
     content = normalize_text(str(row.get('content', '')))
     source = normalize_text(str(row.get('source', '')))
@@ -114,7 +111,6 @@ def analyze_content_deep(row):
 
     if "sos" in title: tags.add("SOS")
     if not tags: tags.add("GENERAL")
-    
     return list(tags)
 
 def get_db_client():
@@ -122,21 +118,26 @@ def get_db_client():
     except: return None
 
 def get_relative_time(date_obj):
-    """Calculates '2h ago' correctly"""
+    """
+    Returns '2h ago', '15m ago'.
+    If date is older than 24h, returns date.
+    """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
-    # Tolerable skew (e.g. server difference)
-    if seconds < 0 and seconds > -3600: return "Τώρα" 
-    if seconds < 0: return date_obj.strftime("%d/%m") # Future date? show date
+    # Correction for server time diffs (negative seconds)
+    if seconds < 0: 
+        # If it's just a few minutes ahead (server drift), say Now
+        if seconds > -3600: return "Τώρα"
+        return date_obj.strftime("%d/%m") # Future date
 
     if seconds < 60: return "Τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
         return f"πριν {mins}λ"
-    elif seconds < 86400:
+    elif seconds < 86400: # Less than 24h
         hours = int(seconds // 3600)
         return f"πριν {hours}ώ"
     elif seconds < 172800:
@@ -337,10 +338,8 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # --- ALIGNMENT STRATEGY (12 ITEMS: 6 RIGHT, 6 BOTTOM in 3 COLS) ---
         c_hero, c_right = st.columns([2.2, 1])
         
-        # LEFT COLUMN (Slider + Bottom Grid)
         with c_hero:
             show_hero_slider(curr)
             
@@ -348,7 +347,7 @@ def render_tab(tab_name):
             if not bottom_items.empty:
                 rows_b = (len(bottom_items) + 2) // 3 
                 for i in range(rows_b):
-                    cols_b = st.columns(3) # 3 Wider columns
+                    cols_b = st.columns(3) 
                     for j, col_b in enumerate(cols_b):
                         idx_b = i * 3 + j
                         if idx_b < len(bottom_items):
@@ -372,7 +371,6 @@ def render_tab(tab_name):
                                 </div>
                                 """, unsafe_allow_html=True)
 
-        # RIGHT COLUMN: 6 Items (Indices 0 to 5)
         with c_right:
             st.markdown("##### ΡΟΗ")
             for i, r in curr.head(6).iterrows():
@@ -398,7 +396,7 @@ def render_tab(tab_name):
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
-    start = 12 if (tab_name == "HOME" and not search_query) else 0 # Offset by 12
+    start = 12 if (tab_name == "HOME" and not search_query) else 0 
     
     grid_items = curr.iloc[start:]
     if not grid_items.empty:
