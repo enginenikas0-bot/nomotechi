@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS ---
+# --- 2. CSS (VIBRANT TIME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -48,11 +48,14 @@ st.markdown("""
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
     .mini-card { background: #111827; border: 1px solid #374151; border-radius: 8px; margin-bottom: 8px; height: 95px; display: flex; flex-direction: row; overflow: hidden; transition: transform 0.2s; }
-    .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
+    .mini-card:hover { transform: scale(1.02); border-color: #3b82f6; }
     .mini-text-content { flex: 1; padding: 10px 10px; display: flex; flex-direction: column; justify-content: flex-start; }
-    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; line-height: 1; }
-    .mini-ago { font-size: 0.65rem; color: #60a5fa; font-weight: 600; }
-    .mini-meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    
+    /* VIBRANT TIME CSS */
+    .mini-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .mini-source { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
+    .mini-ago { font-size: 0.7rem; color: #60a5fa; font-weight: 700; background: rgba(59, 130, 246, 0.1); padding: 1px 4px; border-radius: 3px; }
+
     .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .mini-image-box { width: 100px; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; border-left: 1px solid #374151; flex-shrink: 0; }
 
@@ -120,30 +123,27 @@ def get_db_client():
 def get_relative_time(date_obj):
     """
     Returns '2h ago', '15m ago'.
-    If date is older than 24h, returns date.
     """
     if pd.isnull(date_obj): return ""
     now = datetime.now()
     diff = now - date_obj
     seconds = diff.total_seconds()
     
-    # Correction for server time diffs (negative seconds)
-    if seconds < 0: 
-        # If it's just a few minutes ahead (server drift), say Now
-        if seconds > -3600: return "Τώρα"
-        return date_obj.strftime("%d/%m") # Future date
+    # Tolerable skew
+    if seconds < 0 and seconds > -3600: return "Τώρα" 
+    if seconds < 0: return date_obj.strftime("%d/%m") 
 
     if seconds < 60: return "Τώρα"
     if seconds < 3600:
         mins = int(seconds // 60)
-        return f"πριν {mins}λ"
+        return f"{mins}λ πριν"
     elif seconds < 86400: # Less than 24h
         hours = int(seconds // 3600)
-        return f"πριν {hours}ώ"
+        return f"{hours}ώ πριν"
     elif seconds < 172800:
         return "Χθες"
     else:
-        return f"πριν {diff.days}ημ"
+        return f"{diff.days}μ πριν"
 
 @st.cache_data(ttl=0) 
 def load_data():
