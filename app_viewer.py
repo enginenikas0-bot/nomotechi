@@ -89,7 +89,7 @@ def analyze_content_deep(row):
     ai_category = str(row.get('category', '')).upper()
     tags = set()
 
-    trash_keywords = ["ολυμπιακος", "παναθηναικος", "αεκ", "παοκ", "αρης", "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "κληρωση", "τυχερα παιχνιδια", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
+    trash_keywords = ["ολυμπιακος", "παναθηναικος", "αεκ", "παοκ", "αρης", "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "κληρωση", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
     if any(kw in title for kw in trash_keywords): return ["TRASH"]
 
     eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", "διαγωνισμ", "αναδοχ", "μελετ"]
@@ -118,7 +118,7 @@ def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
     except: return None
 
-@st.cache_data(ttl=60) 
+@st.cache_data(ttl=0) 
 def load_data():
     sh = get_db_client()
     if not sh: return []
@@ -263,7 +263,6 @@ def render_live_flow(curr_df):
     row = curr_df.iloc[idx]
     badges = render_badges(row)
     
-    # NO DATE IN SLIDER (CLEAN LOOK)
     dots_html = ""
     for i in range(min(10, slide_len)):
         active_cls = "active" if i == idx else ""
