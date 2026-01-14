@@ -105,24 +105,36 @@ def normalize_text(text):
 
 def analyze_content_deep(row):
     title = normalize_text(str(row.get('title', '')))
-    content = normalize_text(str(row.get('content', '')))
-    source = normalize_text(str(row.get('source', '')))
     ai_category = str(row.get('category', '')).upper()
     tags = set()
 
     trash_keywords = ["ολυμπιακος", "παναθηναικος", "αεκ", "παοκ", "αρης", "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "κληρωση", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
     if any(kw in title for kw in trash_keywords): return ["TRASH"]
 
-    if any(s in source for s in ["michanikos", "ypodomes", "b2green", "pomida", "pedmede", "elinyae", "tee"]): tags.add("ENG")
-    elif "ENG" in ai_category: tags.add("ENG")
-
-    if any(s in source for s in ["dikastiko", "lawspot", "ethemis", "dsa", "lawnet", "syntagma"]): tags.add("LAW")
-    elif "LAW" in ai_category: tags.add("LAW")
+    # PURE AI CLASSIFICATION (Tags depend ONLY on what AI found)
+    # Αφαιρέθηκαν όλα τα source checks. Εμπιστευόμαστε το ai_category.
     
-    if "e-nomothesia" in source or "taxheaven" in source: tags.add("FEK")
-    elif "FEK" in ai_category: tags.add("FEK")
+    eng_keywords = [
+        "μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "εξοικονομ", 
+        "ανακαινιζ", "κτηματολογ", "πολεοδομ", "υποδομες", "real estate", "κατασκευ", 
+        "διαγωνισμ", "αναδοχ", "μελετ", "nok", "gok", "οικοδομ", "τακτοποιηση"
+    ]
+    if "ENG" in ai_category or any(kw in title for kw in eng_keywords): 
+        tags.add("ENG")
 
-    if "sos" in title: tags.add("SOS")
+    law_keywords = [
+        "δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", 
+        "ποινικ", "αστικ", "αγωγη", "εγκλημα", "συλληψ", "δικαιοσυνη", "δικονομ", 
+        "δικη", "εφετει", "παραβατικ", "αστυνομ"
+    ]
+    if "LAW" in ai_category or any(kw in title for kw in law_keywords): 
+        tags.add("LAW")
+    
+    leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε.", "στε", "συμβουλιο επικρατειας"]
+    if "FEK" in ai_category or any(kw in title for kw in leg_keywords): 
+        tags.add("FEK")
+
+    if "SOS" in title: tags.add("SOS")
     if not tags: tags.add("GENERAL")
     return list(tags)
 
@@ -151,21 +163,14 @@ def load_data():
         return clean_records
     except: return []
 
-# --- ΔΙΟΡΘΩΣΗ ΩΡΑΣ ΣΤΟ FRONTEND ---
 def get_relative_time(dt):
     if pd.isnull(dt): return ""
-    # ΟΡΙΖΟΥΜΕ ΤΟ "ΤΩΡΑ" ΩΣ ΩΡΑ ΕΛΛΑΔΑΣ (UTC + 2)
-    # Επειδή ο server είναι UTC, προσθέτουμε 2 ώρες για να ταιριάζει με το Sheet
     now = datetime.utcnow() + timedelta(hours=2)
-    
     diff = now - dt
     if diff.days > 0: return f"{diff.days}ημ. πριν"
     seconds = diff.total_seconds()
-    
-    # Αν βγει αρνητικό (π.χ. διαφορά δευτερολέπτων συγχρονισμού), δείξε "Τώρα"
     if seconds < 0: return "Τώρα"
     if seconds < 60: return "Τώρα"
-    
     minutes = int(seconds // 60)
     if minutes < 60: return f"{minutes}λ. πριν"
     hours = int(minutes // 60)
@@ -173,7 +178,7 @@ def get_relative_time(dt):
 
 def format_smart_date(date_obj):
     if pd.isnull(date_obj): return ""
-    now = datetime.utcnow() + timedelta(hours=2) # Και εδώ ώρα Ελλάδας
+    now = datetime.utcnow() + timedelta(hours=2)
     if date_obj.date() == now.date(): return f"Σήμερα, {date_obj.strftime('%H:%M')}"
     return date_obj.strftime("%d/%m/%y")
 
