@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS (REFINED DARK AESTHETICS & MINI CARDS) ---
+# --- 2. CSS (MSN STYLE & DARK THEME) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Segoe+UI:wght@300;400;600&display=swap');
@@ -62,22 +62,58 @@ st.markdown("""
     .msn-dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .msn-dot.active { background-color: #ffffff; transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-    /* MINI CARD (FLOW ITEM) */
+    /* --- MSN STYLE MINI CARD (THE FIX) --- */
     .mini-card { 
-        background: #111827; 
-        padding: 10px 12px; 
-        border-radius: 4px; 
-        margin-bottom: 6px; 
+        background: #111827; /* Dark BG */
         border: 1px solid #374151; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2); 
-        height: 100%;
+        border-radius: 8px; 
+        margin-bottom: 8px; 
+        height: 95px; /* Fixed Height for consistency */
+        display: flex;
+        flex-direction: row; /* Side by side */
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    .mini-card:hover { transform: scale(1.02); border-color: #60a5fa; }
+    
+    .mini-text-content {
+        flex: 1; /* Take remaining space */
+        padding: 10px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
-    .mini-card:hover { border-color: #60a5fa; }
-    .mini-title a { color: #f3f4f6 !important; text-decoration: none; font-weight: 600; font-size: 0.9rem; line-height: 1.3; }
-    .mini-date { color: #9ca3af !important; font-size: 0.7rem; margin-top: 4px; text-align: right; }
+    
+    .mini-source {
+        font-size: 0.65rem;
+        color: #9ca3af;
+        text-transform: uppercase;
+        font-weight: 700;
+        margin-bottom: 3px;
+        letter-spacing: 0.5px;
+    }
+    
+    .mini-title a { 
+        color: #f3f4f6 !important; 
+        text-decoration: none; 
+        font-weight: 600; 
+        font-size: 0.85rem; 
+        line-height: 1.25;
+        /* Limit to 2 lines */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .mini-image-box {
+        width: 110px; /* Fixed width image */
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border-left: 1px solid #374151;
+    }
 
     /* STANDARD GRID CARD */
     .grid-card { background: white; border: 1px solid #f5f5f5; border-radius: 4px; overflow: hidden; height: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; }
@@ -268,8 +304,7 @@ def show_hero_slider(curr_df):
     if 'slider_idx' not in st.session_state: st.session_state.slider_idx = 0
     st.session_state.slider_idx += 1
 
-    # INCREASED TO 10 TO MATCH FLOW
-    slide_len = min(10, len(curr_df))
+    slide_len = min(15, len(curr_df)) # Expanded to 15
     idx = st.session_state.slider_idx % slide_len
     row = curr_df.iloc[idx]
     
@@ -277,7 +312,7 @@ def show_hero_slider(curr_df):
     date_d = format_smart_date(row['last_update'])
 
     dots_html = ""
-    for i in range(slide_len):
+    for i in range(min(10, slide_len)): # Dots for first 10
         active_cls = "active" if i == idx else ""
         dots_html += f'<div class="msn-dot {active_cls}"></div>'
 
@@ -324,17 +359,15 @@ def render_tab(tab_name):
         </script>
         """, height=70)
 
-        # COMPACT LAYOUT (RIGHT & BOTTOM OF SLIDER)
+        # MSN STYLE LAYOUT
         c_hero, c_right = st.columns([2, 1])
         
         # SLIDER (Left/Center)
         with c_hero:
             show_hero_slider(curr)
             
-            # Additional Rows UNDER the slider (e.g. 6 items)
-            st.markdown("### ΡΟΗ")
-            # Items 5 to 10 (Next 6 items)
-            bottom_items = curr.iloc[4:10]
+            # BOTTOM ITEMS (Indices 9 to 14) -> 6 items
+            bottom_items = curr.iloc[9:15]
             if not bottom_items.empty:
                 rows_b = (len(bottom_items) + 2) // 3
                 for i in range(rows_b):
@@ -343,28 +376,36 @@ def render_tab(tab_name):
                         idx_b = i * 3 + j
                         if idx_b < len(bottom_items):
                             r = bottom_items.iloc[idx_b]
-                            d = format_smart_date(r['last_update'])
+                            src_label = str(r['source']).upper()[:12]
+                            img_url = get_image(r)
                             with col_b:
                                 st.markdown(f"""
                                 <div class="mini-card">
-                                    <div class="mini-title">
-                                        <a href="{r['link']}" target="_blank">{r['title']}</a>
+                                    <div class="mini-text-content">
+                                        <div class="mini-source">{src_label}</div>
+                                        <div class="mini-title">
+                                            <a href="{r['link']}" target="_blank">{r['title']}</a>
+                                        </div>
                                     </div>
-                                    <div class="mini-date">{d}</div>
+                                    <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
                                 </div>
                                 """, unsafe_allow_html=True)
 
-        # RIGHT COLUMN (Top 4 items)
+        # RIGHT COLUMN (Indices 0 to 8) -> 9 items
         with c_right:
-            st.markdown("##### ΤΩΡΑ")
-            for i, r in curr.head(4).iterrows():
-                d = format_smart_date(r['last_update'])
+            st.markdown("##### ΡΟΗ")
+            for i, r in curr.head(9).iterrows():
+                src_label = str(r['source']).upper()[:12]
+                img_url = get_image(r)
                 st.markdown(f"""
                 <div class="mini-card">
-                    <div class="mini-title">
-                        <a href="{r['link']}" target="_blank">{r['title']}</a>
+                    <div class="mini-text-content">
+                        <div class="mini-source">{src_label}</div>
+                        <div class="mini-title">
+                            <a href="{r['link']}" target="_blank">{r['title']}</a>
+                        </div>
                     </div>
-                    <div class="mini-date">{d}</div>
+                    <div class="mini-image-box" style="background-image: url('{img_url}');"></div>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -372,7 +413,7 @@ def render_tab(tab_name):
 
     st.subheader("Ειδήσεις & Αποφάσεις")
     cols = st.columns(3)
-    start = 10 if (tab_name == "HOME" and not search_query) else 0 # Offset by 10
+    start = 15 if (tab_name == "HOME" and not search_query) else 0 # Offset by 15 items
     
     grid_items = curr.iloc[start:]
     if not grid_items.empty:
