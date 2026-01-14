@@ -16,8 +16,9 @@ GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
 SPREADSHEET_NAME = "laws_database"
 
-# ΗΜΕΡΕΣ ΑΝΑΔΡΟΜΗΣ: 2 Μέρες (για να μην καίμε τζάμπα AI)
-DAYS_LIMIT = 2
+# ΑΥΣΤΗΡΟ ΟΡΙΟ: Αγνοούμε άρθρα παλιότερα από 3 ημέρες
+# (Πιάνει ΠΣΚ, αλλά κόβει τα πολύ παλιά για προστασία του Quota)
+DAYS_LIMIT = 3
 
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -48,6 +49,7 @@ def setup_ai():
     if not GEMINI_API_KEY: return None
     try:
         genai.configure(api_key=GEMINI_API_KEY)
+        # Χρησιμοποιούμε το δυνατό Gemini 2.0 Flash
         return genai.GenerativeModel('gemini-2.0-flash')
     except: return None
 
@@ -60,6 +62,7 @@ def setup_db():
     except: sys.exit(1)
 
 def get_date_obj(entry):
+    """Εξάγει την ημερομηνία με ασφάλεια"""
     try:
         if entry.get('published_parsed'):
             return datetime.fromtimestamp(time.mktime(entry.published_parsed))
@@ -93,18 +96,25 @@ def fetch_article_image(url):
     except: return ""
     return ""
 
+# --- BACKUP LOGIC (Αλεξίπτωτο) ---
 def fallback_classify(title, source):
     t = title.lower()
     s = source.lower()
+    
+    # 1. Βάσει Πηγής
     if "michanikos" in s or "b2green" in s or "ypodomes" in s or "tee" in s: return "ENG"
     if "dikastiko" in s or "lawspot" in s or "dsa" in s: return "LAW"
     if "nomothesia" in s or "taxheaven" in s: return "FEK"
+    
+    # 2. Βάσει Λέξεων
     if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ"]): return "LAW"
     if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση", "ενεργεια"]): return "ENG"
     if any(k in t for k in ["φεκ", "νομος", "αποφαση", "εγκυκλιος"]): return "FEK"
+    
     return "GEN"
 
 def analyze_with_ai(model, title, content, original_summary):
+    # Trash Filter
     trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
     if any(kw in title.lower() for kw in trash_keywords):
         return "TRASH", "Rejected"
@@ -116,15 +126,19 @@ def analyze_with_ai(model, title, content, original_summary):
         prompt = f"""
         ROLE: Senior Analyst.
         TASK: Classify and Summarize in Greek.
+        
         CATEGORIES (Select ALL that apply, comma-separated):
         - ENG: Engineering/Real Estate.
         - LAW: Legal/Courts.
         - FEK: Legislation/Gazette.
         - GEN: General/Economy.
+        
         SUMMARY: Professional, 80-100 words, with dates/amounts.
+        
         DATA:
         Title: {title}
         Content: {content[:2000]}
+        
         Format: CAT1, CAT2 ||| [SUMMARY]
         """
         response = model.generate_content(prompt)
@@ -133,23 +147,24 @@ def analyze_with_ai(model, title, content, original_summary):
             parts = text.split("|||")
             return parts[0].strip().upper(), parts[1].strip()
         return fallback_classify(title, ""), text 
-    except:
+        
+    except Exception:
+        # Αν "σκάσει" το AI, γυρνάμε στο Fallback χωρίς να σταματήσουμε
         print("⚠️ AI Busy/Quota Exceeded. Using Fallback.")
         return fallback_classify(title, ""), (original_summary if len(original_summary) > 10 else "Δεν υπάρχει διαθέσιμη περίληψη.")
 
-# --- Η ΝΕΑ ΣΥΝΑΡΤΗΣΗ ΤΑΞΙΝΟΜΗΣΗΣ ---
+# --- Η ΣΥΝΑΡΤΗΣΗ ΤΑΞΙΝΟΜΗΣΗΣ (SORTING) ---
 def sort_entire_database(worksheet):
     """Διαβάζει ΟΛΑ τα δεδομένα, τα ταξινομεί χρονολογικά και τα ξαναγράφει"""
     print("🧹 Sorting entire database chronologically...")
     try:
         all_values = worksheet.get_all_values()
-        if len(all_values) < 2: return # Κενή βάση ή μόνο header
+        if len(all_values) < 2: return # Κενή βάση
 
         header = all_values[0]
         data = all_values[1:]
 
-        # Ταξινόμηση βάσει της στήλης Ημερομηνία (Index 5 -> F column)
-        # Χρησιμοποιούμε safe key για να μην κρασάρει αν λείπει η ημερομηνία
+        # Ταξινόμηση βάσει Ημερομηνίας (Index 5)
         data.sort(key=lambda x: x[5] if len(x) > 5 else "")
 
         # Καθαρισμός και Επανεγγραφή
@@ -160,8 +175,19 @@ def sort_entire_database(worksheet):
     except Exception as e:
         print(f"⚠️ Sort Error: {e}")
 
+def cleanup_database_safe(worksheet):
+    try:
+        all_values = worksheet.get_all_values()
+        if len(all_values) > 900:
+            header = all_values[0]
+            data_to_keep = all_values[-700:]
+            worksheet.clear()
+            worksheet.append_row(header)
+            worksheet.append_rows(data_to_keep)
+    except: pass
+
 def run_scraper():
-    print(f"🚀 Bot v43 (Auto-Sort & Fix) Started...")
+    print(f"🚀 Bot v44 (Masterplan: 3-Day Limit) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -176,12 +202,16 @@ def run_scraper():
         try:
             feed = feedparser.parse(feed_url)
             count = 0
+            
+            # 15 Άρθρα ανά πηγή
             for entry in feed.entries[:15]:
                 link = entry.get('link', '')
                 if link in existing_links: continue
                 
+                # DATE FILTER: 3 ΗΜΕΡΕΣ
                 article_dt = get_date_obj(entry)
-                if (current_time - article_dt).days > DAYS_LIMIT: continue
+                if (current_time - article_dt).days > DAYS_LIMIT:
+                    continue
 
                 title = entry.get('title', 'No Title')
                 pub_date_str = article_dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -190,9 +220,13 @@ def run_scraper():
                 try:
                     full_text = scrape_full_text(link)
                     if len(full_text) < 50: full_text = rss_summary
+                    
                     time.sleep(6) 
+                    
                     cat_tag, ai_article = analyze_with_ai(model, title, full_text, rss_summary)
-                    if cat_tag == "GEN" or cat_tag == "": cat_tag = fallback_classify(title, source_name)
+                    
+                    if cat_tag == "GEN" or cat_tag == "":
+                         cat_tag = fallback_classify(title, source_name)
 
                     if "TRASH" in cat_tag:
                         existing_links.add(link)
@@ -203,32 +237,21 @@ def run_scraper():
                     new_rows.append(new_row)
                     existing_links.add(link)
                     count += 1
-                except: continue
+                except Exception as e: 
+                    print(f"Skipping: {e}")
+                    continue
             print(f"✅ {count} (Fresh)")
         except: print("❌")
 
     if new_rows:
         try:
             worksheet.append_rows(new_rows)
-            print(f"💾 Saved {len(new_rows)} new items.")
+            print(f"💾 Saved {len(new_rows)} items.")
         except: sys.exit(1)
     
-    # ΤΕΛΙΚΟ ΒΗΜΑ: ΤΑΞΙΝΟΜΗΣΗ ΟΛΗΣ ΤΗΣ ΒΑΣΗΣ (ΠΑΛΙΑ + ΝΕΑ)
+    # ΤΕΛΙΚΟ ΒΗΜΑ: ΤΑΞΙΝΟΜΗΣΗ ΟΛΗΣ ΤΗΣ ΒΑΣΗΣ
     sort_entire_database(worksheet)
-
-    # Διατήρηση μεγέθους (κρατάει τα τελευταία 700)
-    # Η sort_entire_database έχει ήδη κάνει clear/rewrite, οπότε μπορούμε να κόψουμε αν θέλουμε
-    # Αλλά για ασφάλεια, ας αφήσουμε το cleanup να τρέξει μετά
-    try:
-        all_vals = worksheet.get_all_values()
-        if len(all_vals) > 900:
-            header = all_vals[0]
-            # Κρατάμε τα 700 τελευταία (που είναι τα πιο πρόσφατα μετά το sort)
-            keep = all_vals[-700:] 
-            worksheet.clear()
-            worksheet.append_row(header)
-            worksheet.append_rows(keep)
-    except: pass
+    cleanup_database_safe(worksheet)
 
 if __name__ == "__main__":
     run_scraper()
