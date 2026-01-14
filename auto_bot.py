@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import requests
 import random
 from datetime import datetime, timedelta, timezone
-import dateutil.parser # Πιο δυνατο parsing
+import dateutil.parser
 import json
 import os
 import sys
@@ -21,6 +21,7 @@ USER_AGENTS = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
+# --- 2. LIST OF SOURCES (ΜΕ EMOJIS ΓΙΑ ΝΑ ΤΑΙΡΙΑΖΟΥΝ ΣΤΟ SHEET) ---
 RSS_FEEDS = {
     # --- ΜΗΧΑΝΙΚΟΙ ---
     "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
@@ -65,8 +66,10 @@ def scrape_full_text(url):
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            for tag in soup(["script", "style", "nav", "footer", "header"]): tag.extract()
-            return soup.get_text(separator=" ").strip()[:6000]
+            # Καθαρισμός για να μείνει μόνο η ουσία
+            for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form"]): tag.extract()
+            text = soup.get_text(separator=" ").strip()
+            return text[:6000] if len(text) > 100 else ""
     except: return ""
     return ""
 
@@ -82,13 +85,34 @@ def fetch_article_image(url):
     return ""
 
 def analyze_with_ai(model, title, content):
-    if not model: return "GEN", "No AI Summary."
+    # 1. TRASH FILTER (THE BOUNCER)
+    # Πετάμε τα άσχετα ΠΡΙΝ καν ασχοληθεί το AI σοβαρά
+    trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
+    if any(kw in title.lower() for kw in trash_keywords):
+        return "TRASH", "Rejected"
+
+    if not model: return "GEN", "No AI."
+    
+    # 2. PURE INTELLIGENCE PROMPT
+    # Το AI κρίνει μόνο βάσει περιεχομένου. Αν δεν υπάρχει περιεχόμενο, κρίνει βάσει τίτλου.
     try:
         prompt = f"""
-        Classify: ENG (Technical/Real Estate), LAW (Legal/Justice), FEK (Legislation), GEN (General).
-        Summarize (Greek, max 25 words).
-        Input: {title} | {content[:1000]}
-        Output: CATEGORY ||| SUMMARY
+        ACT AS A STRICT CLASSIFIER for a Professional Portal.
+        
+        TASK 1: CLASSIFY into ONE category based ONLY on the content:
+        - ENG: Engineering, Technical Projects, Real Estate, Energy, Public Works, Urban Planning.
+        - LAW: Courts, Justice, Lawyers, Criminal/Civil Law, Supreme Court Decisions.
+        - FEK: Official Legislation, Gazettes (FEK), Circulars, Ministries Decisions.
+        - GEN: Economy, Taxes, Politics (General news).
+        - TRASH: Sports, Gambling, Lifestyle, Showbiz, Irrelevant.
+
+        TASK 2: SUMMARIZE in Greek (max 25 words).
+
+        DATA TO ANALYZE:
+        Title: {title}
+        Content Snippet: {content[:1000] if content else "NO CONTENT AVAILABLE - JUDGE BY TITLE ONLY"}
+
+        Output Format: CATEGORY ||| SUMMARY
         """
         response = model.generate_content(prompt)
         text = response.text.strip()
@@ -96,43 +120,26 @@ def analyze_with_ai(model, title, content):
             parts = text.split("|||")
             return parts[0].strip().upper(), parts[1].strip()
         return "GEN", text
-    except: return "GEN", "AI Busy."
+    except: 
+        return "GEN", "AI Error."
 
 def get_greek_time_str(entry):
-    """
-    Returns string: YYYY-MM-DD HH:MM:SS in Greek Time (UTC+2/3)
-    """
     try:
-        # 1. Try parsing the RSS string directly
         date_str = entry.get('published') or entry.get('pubDate') or entry.get('updated')
         dt = None
-        
         if date_str:
-            try:
-                dt = dateutil.parser.parse(date_str)
+            try: dt = dateutil.parser.parse(date_str)
             except: pass
         
-        # 2. Fallback to struct_time
         if not dt and entry.get('published_parsed'):
             dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), timezone.utc)
 
-        # 3. Convert to Naive Greek Time (Approx UTC+2 for simplicity)
         if dt:
-            # If offset-aware, convert to UTC then add 2 hours
             if dt.tzinfo:
                 dt = dt.astimezone(timezone.utc)
                 dt = dt.replace(tzinfo=None) + timedelta(hours=2)
-            else:
-                # If naive, assume it's source time, usually close to local.
-                # Just formatting it ensures consistency.
-                pass
-            
             return dt.strftime("%Y-%m-%d %H:%M:%S")
-
-    except Exception as e:
-        pass
-
-    # 4. Final Fallback: NOW (Greek Time)
+    except: pass
     return (datetime.utcnow() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
 
 def cleanup_database_safe(worksheet):
@@ -147,7 +154,7 @@ def cleanup_database_safe(worksheet):
     except: pass
 
 def run_scraper():
-    print("🚀 Bot v24 (Greek Time Fix) Started...")
+    print("🚀 Bot v27 (Pure AI & Emojis) Started...")
     model = setup_ai()
     worksheet = setup_db()
     
@@ -166,15 +173,19 @@ def run_scraper():
                 if link in existing_links: continue
                 
                 title = entry.get('title', 'No Title')
-                
-                # USE NEW TIME FUNCTION
                 pub_date = get_greek_time_str(entry)
 
                 try:
                     full_text = scrape_full_text(link)
-                    if len(full_text) < 50: full_text = entry.get('summary', '')
+                    if len(full_text) < 50: full_text = entry.get('summary', '') or entry.get('description', '')
                     
+                    # PURE AI ANALYSIS
                     cat_tag, ai_summary = analyze_with_ai(model, title, full_text)
+                    
+                    if "TRASH" in cat_tag:
+                        print(f"🗑️ Rejected: {title}")
+                        existing_links.add(link)
+                        continue
                     
                     new_row = [str(hash(link)), source_name, title, ai_summary, link, pub_date, cat_tag, fetch_article_image(link)]
                     new_rows.append(new_row)
@@ -194,4 +205,3 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
-
