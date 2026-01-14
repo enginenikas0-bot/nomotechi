@@ -126,7 +126,6 @@ def analyze_content_deep(row):
         tags.add("LAW")
 
     # --- 3. FEK / NOMOTHESIA (FEK) ---
-    # Εδώ μπαίνουν ΟΛΑ τα επίσημα (Νόμοι, ΦΕΚ, Αποφάσεις) ανεξαρτήτως θέματος
     leg_keywords = ["φεκ", "νομος", "κυα", "υπουργικη αποφαση", "εγκυκλιος", "τροπολογια", "προεδρικο διαταγμα", "αποφαση", "διαταξεις", "πολ.", "α.α.δ.ε.", "στε", "συμβουλιο επικρατειας"]
     
     if any(kw in title for kw in leg_keywords) or "FEK" in ai_category: 
@@ -163,6 +162,23 @@ def load_data():
                 clean_records.append(r)
         return clean_records
     except: return []
+
+# --- MISSING FUNCTION ADDED HERE ---
+def get_relative_time(dt):
+    if pd.isnull(dt): return ""
+    now = datetime.now()
+    diff = now - dt
+    if diff.days > 0:
+        return f"{diff.days}ημ. πριν"
+    seconds = diff.total_seconds()
+    if seconds < 60:
+        return "Τώρα"
+    minutes = int(seconds // 60)
+    if minutes < 60:
+        return f"{minutes}λ. πριν"
+    hours = int(minutes // 60)
+    return f"{hours}ώ. πριν"
+# -----------------------------------
 
 def format_smart_date(date_obj):
     if pd.isnull(date_obj): return ""
