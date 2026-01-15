@@ -129,11 +129,11 @@ def scrape_full_text(url, session):
     except: return ""
     return ""
 
-# --- Η ΔΙΚΗ ΣΟΥ ΕΝΙΣΧΥΜΕΝΗ AI ΣΥΝΑΡΤΗΣΗ ---
 def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
         time.sleep(6) 
+        # --- ΤΟ PROMPT ΠΑΡΑΜΕΝΕΙ ΑΚΡΙΒΩΣ ΙΔΙΟ (ΔΕΝ ΑΛΛΑΖΕΙ ΤΙΠΟΤΑ ΕΔΩ) ---
         prompt = f"""
         ROLE: Specialized Intelligence Analyst for NomoTech.gr.
         TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN). 
@@ -170,10 +170,28 @@ def analyze_with_ai(client, title, content, original_summary):
         """
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
-        if "|||" in text:
-            parts = text.split("|||")
+        
+        # --- ΕΔΩ ΕΙΝΑΙ Η ΜΟΝΗ ΑΛΛΑΓΗ (PARSING FIX) ---
+        # 1. Καθαρισμός από "σκουπίδια" που βάζει το AI (π.χ. "Output: ENG")
+        clean_text = text.replace("Category:", "").replace("Output:", "").replace("Tags:", "").strip()
+        
+        if "|||" in clean_text:
+            parts = clean_text.split("|||")
             return parts[0].strip().upper(), parts[1].strip()
-        return fallback_classify(title, ""), text
+            
+        # 2. Fail-safe: Αν το AI ξέχασε το ||| αλλά έγραψε ENG στην αρχή
+        if clean_text.startswith("ENG") or clean_text.startswith("LAW") or clean_text.startswith("FEK"):
+            # Παίρνουμε τα πρώτα γράμματα ως Tag και το υπόλοιπο ως κείμενο
+            # π.χ. "ENG, LAW Αυτό είναι το κείμενο..."
+            split_point = max(clean_text.find(" "), clean_text.find(":"))
+            if split_point > 0:
+                possible_tag = clean_text[:split_point].strip(" .:-").upper()
+                possible_summary = clean_text[split_point:].strip(" .:-")
+                return possible_tag, possible_summary
+
+        # Αν αποτύχουν όλα, fallback
+        return fallback_classify(title, ""), clean_text
+        
     except Exception as e:
         print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
         return fallback_classify(title, ""), original_summary
@@ -236,3 +254,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
