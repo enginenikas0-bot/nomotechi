@@ -22,7 +22,7 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
-# ΔΙΟΡΘΩΜΕΝΑ URLS (Αφαιρέθηκαν τα νεκρά 404, Ενημερώθηκαν τα υπόλοιπα)
+# RSS URLS 
 RSS_FEEDS = {
     "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
     "🏗️ TEE": "https://web.tee.gr/feed/",
@@ -36,9 +36,8 @@ RSS_FEEDS = {
     "⚖️ DSA": "https://www.dsa.gr/rss.xml",
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "📜 Taxheaven": "https://www.taxheaven.gr/rss", 
-    "💰 Capital": "https://www.capital.gr/rss/roi" # Προσπάθεια με νέα headers
+    "💰 Capital": "https://www.capital.gr/rss" 
 }
-# Αφαιρέθηκαν προσωρινά POMIDA, E-Themis, Lawspot, Lawnet λόγω μόνιμου 404/Error
 
 def setup_ai():
     if not GEMINI_API_KEY: return None
@@ -61,9 +60,20 @@ def get_date_obj(entry):
         return dt + timedelta(hours=2)
     except: return datetime.now()
 
+# --- Η ΣΥΝΑΡΤΗΣΗ ΠΟΥ ΕΛΕΙΠΕ (Κρίσιμη για να μην κρασάρει) ---
+def fallback_classify(title, source):
+    """Backup classification logic if AI fails"""
+    t = title.lower()
+    # ENG keywords
+    if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση", "ενεργεια", "ακινητ", "ktimatologio", "τεε", "οικοδομ", "εξοικονομ"]): return "ENG"
+    # LAW keywords
+    if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ", "αρειο", "αστυνομ", "νομικ", "δσα", "στε"]): return "LAW"
+    # FEK keywords
+    if any(k in t for k in ["φεκ", "νομος", "αποφαση", "εγκυκλιος", "τροπολογια", "ααδε"]): return "FEK"
+    return "GEN"
+
 def fetch_article_image(url, session):
     try:
-        # Headers που μιμούνται 100% τον Chrome
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Referer': 'https://www.google.com/',
@@ -72,44 +82,36 @@ def fetch_article_image(url, session):
         response = session.get(url, headers=headers, timeout=15, verify=False)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # 1. FIX: Χρήση attrs={} για να αποφύγουμε το "got multi" error
             img_url = ""
             
-            # OpenGraph
+            # 1. Meta Tags 
             meta = soup.find("meta", attrs={"property": "og:image"})
             if meta: img_url = meta.get("content")
             
-            # Twitter
             if not img_url:
                 meta = soup.find("meta", attrs={"name": "twitter:image"})
                 if meta: img_url = meta.get("content")
 
-            # Schema Itemprop
             if not img_url:
                 meta = soup.find("meta", attrs={"itemprop": "image"})
                 if meta: img_url = meta.get("content")
 
-            # Link Rel
             if not img_url:
                 link = soup.find("link", attrs={"rel": "image_src"})
                 if link: img_url = link.get("href")
             
-            # 2. Deep Scan (Body Search)
+            # 2. Deep Scan
             if not img_url:
-                # Ψάχνουμε σε article, main, ή γενικά div content
                 main_content = soup.find("article") or soup.find("main") or soup.find("div", class_="post-content") or soup.find("div", class_="entry-content")
                 if main_content:
                     first_img = main_content.find("img")
                     if first_img:
                         img_url = first_img.get("src") or first_img.get("data-src")
             
-            # 3. Absolute URL conversion
-            if img_url:
-                return urljoin(url, img_url)
+            # 3. Absolute URL
+            if img_url: return urljoin(url, img_url)
                 
     except Exception as e:
-        # Τυπώνει το error αλλά δεν σταματάει το πρόγραμμα
         print(f"⚠️ Img Error: {str(e)[:20]}") 
     return ""
 
@@ -127,6 +129,7 @@ def scrape_full_text(url, session):
     except: return ""
     return ""
 
+# --- Η ΔΙΚΗ ΣΟΥ ΕΝΙΣΧΥΜΕΝΗ AI ΣΥΝΑΡΤΗΣΗ ---
 def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
@@ -174,7 +177,6 @@ def analyze_with_ai(client, title, content, original_summary):
     except Exception as e:
         print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
         return fallback_classify(title, ""), original_summary
-        
 
 def sort_and_clean_database(worksheet):
     print(f"🧹 Sorting & Cleaning Database ({DB_RETENTION_DAYS} days)...")
@@ -184,15 +186,15 @@ def sort_and_clean_database(worksheet):
         header, data = all_values[0], all_values[1:]
         cutoff = datetime.utcnow() + timedelta(hours=2) - timedelta(days=DB_RETENTION_DAYS)
         cleaned = [row for row in data if datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S") > cutoff]
-        cleaned.sort(key=lambda x: x[5])
+        cleaned.sort(key=lambda x: x[5], reverse=True)
         worksheet.clear()
         worksheet.append_row(header)
         if cleaned: worksheet.append_rows(cleaned)
         print(f"✅ Kept {len(cleaned)} items.")
-    except Exception as e: print(f"⚠️ Error: {e}")
+    except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v2.1.6 (Bug Fixes) Started...")
+    print("🚀 NomoTech Bot v2.1.8 (Final Master) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
@@ -202,7 +204,6 @@ def run_scraper():
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            # Random parameter για να σπάει το cache
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
                 'Accept': 'application/rss+xml, application/xml, */*'
@@ -235,4 +236,3 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
-
