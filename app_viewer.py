@@ -142,8 +142,10 @@ def get_db_client():
     try: return gspread.service_account_from_dict(st.secrets["gcp_service_account"]).open("laws_database")
     except: return None
 
-@st.cache_data(ttl=0) 
+# Πρόταση αλλαγής:
+@st.cache_data(ttl=600) # Ανανέωση cache κάθε 10 λεπτά
 def load_data():
+    # ... ο κώδικάς σου ...
     sh = get_db_client()
     if not sh: return []
     try: 
@@ -471,5 +473,6 @@ with tabs[4]:
             st.cache_data.clear()
             st.rerun()
         st.dataframe(df)
+
 
 
