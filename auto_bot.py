@@ -104,13 +104,13 @@ def fallback_classify(title, source):
     if "michanikos" in s or "b2green" in s or "ypodomes" in s or "tee" in s: return "ENG"
     if "dikastiko" in s or "lawspot" in s or "dsa" in s: return "LAW"
     if "nomothesia" in s or "taxheaven" in s: return "FEK"
-    if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ"]): return "LAW"
-    if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση", "ενεργεια"]): return "ENG"
+    if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ", "αρειο", "εισαγγελ", "αγωγη", "αστυνομ", "μηνυσ", "δικη", "δικογραφ"]): return "LAW"
+    if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση", "ενεργεια", "ακινητ", "οικοδομ", "κτιρι", "κτηρι", "κατασκευ", "μελετ", "μεσιτικ"]): return "ENG"
     if any(k in t for k in ["φεκ", "νομος", "αποφαση", "εγκυκλιος"]): return "FEK"
     return "GEN"
 
 def analyze_with_ai(model, title, content, original_summary):
-    trash_keywords = ["ολυμπιακος", "παοκ", "αεκ", "παναθηναικος", "τζοκερ", "κληρωση", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
+    trash_keywords = ["τζοκερ", "survivor", "masterchef", "ζωδια", "gossip", "super league"]
     if any(kw in title.lower() for kw in trash_keywords):
         return "TRASH", "Rejected"
 
@@ -250,3 +250,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
