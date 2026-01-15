@@ -1,7 +1,7 @@
 import time
 import feedparser
 import gspread
-from google import genai  # Νέα επίσημη βιβλιοθήκη
+from google import genai 
 from bs4 import BeautifulSoup
 import requests
 import random
@@ -15,10 +15,7 @@ import sys
 GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
 GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
 SPREADSHEET_NAME = "laws_database"
-
-# Πόσο πίσω να ελέγχουμε τα RSS (10 ημέρες)
 FETCH_DAYS_LIMIT = 10 
-# Πόσο καιρό να κρατάμε τα άρθρα στη βάση (31 ημέρες)
 DB_RETENTION_DAYS = 31
 
 USER_AGENTS = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36']
@@ -88,9 +85,10 @@ def fallback_classify(title, source):
 def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
-        # Αναμονή για αποφυγή Rate Limit
-        time.sleep(10) 
-        prompt = f"Είσαι αναλυτής. Ταξινόμησε (ENG, LAW, FEK, GEN) και κάνε περίληψη στα Ελληνικά: {title}. Περιεχόμενο: {content[:1500]}. Format: CATEGORY ||| SUMMARY"
+        # Time sleep 6s όπως ζήτησες
+        time.sleep(6) 
+        prompt = f"Role: Senior Analyst. Classify (ENG, LAW, FEK, GEN) and summarize in Greek: {title}. Content: {content[:2000]}. Format: CAT ||| Summary"
+        # Χρήση Gemini 2.0 Flash (Πλέον ξεκλείδωτο)
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
         if "|||" in text:
@@ -98,7 +96,7 @@ def analyze_with_ai(client, title, content, original_summary):
             return parts[0].strip().upper()[:3], parts[1].strip()
         return fallback_classify(title, ""), text
     except Exception as e:
-        print(f"⚠️ AI Skip: {str(e)[:40]}. Using Fallback.")
+        print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
         return fallback_classify(title, ""), original_summary
 
 def sort_and_clean_database(worksheet):
@@ -114,10 +112,10 @@ def sort_and_clean_database(worksheet):
         worksheet.append_row(header)
         if cleaned: worksheet.append_rows(cleaned)
         print(f"✅ Database Processed: Kept {len(cleaned)} items.")
-    except Exception as e: print(f"⚠️ Error cleaning: {e}")
+    except Exception as e: print(f"⚠️ Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v2.0.4 Started...")
+    print("🚀 NomoTech Bot v2.0.5 (Billing Enabled) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
