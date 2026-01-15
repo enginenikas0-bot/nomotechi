@@ -10,7 +10,7 @@ import json
 import os
 import sys
 import urllib3
-from urllib.parse import urljoin # Κρίσιμο για τις εικόνες
+from urllib.parse import urljoin # Απαραίτητο import στην κορυφή του αρχείου
 
 # Απενεργοποίηση προειδοποιήσεων SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -63,25 +63,39 @@ def get_date_obj(entry):
         return dt + timedelta(hours=2)
     except: return datetime.now()
 
+
 def fetch_article_image(url, session):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = session.get(url, headers=headers, timeout=12, verify=False)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            # Αναζήτηση σε πολλαπλά meta tags
+            
+            # 1. Λίστα με όλα τα πιθανά Meta Tags
+            img_url = ""
             img_tag = (soup.find("meta", property="og:image") or 
                        soup.find("meta", name="twitter:image") or 
-                       soup.find("meta", itemprop="image"))
-            img_url = ""
-            if img_tag: img_url = img_tag.get("content", "")
+                       soup.find("meta", itemprop="image") or
+                       soup.find("link", rel="image_src"))
+            
+            if img_tag:
+                img_url = img_tag.get("content") or img_tag.get("href")
+            
+            # 2. Deep Scan αν το meta tag λείπει
             if not img_url:
-                article = soup.find("article")
-                if article:
-                    first_img = article.find("img")
-                    if first_img: img_url = first_img.get("src", "")
-            if img_url: return urljoin(url, img_url) # Διόρθωση relative URLs
-    except: pass
+                # Ψάχνουμε την πρώτη εικόνα μέσα στο κύριο άρθρο
+                main_content = soup.find("article") or soup.find("main") or soup.find("div", class_="content")
+                if main_content:
+                    first_img = main_content.find("img")
+                    if first_img:
+                        img_url = first_img.get("src") or first_img.get("data-src") # data-src για lazy loading sites
+            
+            # 3. Μετατροπή σε πλήρες URL αν είναι relative
+            if img_url:
+                return urljoin(url, img_url)
+                
+    except Exception as e:
+        print(f"⚠️ Img Error: {str(e)[:20]}")
     return ""
 
 def scrape_full_text(url, session):
@@ -162,3 +176,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
