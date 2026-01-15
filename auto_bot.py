@@ -162,6 +162,8 @@ def analyze_with_ai(client, title, content, original_summary):
         - If an article mentions a "Court Ruling on Arbitrary Buildings" (ΣτΕ για Αυθαίρετα) -> TAG: ENG, LAW.
         - If an article is about "New Tax Law for Lawyers" -> TAG: LAW, FEK.
         - If an article is about "Golden Visa changes" -> TAG: ENG, FEK.
+        - OUTPUT LANGUAGE: GREEK ONLY (ΕΛΛΗΝΙΚΑ). Do NOT write the summary in English.
+        - Format: CATEGORIES ||| SUMMARY
         
         SUMMARY: Professional Greek, 120-150 words. Focus on the impact for professionals.
         
@@ -173,7 +175,7 @@ def analyze_with_ai(client, title, content, original_summary):
         
         # --- ΕΔΩ ΕΙΝΑΙ Η ΜΟΝΗ ΑΛΛΑΓΗ (PARSING FIX) ---
         # 1. Καθαρισμός από "σκουπίδια" που βάζει το AI (π.χ. "Output: ENG")
-        clean_text = text.replace("Category:", "").replace("Output:", "").replace("Tags:", "").strip()
+        clean_text = text.replace("CATEGORIES:", "").replace("Category:", "").replace("Output:", "").replace("Tags:", "").strip()
         
         if "|||" in clean_text:
             parts = clean_text.split("|||")
@@ -254,4 +256,5 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
 
