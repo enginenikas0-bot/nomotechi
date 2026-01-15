@@ -63,13 +63,19 @@ def get_date_obj(entry):
 
 def scrape_full_text(url):
     try:
-        headers = {'User-Agent': random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=10)
+        # Προσθήκη τυχαίου User-Agent για να μην μας μπλοκάρουν
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
+        # Προσθήκη verify=False για να ξεπερνάμε προβλήματα SSL
+        response = requests.get(url, headers=headers, timeout=15, verify=False) 
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "header", "aside"]): tag.extract()
             return soup.get_text(separator=" ").strip()[:8000]
-    except: return ""
+    except Exception as e:
+        print(f"❌ Scrape Error: {str(e)[:30]}")
     return ""
 
 def fallback_classify(title, source):
@@ -154,11 +160,14 @@ def run_scraper():
     except: existing_links = set()
     new_rows, current_time = [], datetime.utcnow() + timedelta(hours=2)
     
-    for source_name, feed_url in RSS_FEEDS.items():
-        print(f"📡 {source_name}...", end=" ", flush=True)
-        try:
-            feed = feedparser.parse(feed_url)
-            count = 0
+   # Μέσα στο run_scraper, άλλαξε τον τρόπο που διαβάζει το RSS:
+for source_name, feed_url in RSS_FEEDS.items():
+    print(f"📡 {source_name}...", end=" ", flush=True)
+    try:
+        # Χρήση requests για το RSS αντί για απευθείας feedparser
+        resp = requests.get(feed_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15, verify=False)
+        feed = feedparser.parse(resp.content)
+        # ... το υπόλοιπο loop παραμένει ίδιο ...
             for entry in feed.entries[:15]:
                 link = entry.get('link', '')
                 if link in existing_links or (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
@@ -175,4 +184,5 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
 
