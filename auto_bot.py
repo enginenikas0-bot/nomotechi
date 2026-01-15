@@ -128,32 +128,68 @@ def scrape_full_text(url, session):
     return ""
 
 def analyze_with_ai(client, title, content, original_summary):
-    if not client: return "GEN", original_summary
+    if not client: return fallback_classify(title, ""), original_summary
     try:
         time.sleep(6) 
-        prompt = f"Role: Senior Industry Analyst. Classify (ENG, LAW, FEK, GEN) and summarize in Greek: {title}. Content: {content[:2500]}. Format: CAT ||| Summary"
+        prompt = f"""
+        ROLE: Specialized Intelligence Analyst for NomoTech.gr.
+        TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN). 
+        STRICT PRIORITY: Always include 'ENG' for Property, Housing Market, Construction, or Engineering.
+        
+        TAXONOMY & KEYWORDS (EXPANDED):
+        
+        1. [ENG] - ENGINEERING, REAL ESTATE & CONSTRUCTION:
+           - Real Estate: Αγορά Ακινήτων, Αντικειμενικές Αξίες, ΕΝΦΙΑ, Μεταβιβάσεις, Συμβόλαια, Golden Visa, Airbnb/Βραχυχρόνια, Πλειστηριασμοί Ακινήτων, Στεγαστική Πολιτική, Ενοίκια.
+           - Urban Planning (Πολεοδομία): Εκτός Σχεδίου Δόμηση, Χρήσεις Γης, Ρυμοτομικό, Δασικοί Χάρτες, Κτηματολόγιο (Cadastre), Κτηματογράφηση.
+           - Construction/Technical: Οικοδομική Άδεια, ΝΟΚ (Νέος Οικοδομικός Κανονισμός), ΓΟΚ, Αυθαίρετα (Τακτοποίηση), Ηλεκτρονική Ταυτότητα Κτιρίου (ΗΤΚ), Εξοικονομώ, Ενεργειακή Αναβάθμιση (ΠΕΑ), ΑΠΕ (Φωτοβολταϊκά).
+           - Infrastructure: Δημόσια Έργα, Διαγωνισμοί, ΣΔΙΤ, Αναδοχές, Υποδομές (Μετρό, Δρόμοι), Εργοληπτικά Πτυχία.
+           - Professional: ΤΕΕ (Τεχνικό Επιμελητήριο), Μηχανικοί, Αρχιτέκτονες, Εργολήπτες.
+
+        2. [LAW] - LEGAL, JUSTICE & COURTS:
+           - Courts (Δικαστήρια): Συμβούλιο της Επικρατείας (ΣτΕ), Άρειος Πάγος, Ελεγκτικό Συνέδριο, Διοικητικό Εφετείο, Πρωτοδικείο, Ειρηνοδικείο.
+           - Jurisprudence (Νομολογία): Δικαστικές Αποφάσεις, Αναίρεση, Έφεση, Αγωγή, Ασφαλιστικά Μέτρα, Προσωρινή Διαταγή.
+           - Areas of Law: Αστικό Δίκαιο (Κληρονομικά, Οικογενειακό), Ποινικό, Εργατικό (Αποζημιώσεις, Απολύσεις), Εμπορικό (Πτωχεύσεις, Εξυγίανση, Κόκκινα Δάνεια).
+           - Professional: Δικηγόροι, Δικηγορικός Σύλλογος (ΔΣΑ, ΔΣΘ), Συμβολαιογράφοι, Δικαστικοί Επιμελητές, Ολομέλεια Δικηγορικών Συλλόγων.
+
+        3. [FEK] - LEGISLATION & GAZETTE:
+           - Official Acts: ΦΕΚ (Government Gazette), Νόμος (Law), Προεδρικό Διάταγμα (ΠΔ), Υπουργική Απόφαση (ΚΥΑ/ΥΑ), Εγκύκλιος, Τροπολογία, Πολυνομοσχέδιο.
+           - Authorities: ΑΑΔΕ (Tax Authority), Υπουργείο Οικονομικών, Υπουργείο Περιβάλλοντος (ΥΠΕΝ), Βουλή.
+
+        INSTRUCTIONS:
+        - If an article mentions a "Court Ruling on Arbitrary Buildings" (ΣτΕ για Αυθαίρετα) -> TAG: ENG, LAW.
+        - If an article is about "New Tax Law for Lawyers" -> TAG: LAW, FEK.
+        - If an article is about "Golden Visa changes" -> TAG: ENG, FEK.
+        
+        SUMMARY: Professional Greek, 120-150 words. Focus on the impact for professionals.
+        
+        Title: {title} | Content: {content[:2500]}
+        OUTPUT: CATEGORIES (comma-separated) ||| Summary
+        """
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
         if "|||" in text:
             parts = text.split("|||")
             return parts[0].strip().upper(), parts[1].strip()
-        return "GEN", text
-    except: return "GEN", original_summary
+        return fallback_classify(title, ""), text
+    except Exception as e:
+        print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
+        return fallback_classify(title, ""), original_summary
+        
 
 def sort_and_clean_database(worksheet):
-    print(f"🧹 Sorting & Cleaning Database...")
+    print(f"🧹 Sorting & Cleaning Database ({DB_RETENTION_DAYS} days)...")
     try:
         all_values = worksheet.get_all_values()
         if len(all_values) < 2: return 
         header, data = all_values[0], all_values[1:]
-        cutoff = datetime.now() - timedelta(days=DB_RETENTION_DAYS)
+        cutoff = datetime.utcnow() + timedelta(hours=2) - timedelta(days=DB_RETENTION_DAYS)
         cleaned = [row for row in data if datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S") > cutoff]
-        cleaned.sort(key=lambda x: x[5], reverse=True)
+        cleaned.sort(key=lambda x: x[5])
         worksheet.clear()
         worksheet.append_row(header)
         if cleaned: worksheet.append_rows(cleaned)
-        print(f"✅ Database Processed.")
-    except Exception as e: print(f"⚠️ Clean Error: {e}")
+        print(f"✅ Kept {len(cleaned)} items.")
+    except Exception as e: print(f"⚠️ Error: {e}")
 
 def run_scraper():
     print("🚀 NomoTech Bot v2.1.6 (Bug Fixes) Started...")
@@ -199,3 +235,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
