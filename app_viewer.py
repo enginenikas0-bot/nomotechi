@@ -189,13 +189,19 @@ IMAGE_POOL = {
 }
 
 def get_image(row):
+    # Προσπάθεια ανάγνωσης από τη στήλη της βάσης
+    img = str(row.get('image_url', '')).strip()
+    
+    # Έλεγχος αν είναι έγκυρο URL
+    if img.startswith('http') and len(img) > 10: 
+        return img
+        
+    # Αν δεν υπάρχει εικόνα, χρήση fallback βάσει tags
     tags = row.get('smart_tags', [])
-    img = row.get('image_url', '')
-    if str(img).startswith('http'): return img
     if "ENG" in tags: return IMAGE_POOL["ENG"][0]
     if "LAW" in tags: return IMAGE_POOL["LAW"][0]
     return IMAGE_POOL["GENERAL"][0]
-
+    
 def render_badges(row):
     tags = row.get('smart_tags', [])
     badges_html = ""
@@ -465,4 +471,5 @@ with tabs[4]:
             st.cache_data.clear()
             st.rerun()
         st.dataframe(df)
+
 
