@@ -63,6 +63,17 @@ def get_date_obj(entry):
         return dt + timedelta(hours=2)
     except: return datetime.utcnow() + timedelta(hours=2)
 
+def fetch_article_image(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=10, verify=False)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            og_image = soup.find("meta", property="og:image")
+            if og_image and og_image.get("content"): return og_image["content"]
+    except: return ""
+    return ""
+
 def scrape_full_text(url):
     try:
         headers = {
@@ -74,8 +85,7 @@ def scrape_full_text(url):
             soup = BeautifulSoup(response.content, 'html.parser')
             for tag in soup(["script", "style", "nav", "footer", "header", "aside"]): tag.extract()
             return soup.get_text(separator=" ").strip()[:8000]
-    except Exception as e:
-        print(f"❌ Scrape Error: {str(e)[:30]}")
+    except: return ""
     return ""
 
 def fallback_classify(title, source):
@@ -93,18 +103,21 @@ def analyze_with_ai(client, title, content, original_summary):
     try:
         time.sleep(6) 
         prompt = f"""
-        ROLE: Specialized Intelligence Analyst for NomoTech.gr.
-        TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN). 
-        STRICT PRIORITY: Always include 'ENG' for Property, Housing Market, Construction, or Engineering.
+        ROLE: Specialized Intelligence Analyst for NomoTech.gr. 
+        TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN).
         
-        TAXONOMY & KEYWORDS:
-        - ENG: Building Permits, Cadastre (Κτηματολόγιο), Real Estate Market, Urban Planning, ΤΕΕ, NOK/GOK.
-        - LAW: Court Rulings, Supreme Court (Άρειος Πάγος), Council of State (ΣτΕ), Litigation, Justice system.
-        - FEK: New Laws, Ministerial Decisions, Circulars (Εγκύκλιοι), Official Gazette.
+        KEYWORDS:
+        - ENG: Building Permits, Cadastre, Real Estate, Construction, Energy, ΠΕΑ, ΤΕΕ, ΝΟΚ/ΓΟΚ.
+        - LAW: Court Rulings, Supreme Court (Άρειος Πάγος), Council of State (ΣτΕ), Litigation, Lawyers.
+        - FEK: New Laws, Ministerial Decisions, Circulars (Εγκύκλιοι), Gazette.
         
-        SUMMARY: Professional Greek, 120-150 words.
-        Title: {title} | Content: {content[:2500]}
-        OUTPUT: CATEGORIES (comma-separated) ||| Summary
+        STRICT RULES:
+        1. ALWAYS include 'ENG' for Real Estate, Property market, Housing, or Construction projects.
+        2. MULTITAGGING: Use comma-separated tags (e.g., ENG, LAW) if the topic overlaps.
+        3. Professional Greek summary, 120-150 words.
+        
+        DATA: Title: {title} | Content: {content[:2500]}
+        OUTPUT FORMAT: CATEGORIES ||| Summary
         """
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
@@ -113,7 +126,7 @@ def analyze_with_ai(client, title, content, original_summary):
             return parts[0].strip().upper(), parts[1].strip()
         return fallback_classify(title, ""), text
     except Exception as e:
-        print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
+        print(f"⚠️ AI Error: {str(e)[:40]}. Using Fallback.")
         return fallback_classify(title, ""), original_summary
 
 def sort_and_clean_database(worksheet):
@@ -129,10 +142,10 @@ def sort_and_clean_database(worksheet):
         worksheet.append_row(header)
         if cleaned: worksheet.append_rows(cleaned)
         print(f"✅ Kept {len(cleaned)} items.")
-    except Exception as e: print(f"⚠️ Error: {e}")
+    except: pass
 
 def run_scraper():
-    print("🚀 NomoTech Bot v2.0.8 (Final High-Flow) Started...")
+    print("🚀 NomoTech Bot v2.0.9 (Full Edition) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
@@ -141,24 +154,23 @@ def run_scraper():
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            # Διόρθωση ανάγνωσης RSS με headers
             resp = requests.get(feed_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15, verify=False)
             feed = feedparser.parse(resp.content)
             count = 0
-            # Αυξημένο όριο σε 40 entries
+            # High-Flow: Ελέγχουμε 40 άρθρα
             for entry in feed.entries[:40]:
                 link = entry.get('link', '')
-                if link in existing_links or (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: 
-                    continue
+                if link in existing_links or (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
                 title = entry.get('title', 'No Title')
                 full_text = scrape_full_text(link) or title
                 cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
-                new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, ""])
+                # Image Scraping
+                img_url = fetch_article_image(link)
+                new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
                 existing_links.add(link)
                 count += 1
             print(f"✅ {count}")
         except: print("❌")
-        
     if new_rows: worksheet.append_rows(new_rows)
     sort_and_clean_database(worksheet)
 
