@@ -133,7 +133,7 @@ def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
         time.sleep(6) 
-        # --- ΤΟ PROMPT ΠΑΡΑΜΕΝΕΙ ΑΚΡΙΒΩΣ ΙΔΙΟ (ΔΕΝ ΑΛΛΑΖΕΙ ΤΙΠΟΤΑ ΕΔΩ) ---
+        # --- ΤΟ PROMPT ΜΕ ΤΗΝ ΠΡΟΣΘΗΚΗ ΓΙΑ ΤΑ ΕΛΛΗΝΙΚΑ ---
         prompt = f"""
         ROLE: Specialized Intelligence Analyst for NomoTech.gr.
         TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN). 
@@ -173,8 +173,7 @@ def analyze_with_ai(client, title, content, original_summary):
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
         
-        # --- ΕΔΩ ΕΙΝΑΙ Η ΜΟΝΗ ΑΛΛΑΓΗ (PARSING FIX) ---
-        # 1. Καθαρισμός από "σκουπίδια" που βάζει το AI (π.χ. "Output: ENG")
+        # --- ΕΔΩ ΕΙΝΑΙ Η ΚΡΙΣΙΜΗ ΑΛΛΑΓΗ (CATEGORIES FIX) ---
         clean_text = text.replace("CATEGORIES:", "").replace("Category:", "").replace("Output:", "").replace("Tags:", "").strip()
         
         if "|||" in clean_text:
@@ -184,7 +183,6 @@ def analyze_with_ai(client, title, content, original_summary):
         # 2. Fail-safe: Αν το AI ξέχασε το ||| αλλά έγραψε ENG στην αρχή
         if clean_text.startswith("ENG") or clean_text.startswith("LAW") or clean_text.startswith("FEK"):
             # Παίρνουμε τα πρώτα γράμματα ως Tag και το υπόλοιπο ως κείμενο
-            # π.χ. "ENG, LAW Αυτό είναι το κείμενο..."
             split_point = max(clean_text.find(" "), clean_text.find(":"))
             if split_point > 0:
                 possible_tag = clean_text[:split_point].strip(" .:-").upper()
@@ -256,5 +254,3 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
-
-
