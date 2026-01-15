@@ -112,18 +112,18 @@ def analyze_content_deep(row):
     
     tags = set()
 
-    trash_keywords = ["ολυμπιακος", "παναθηναικος", "αεκ", "παοκ", "αρης", "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "κληρωση", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
+    trash_keywords = ["super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
     if any(kw in title for kw in trash_keywords): return ["TRASH"]
 
     # PURE AI CLASSIFICATION + TEXT RECOVERY
-    # Αν το AI έβαλε "Category: ENG" μέσα στο κείμενο, το πιάνουμε εδώ!
-    if "ENG" in ai_category or "CATEGORY: ENG" in content_body or "TAG: ENG" in content_body: 
+    # --- ΑΛΛΑΓΗ ΕΔΩ: Προστέθηκε το "CATEGORIES: ENG" (πληθυντικός) ---
+    if "ENG" in ai_category or "CATEGORY: ENG" in content_body or "CATEGORIES: ENG" in content_body or "TAG: ENG" in content_body: 
         tags.add("ENG")
 
-    if "LAW" in ai_category or "CATEGORY: LAW" in content_body or "TAG: LAW" in content_body: 
+    if "LAW" in ai_category or "CATEGORY: LAW" in content_body or "CATEGORIES: LAW" in content_body or "TAG: LAW" in content_body: 
         tags.add("LAW")
     
-    if "FEK" in ai_category or "CATEGORY: FEK" in content_body: 
+    if "FEK" in ai_category or "CATEGORY: FEK" in content_body or "CATEGORIES: FEK" in content_body: 
         tags.add("FEK")
     
     # Keyword Fallback (Ασφάλεια)
@@ -481,3 +481,4 @@ with tabs[4]:
             st.cache_data.clear()
             st.rerun()
         st.dataframe(df)
+
