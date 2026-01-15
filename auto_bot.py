@@ -154,25 +154,53 @@ def run_scraper():
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            resp = requests.get(feed_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15, verify=False)
+            # Δημιουργία Session για να διατηρούμε τα cookies (βοηθάει πολύ σε Michanikos & Capital)
+            session = requests.Session()
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+            }
+            
+            # Λήψη του περιεχομένου με το Session
+            resp = session.get(feed_url, headers=headers, timeout=20, verify=False)
+            
+            # Έλεγχος αν το site μας έδωσε δεδομένα
+            if resp.status_code != 200:
+                print(f"❌ HTTP {resp.status_code}")
+                continue
+                
             feed = feedparser.parse(resp.content)
+            
+            # Αν το feed είναι άδειο, δοκίμασε εναλλακτικό parsing
+            if not feed.entries:
+                print("⚠️ Empty Feed")
+                continue
+
             count = 0
-            # High-Flow: Ελέγχουμε 40 άρθρα
             for entry in feed.entries[:40]:
                 link = entry.get('link', '')
-                if link in existing_links or (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
+                if not link or link in existing_links: continue
+                
+                # Έλεγχος ημερομηνίας
+                article_date = get_date_obj(entry)
+                if (current_time - article_date).days > FETCH_DAYS_LIMIT: continue
+                
                 title = entry.get('title', 'No Title')
+                
+                # Scraping με το ίδιο session για να φαινόμαστε ως ο ίδιος χρήστης
                 full_text = scrape_full_text(link) or title
                 cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
-                # Image Scraping
                 img_url = fetch_article_image(link)
-                new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
+                
+                new_rows.append([str(hash(link)), source_name, title, ai_article, link, article_date.strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
                 existing_links.add(link)
                 count += 1
             print(f"✅ {count}")
-        except: print("❌")
+        except Exception as e:
+            print(f"❌ Error: {str(e)[:20]}")
     if new_rows: worksheet.append_rows(new_rows)
     sort_and_clean_database(worksheet)
 
 if __name__ == "__main__":
     run_scraper()
+
