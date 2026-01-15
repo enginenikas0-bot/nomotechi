@@ -10,6 +10,10 @@ import dateutil.parser
 import json
 import os
 import sys
+import urllib3
+
+# Απενεργοποίηση προειδοποιήσεων SSL για καθαρό log
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- 1. CONFIGURATION ---
 GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
@@ -17,8 +21,6 @@ GCP_CREDENTIALS = os.environ.get("GCP_CREDENTIALS")
 SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 10 
 DB_RETENTION_DAYS = 31
-
-USER_AGENTS = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36']
 
 RSS_FEEDS = {
     "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
@@ -63,12 +65,10 @@ def get_date_obj(entry):
 
 def scrape_full_text(url):
     try:
-        # Προσθήκη τυχαίου User-Agent για να μην μας μπλοκάρουν
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         }
-        # Προσθήκη verify=False για να ξεπερνάμε προβλήματα SSL
         response = requests.get(url, headers=headers, timeout=15, verify=False) 
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -91,53 +91,31 @@ def fallback_classify(title, source):
 def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
-        # Διατήρηση της σταθερότητας με 6s delay
         time.sleep(6) 
-        
         prompt = f"""
-        ROLE: Specialized Intelligence Analyst for NomoTech.gr. Your expertise lies in distilling complex Greek Engineering, Legal, and Legislative data for professionals.
-
-        TASK: Analyze the provided article and assign ALL applicable CATEGORIES. Accuracy is critical for professional decision-making.
-
+        ROLE: Specialized Intelligence Analyst for NomoTech.gr.
+        TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN). 
+        STRICT PRIORITY: Always include 'ENG' for Property, Housing Market, Construction, or Engineering.
+        
         TAXONOMY & KEYWORDS:
-        - ENG (Engineering & Real Estate): Focus on Building Permits (Άδειες Δόμησης), Cadastre (Κτηματολόγιο), Energy Performance (Εξοικονομώ, ΠΕΑ), Real Estate Market Trends, Construction Costs, Infrastructure Projects, Urban Planning (Πολεοδομία), Civil Engineering technicalities, Engineering, Construction, Real Estate prices/trends, Energy, Technical projects, Immovable asset, ΤΕΕ, NOK (ΝΟΚ), GOK (ΓΟΚ), Technical Issues.
-        - LAW (Legal & Jurisprudence): Focus on Court Rulings (Αποφάσεις Δικαστηρίων), Supreme Court (Άρειος Πάγος), Council of State (ΣτΕ), Litigation (Αγωγές), Legal Procedures, Lawyer Professional News, Penal/Civil/Administrative Law updates, Justice system, Court rulings (Areios Pagos, StE), Lawyer news.
-        - FEK (Government Gazette & Legislation): Focus on New Laws (Νόμοι), Ministerial Decisions (Υπουργικές Αποφάσεις), Circulars (Εγκύκλιοι), Official Gazette publications, Tax Legislation updates.
-        - GEN (General Economy): Macro-economics, general business news, or social news with NO specific technical, legal, or legislative impact.
-
-        MULTITAGGING PROTOCOL:
-        * If an article discusses Real Estate prices AND new legislation, use: ENG, FEK.
-        * If an article discusses a Court ruling regarding a construction project, use: ENG, LAW.
-        * If an article discusses a new Law about Lawyers, use: LAW, FEK.
-        * ALWAYS include 'ENG' for anything related to Property, Housing/Building Market, Urban planning, Cadastre (Κτηματολόγιο), Real estate, Construction, or engineering.
-
-        SUMMARY REQUIREMENTS:
-        * Language: Professional Greek (Formal tone).
-        * Content: Focus on "Who, What, When, and the Professional Impact".
-        * Length: 120-150 words.
-
-        ARTICLE DATA:
-        Title: {title}
-        Content: {content[:2500]}
-
-        OUTPUT FORMAT: CATEGORIES (comma-separated) ||| Summary
+        - ENG: Building Permits, Cadastre (Κτηματολόγιο), Real Estate Market, Urban Planning, ΤΕΕ, NOK/GOK.
+        - LAW: Court Rulings, Supreme Court (Άρειος Πάγος), Council of State (ΣτΕ), Litigation, Justice system.
+        - FEK: New Laws, Ministerial Decisions, Circulars (Εγκύκλιοι), Official Gazette.
+        
+        SUMMARY: Professional Greek, 120-150 words.
+        Title: {title} | Content: {content[:2500]}
+        OUTPUT: CATEGORIES (comma-separated) ||| Summary
         """
-
-        # Εκτέλεση με Gemini 2.0 Flash
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
-        
         if "|||" in text:
             parts = text.split("|||")
-            tags = parts[0].strip().upper() 
-            summary = parts[1].strip()
-            return tags, summary
-            
+            return parts[0].strip().upper(), parts[1].strip()
         return fallback_classify(title, ""), text
     except Exception as e:
         print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
         return fallback_classify(title, ""), original_summary
-        
+
 def sort_and_clean_database(worksheet):
     print(f"🧹 Sorting & Cleaning Database ({DB_RETENTION_DAYS} days)...")
     try:
@@ -150,27 +128,28 @@ def sort_and_clean_database(worksheet):
         worksheet.clear()
         worksheet.append_row(header)
         if cleaned: worksheet.append_rows(cleaned)
-        print(f"✅ Database Processed: Kept {len(cleaned)} items.")
+        print(f"✅ Kept {len(cleaned)} items.")
     except Exception as e: print(f"⚠️ Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v2.0.5 (Billing Enabled) Started...")
+    print("🚀 NomoTech Bot v2.0.8 (Final High-Flow) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
     new_rows, current_time = [], datetime.utcnow() + timedelta(hours=2)
     
-   # Μέσα στο run_scraper, άλλαξε τον τρόπο που διαβάζει το RSS:
-for source_name, feed_url in RSS_FEEDS.items():
-    print(f"📡 {source_name}...", end=" ", flush=True)
-    try:
-        # Χρήση requests για το RSS αντί για απευθείας feedparser
-        resp = requests.get(feed_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15, verify=False)
-        feed = feedparser.parse(resp.content)
-        # ... το υπόλοιπο loop παραμένει ίδιο ...
-            for entry in feed.entries[:15]:
+    for source_name, feed_url in RSS_FEEDS.items():
+        print(f"📡 {source_name}...", end=" ", flush=True)
+        try:
+            # Διόρθωση ανάγνωσης RSS με headers
+            resp = requests.get(feed_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15, verify=False)
+            feed = feedparser.parse(resp.content)
+            count = 0
+            # Αυξημένο όριο σε 40 entries
+            for entry in feed.entries[:40]:
                 link = entry.get('link', '')
-                if link in existing_links or (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
+                if link in existing_links or (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: 
+                    continue
                 title = entry.get('title', 'No Title')
                 full_text = scrape_full_text(link) or title
                 cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
@@ -179,10 +158,9 @@ for source_name, feed_url in RSS_FEEDS.items():
                 count += 1
             print(f"✅ {count}")
         except: print("❌")
+        
     if new_rows: worksheet.append_rows(new_rows)
     sort_and_clean_database(worksheet)
 
 if __name__ == "__main__":
     run_scraper()
-
-
