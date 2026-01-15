@@ -10,7 +10,7 @@ import json
 import os
 import sys
 import urllib3
-from urllib.parse import urljoin # Απαραίτητο import στην κορυφή του αρχείου
+from urllib.parse import urljoin 
 
 # Απενεργοποίηση προειδοποιήσεων SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -22,25 +22,23 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
+# ΔΙΟΡΘΩΜΕΝΑ URLS (Αφαιρέθηκαν τα νεκρά 404, Ενημερώθηκαν τα υπόλοιπα)
 RSS_FEEDS = {
     "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🏗️ B2Green": "https://news.b2green.gr/feed",
-    "🏗️ POMIDA": "https://www.pomida.gr/feed/",
     "🏗️ PEDMEDE": "https://pedmede.gr/feed/",
     "🏗️ ELINYAE": "https://www.elinyae.gr/rss.xml",
-    "⚖️ E-Themis": "https://www.ethemis.gr/feed/", 
     "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ Dikastiko Rep": "https://www.dikastikoreportaz.gr/feed/",
-    "⚖️ Lawspot": "https://www.lawspot.gr/rss",
     "⚖️ Syntagma": "https://www.syntagmawatch.gr/feed/",
-    "⚖️ LawNet": "https://www.lawnet.gr/feed/",
     "⚖️ DSA": "https://www.dsa.gr/rss.xml",
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
     "📜 Taxheaven": "https://www.taxheaven.gr/rss", 
-    "💰 Capital": "https://www.capital.gr/rss"
+    "💰 Capital": "https://www.capital.gr/rss/roi" # Προσπάθεια με νέα headers
 }
+# Αφαιρέθηκαν προσωρινά POMIDA, E-Themis, Lawspot, Lawnet λόγω μόνιμου 404/Error
 
 def setup_ai():
     if not GEMINI_API_KEY: return None
@@ -63,44 +61,64 @@ def get_date_obj(entry):
         return dt + timedelta(hours=2)
     except: return datetime.now()
 
-
 def fetch_article_image(url, session):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        response = session.get(url, headers=headers, timeout=12, verify=False)
+        # Headers που μιμούνται 100% τον Chrome
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Referer': 'https://www.google.com/',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
+        response = session.get(url, headers=headers, timeout=15, verify=False)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # 1. Λίστα με όλα τα πιθανά Meta Tags
+            # 1. FIX: Χρήση attrs={} για να αποφύγουμε το "got multi" error
             img_url = ""
-            img_tag = (soup.find("meta", property="og:image") or 
-                       soup.find("meta", name="twitter:image") or 
-                       soup.find("meta", itemprop="image") or
-                       soup.find("link", rel="image_src"))
             
-            if img_tag:
-                img_url = img_tag.get("content") or img_tag.get("href")
+            # OpenGraph
+            meta = soup.find("meta", attrs={"property": "og:image"})
+            if meta: img_url = meta.get("content")
             
-            # 2. Deep Scan αν το meta tag λείπει
+            # Twitter
             if not img_url:
-                # Ψάχνουμε την πρώτη εικόνα μέσα στο κύριο άρθρο
-                main_content = soup.find("article") or soup.find("main") or soup.find("div", class_="content")
+                meta = soup.find("meta", attrs={"name": "twitter:image"})
+                if meta: img_url = meta.get("content")
+
+            # Schema Itemprop
+            if not img_url:
+                meta = soup.find("meta", attrs={"itemprop": "image"})
+                if meta: img_url = meta.get("content")
+
+            # Link Rel
+            if not img_url:
+                link = soup.find("link", attrs={"rel": "image_src"})
+                if link: img_url = link.get("href")
+            
+            # 2. Deep Scan (Body Search)
+            if not img_url:
+                # Ψάχνουμε σε article, main, ή γενικά div content
+                main_content = soup.find("article") or soup.find("main") or soup.find("div", class_="post-content") or soup.find("div", class_="entry-content")
                 if main_content:
                     first_img = main_content.find("img")
                     if first_img:
-                        img_url = first_img.get("src") or first_img.get("data-src") # data-src για lazy loading sites
+                        img_url = first_img.get("src") or first_img.get("data-src")
             
-            # 3. Μετατροπή σε πλήρες URL αν είναι relative
+            # 3. Absolute URL conversion
             if img_url:
                 return urljoin(url, img_url)
                 
     except Exception as e:
-        print(f"⚠️ Img Error: {str(e)[:20]}")
+        # Τυπώνει το error αλλά δεν σταματάει το πρόγραμμα
+        print(f"⚠️ Img Error: {str(e)[:20]}") 
     return ""
 
 def scrape_full_text(url, session):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Referer': 'https://www.google.com/'
+        }
         response = session.get(url, headers=headers, timeout=15, verify=False) 
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -130,7 +148,7 @@ def sort_and_clean_database(worksheet):
         header, data = all_values[0], all_values[1:]
         cutoff = datetime.now() - timedelta(days=DB_RETENTION_DAYS)
         cleaned = [row for row in data if datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S") > cutoff]
-        cleaned.sort(key=lambda x: x[5], reverse=True) # Νεότερα πρώτα
+        cleaned.sort(key=lambda x: x[5], reverse=True)
         worksheet.clear()
         worksheet.append_row(header)
         if cleaned: worksheet.append_rows(cleaned)
@@ -138,7 +156,7 @@ def sort_and_clean_database(worksheet):
     except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v2.1.4 (Deep Image Scan) Started...")
+    print("🚀 NomoTech Bot v2.1.6 (Bug Fixes) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
@@ -148,8 +166,13 @@ def run_scraper():
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/rss+xml, application/xml, */*'}
+            # Random parameter για να σπάει το cache
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'application/rss+xml, application/xml, */*'
+            }
             resp = session.get(f"{feed_url}?v={random.randint(1,999)}", headers=headers, timeout=25, verify=False)
+            
             if resp.status_code != 200:
                 print(f"❌ HTTP {resp.status_code}"); continue
                 
@@ -169,11 +192,10 @@ def run_scraper():
                 existing_links.add(link)
                 count += 1
             print(f"✅ {count}")
-        except: print("❌ Error")
+        except Exception as e: print(f"❌ Error: {str(e)[:15]}")
         
     if new_rows: worksheet.append_rows(new_rows)
     sort_and_clean_database(worksheet)
 
 if __name__ == "__main__":
     run_scraper()
-
