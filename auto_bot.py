@@ -85,20 +85,53 @@ def fallback_classify(title, source):
 def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
-        # Time sleep 6s όπως ζήτησες
+        # Διατήρηση της σταθερότητας με 6s delay
         time.sleep(6) 
-        prompt = f"Role: Senior Analyst. Classify (ENG, LAW, FEK, GEN) and summarize in Greek: {title}. Content: {content[:2000]}. Format: CAT ||| Summary"
-        # Χρήση Gemini 2.0 Flash (Πλέον ξεκλείδωτο)
+        
+        prompt = f"""
+        ROLE: Specialized Intelligence Analyst for NomoTech.gr. Your expertise lies in distilling complex Greek Engineering, Legal, and Legislative data for professionals.
+
+        TASK: Analyze the provided article and assign ALL applicable CATEGORIES. Accuracy is critical for professional decision-making.
+
+        TAXONOMY & KEYWORDS:
+        - ENG (Engineering & Real Estate): Focus on Building Permits (Άδειες Δόμησης), Cadastre (Κτηματολόγιο), Energy Performance (Εξοικονομώ, ΠΕΑ), Real Estate Market Trends, Construction Costs, Infrastructure Projects, Urban Planning (Πολεοδομία), Civil Engineering technicalities, Engineering, Construction, Real Estate prices/trends, Energy, Technical projects, Immovable asset, ΤΕΕ, NOK (ΝΟΚ), GOK (ΓΟΚ), Technical Issues.
+        - LAW (Legal & Jurisprudence): Focus on Court Rulings (Αποφάσεις Δικαστηρίων), Supreme Court (Άρειος Πάγος), Council of State (ΣτΕ), Litigation (Αγωγές), Legal Procedures, Lawyer Professional News, Penal/Civil/Administrative Law updates, Justice system, Court rulings (Areios Pagos, StE), Lawyer news.
+        - FEK (Government Gazette & Legislation): Focus on New Laws (Νόμοι), Ministerial Decisions (Υπουργικές Αποφάσεις), Circulars (Εγκύκλιοι), Official Gazette publications, Tax Legislation updates.
+        - GEN (General Economy): Macro-economics, general business news, or social news with NO specific technical, legal, or legislative impact.
+
+        MULTITAGGING PROTOCOL:
+        * If an article discusses Real Estate prices AND new legislation, use: ENG, FEK.
+        * If an article discusses a Court ruling regarding a construction project, use: ENG, LAW.
+        * If an article discusses a new Law about Lawyers, use: LAW, FEK.
+        * ALWAYS include 'ENG' for anything related to Property, Housing/Building Market, Urban planning, Cadastre (Κτηματολόγιο), Real estate, Construction, or engineering.
+
+        SUMMARY REQUIREMENTS:
+        * Language: Professional Greek (Formal tone).
+        * Content: Focus on "Who, What, When, and the Professional Impact".
+        * Length: 120-150 words.
+
+        ARTICLE DATA:
+        Title: {title}
+        Content: {content[:2500]}
+
+        OUTPUT FORMAT: CATEGORIES (comma-separated) ||| Summary
+        """
+
+        # Εκτέλεση με Gemini 2.0 Flash
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
+        
         if "|||" in text:
             parts = text.split("|||")
-            return parts[0].strip().upper()[:3], parts[1].strip()
+            tags = parts[0].strip().upper() 
+            summary = parts[1].strip()
+            return tags, summary
+            
         return fallback_classify(title, ""), text
     except Exception as e:
         print(f"⚠️ AI Error: {str(e)[:50]}. Using Fallback.")
         return fallback_classify(title, ""), original_summary
-
+        
 def sort_and_clean_database(worksheet):
     print(f"🧹 Sorting & Cleaning Database ({DB_RETENTION_DAYS} days)...")
     try:
@@ -142,3 +175,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
