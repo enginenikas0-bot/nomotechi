@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v6.3 - HIDDEN TRIGGER FIX) ---
+# --- 2. CSS & STYLING (v6.4 - GHOST BUTTON TECHNIQUE) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -35,13 +35,20 @@ st.markdown(f"""
         width: 350px !important;
     }}
     
-    /* ΚΡΥΒΟΥΜΕ ΤΟ NATIVE ΚΟΥΜΠΙ ΑΛΛΑ ΤΟ ΑΦΗΝΟΥΜΕ "ΠΑΤΗΣΙΜΟ" ΓΙΑ ΤΗ JAVASCRIPT */
+    /* === ΤΟ ΚΟΛΠΟ ΜΕ ΤΟ GHOST BUTTON === */
+    /* Μετακινούμε το αληθινό κουμπί του Streamlit πάνω από το δικό μας και το κάνουμε αόρατο */
     [data-testid="collapsedControl"] {{
-        opacity: 0 !important;
-        pointer-events: none !important;
-        display: block !important; /* Πρέπει να υπάρχει για να το βρει η JS */
+        display: block !important;
+        position: fixed !important;
+        top: 45px !important;      /* Το ύψος που είναι το δικό μας κουμπί */
+        left: 15px !important;     /* Η θέση που είναι το δικό μας κουμπί */
+        width: 50px !important;
+        height: 40px !important;
+        opacity: 0 !important;     /* ΑΟΡΑΤΟ */
+        z-index: 100000 !important; /* Πάνω από όλα */
+        cursor: pointer !important;
     }}
-    
+
     /* Typography Sidebar */
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
@@ -128,7 +135,7 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
 
-    /* HAMBURGER (Left) */
+    /* HAMBURGER (Left) - VISUAL ONLY */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important;
         height: 38px !important;
@@ -136,6 +143,7 @@ st.markdown(f"""
         line-height: 1 !important;
         color: #ffffff !important;
         display: flex; align-items: center; justify-content: center;
+        pointer-events: none !important; /* Δεν πατιέται το ίδιο, πατιέται το "φάντασμα" από πάνω */
     }}
     
     /* USER BUTTON (Right) */
@@ -363,9 +371,18 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # B. WEATHER WIDGET (METEOBLUE - RELIABLE)
+    # B. WEATHER WIDGET (Meteoblue iFrame Fix)
+    # Χρησιμοποιούμε μια έτοιμη λύση iframe που λειτουργεί παντού
+    # Βάλαμε background-color στο iframe container για να μην είναι μαύρο-σε-μαύρο αν αργήσει
     st.markdown("### 🌤️ Live Καιρός (Αθήνα)")
-    components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=240, scrolling=False)
+    st.markdown("""
+        <div style="background-color:#1e1e1e; border-radius:4px; overflow:hidden;">
+            <iframe src="https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark" 
+            frameborder="0" scrolling="NO" allowtransparency="true" 
+            sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox" 
+            style="width: 100%; height: 240px"></iframe>
+        </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -406,17 +423,9 @@ st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10
 c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
 
 with c_nav_l:
-    # ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΟΛΠΟ: Οταν πατάς το κουμπί, τρέχει JavaScript που πατάει το ΚΡΥΦΟ βελάκι
-    if st.button("☰", key="nav_menu"):
-        js = '''
-        <script>
-            var sidebarBtn = window.parent.document.querySelector('button[data-testid="collapsedControl"]');
-            if (sidebarBtn) {
-                sidebarBtn.click();
-            }
-        </script>
-        '''
-        components.html(js, height=0, width=0)
+    # Το κουμπί υπάρχει ΜΟΝΟ για εμφάνιση.
+    # Το κλικ το "κλέβει" το αόρατο κουμπί του Streamlit που μετακινήσαμε από πάνω του με CSS.
+    st.button("☰", key="nav_menu")
 
 with c_nav_r:
     st.button("Sign in/up", key="nav_user", help="Account") 
