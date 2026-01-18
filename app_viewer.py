@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v7.0 - TOP DRAWER TOOLBOX) ---
+# --- 2. CSS & STYLING (v7.1 - CLEAN MINIMAL TOOLBOX) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -37,13 +37,13 @@ st.markdown(f"""
 
     /* 3. TOOLBOX DRAWER (To "Συρτάρι") */
     .menu-panel {{
-        background-color: #080808;
+        background-color: #050505; /* Απόλυτο μαύρο/ανθρακί */
         border-bottom: 1px solid #333;
-        padding: 20px;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        border-radius: 4px;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.8);
+        padding: 25px; /* Λίγο παραπάνω padding */
+        margin-top: 5px;
+        margin-bottom: 25px;
+        border-radius: 0px; /* Πιο αυστηρό τετράγωνο */
+        box-shadow: 0 15px 30px rgba(0,0,0,0.9);
     }}
     
     /* Branding μέσα στο Drawer */
@@ -54,6 +54,7 @@ st.markdown(f"""
         justify-content: center;
         height: 100%;
         border-right: 1px solid #222;
+        padding-right: 15px;
     }}
     .drawer-brand img {{
         width: 70px;
@@ -61,18 +62,44 @@ st.markdown(f"""
         border-radius: 50%;
         object-fit: cover;
         border: 2px solid #333;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }}
     .drawer-brand-title {{
         font-family: 'Playfair Display', serif;
         font-size: 1.1rem;
         color: #fff;
+        margin-bottom: 5px;
     }}
     .drawer-brand-sub {{
         font-family: 'Inter', sans-serif;
         font-size: 0.65rem;
         color: #666;
         letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }}
+    
+    /* Τίτλος Εργαλειοθήκης */
+    .toolbox-title {{
+        font-family: 'Inter', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 20px;
+        letter-spacing: 1px;
+        border-bottom: 1px solid #222;
+        padding-bottom: 10px;
+        text-transform: uppercase;
+    }}
+    
+    /* Section Headers μέσα στο Drawer */
+    .toolbox-section-header {{
+        color: #888;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-family: 'Inter', sans-serif;
     }}
 
     /* 4. MARKET TICKER */
@@ -348,7 +375,6 @@ st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10
 c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
 
 with c_nav_l:
-    # Αυτό το κουμπί ανοίγει το "συρτάρι" από κάτω (με st.session_state)
     if st.button("☰", key="nav_menu"):
         toggle_menu()
 
@@ -359,8 +385,12 @@ with c_nav_r:
 if st.session_state.menu_open:
     st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
     
-    # Χωρίζουμε το συρτάρι σε 3 μέρη
-    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5])
+    # 1. HEADER (Custom Title Bar) - ΜΑΥΡΗ ΜΠΑΡΑ ΜΕ ΤΙΤΛΟ
+    st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
+    
+    # 2. COLUMNS (Με μεγαλύτερο κενό/gap)
+    # Χρησιμοποιούμε gap="medium" για να μεγαλώσουμε το κενό μεταξύ των στηλών
+    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="medium")
     
     # Μέρος 1: Branding (Logo)
     with col_t1:
@@ -373,17 +403,17 @@ if st.session_state.menu_open:
         </div>
         """, unsafe_allow_html=True)
     
-    # Μέρος 2: Weather Widget (Meteoblue Wide)
+    # Μέρος 2: Weather Widget (Meteoblue Wide) - Χωρίς Emoji
     with col_t2:
-        st.markdown('<div style="color:#888; font-size:0.8rem; font-weight:700; margin-bottom:5px;">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
+        st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
         components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
 
-    # Μέρος 3: Tools & Actions
+    # Μέρος 3: Tools & Actions - Χωρίς Emojis
     with col_t3:
-        st.markdown('<div style="color:#888; font-size:0.8rem; font-weight:700; margin-bottom:5px;">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+        st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
         
-        # Tabs για εργαλεία για να γλιτώσουμε χώρο
-        tool_tabs = st.tabs(["🧮 ΦΠΑ", "📅 Calendar", "🔄 System"])
+        # Tabs για εργαλεία (ΚΕΦΑΛΑΙΑ, ΧΩΡΙΣ EMOJIS)
+        tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
         
         with tool_tabs[0]:
             amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
@@ -394,10 +424,10 @@ if st.session_state.menu_open:
             st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
             
         with tool_tabs[2]:
-            if st.button("🔄 ΑΝΑΝΕΩΣΗ", use_container_width=True):
+            if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v7.0")
+            st.caption("Status: Online v7.1")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
