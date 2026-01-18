@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v10.0 - STABLE RESTORATION) ---
+# --- 2. CSS & STYLING (v11.0 - SURGICAL MOBILE FIX) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -36,7 +36,7 @@ st.markdown(f"""
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. MODAL / DIALOG STYLING (RESTORED TO CLEAN DARK) */
+    /* 3. MODAL / DIALOG STYLING (CORRECT BORDER FIX) */
     div[role="dialog"] {{
         background-color: #0b0d0f !important;
         border: 1px solid #333 !important;
@@ -45,16 +45,27 @@ st.markdown(f"""
     div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, div[role="dialog"] p, div[role="dialog"] label {{
         color: #ffffff !important;
     }}
-    /* Επαναφορά στα Default Dark Inputs για να φτιάξει το ματάκι */
-    div[role="dialog"] input {{
-        background-color: #111 !important;
-        color: #fff !important;
-        border: 1px solid #333 !important;
+    
+    /* ΤΟ ΚΟΛΠΟ ΓΙΑ ΤΑ ΚΕΛΙΑ ΚΑΙ ΤΟ ΜΑΤΑΚΙ:
+       Εφαρμόζουμε το Λευκό Πλαίσιο στο Container (wrapper) που κρατάει τα πάντα.
+       Έτσι το ματάκι είναι ΜΕΣΑ στο πλαίσιο και φαίνεται σωστά.
+    */
+    div[role="dialog"] div[data-baseweb="input"] {{
+        background-color: #000000 !important;
+        border: 1px solid #ffffff !important; /* Λευκό Πλαίσιο εδώ */
         border-radius: 4px !important;
     }}
-    div[role="dialog"] input:focus {{
+    
+    /* Το εσωτερικό input είναι διάφανο */
+    div[role="dialog"] input {{
+        background-color: transparent !important;
+        color: #ffffff !important;
+        border: none !important; 
+    }}
+    
+    /* Όταν κάνεις κλικ (Focus), πρασινίζει το πλαίσιο */
+    div[role="dialog"] div[data-baseweb="input"]:focus-within {{
         border-color: #4ade80 !important;
-        box-shadow: none !important;
     }}
 
     /* 4. TOOLBOX DRAWER */
@@ -83,17 +94,19 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 6. CUSTOM BUTTONS (Global) */
+    /* 6. CUSTOM BUTTONS */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
         background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
         border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important;
     }}
+
     /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important; height: 38px !important; font-size: 1.6rem !important;
         line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }}
-    /* USER BUTTON */
+    
+    /* USER BUTTON (Desktop) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
         height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
         margin-top: 5px !important; background-image: none !important; display: flex !important;
@@ -104,6 +117,7 @@ st.markdown(f"""
         letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
         white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }}
+
     /* NO HOVER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * {{ color: #ffffff !important; }}
@@ -149,49 +163,32 @@ st.markdown(f"""
     .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
     /* ========================================= */
-    /* MOBILE FIXES (v10.0) - THE SAFE METHOD    */
+    /* MOBILE FIXES (v11.0) - THE SURGICAL STRIKE */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. FORCE HORIZONTAL LAYOUT (FLEX ROW) */
-        /* Αυτό είναι το κλειδί: Αναγκάζουμε το μενού να μην γίνει κάθετο */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) {{
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            width: 100% !important;
-        }}
-
-        /* Hamburger (Left) */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) {{
-            width: 50px !important;
-            min-width: 50px !important;
-            flex: 0 0 auto !important;
-        }}
-
-        /* Middle Spacer (Shrink) */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(2) {{
-            width: 10px !important;
-            flex: 1 1 auto !important; /* Παίρνει τον ενδιάμεσο χώρο */
-        }}
-
-        /* User Button (Right) - Καρφωμένο δεξιά αλλά μέσα στη ροή */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
+        /* Στοχεύουμε ΜΟΝΟ την 3η κολώνα (Sign in). 
+           Δεν πειράζουμε το γονιό container, άρα δεν χαλάει η υπόλοιπη διάταξη.
+        */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) > div:nth-of-type(3) {{
+            position: absolute !important; /* Βγαίνει από τη ροή */
+            top: 0px !important;
+            right: 15px !important;
             width: auto !important;
-            min-width: auto !important;
-            flex: 0 0 auto !important;
-            display: flex !important;
-            justify-content: flex-end !important;
+            z-index: 9999 !important;
+            margin-top: 5px !important;
         }}
         
-        /* Button styling on Mobile */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
+        /* Το κουμπί */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) > div:nth-of-type(3) button {{
             width: 100px !important;
             padding: 0px !important;
-            margin-top: 0px !important;
+            margin: 0 !important;
+            background-color: #000 !important; 
+            border: 1px solid #333 !important;
         }}
 
-        /* 2. DATE POSITION (Reset) */
+        /* 2. DATE POSITION */
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
 
@@ -417,7 +414,7 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v10.0")
+            st.caption("Status: Online v11.0")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN CONTENT ---
