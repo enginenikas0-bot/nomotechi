@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v9.2 - FINAL FIXES) ---
+# --- 2. CSS & STYLING (v12.0 - THE FLEX-HEADER SOLUTION) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -36,7 +36,7 @@ st.markdown(f"""
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. MODAL / DIALOG STYLING (CLEAN & DARK) */
+    /* 3. MODAL / DIALOG STYLING */
     div[role="dialog"] {{
         background-color: #0b0d0f !important;
         border: 1px solid #333 !important;
@@ -45,11 +45,16 @@ st.markdown(f"""
     div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, div[role="dialog"] p, div[role="dialog"] label {{
         color: #ffffff !important;
     }}
-    /* Επαναφορά στο Default Dark Style για να φτιάξει το "ματάκι" */
+    /* Dark Inputs (Clean Look) */
     div[role="dialog"] input {{
         background-color: #111 !important;
         color: #fff !important;
-        border-color: #333 !important;
+        border: 1px solid #333 !important;
+        border-radius: 4px !important;
+    }}
+    div[role="dialog"] input:focus {{
+        border-color: #4ade80 !important;
+        box-shadow: none !important;
     }}
 
     /* 4. TOOLBOX DRAWER */
@@ -62,10 +67,7 @@ st.markdown(f"""
         border-radius: 0px;
         box-shadow: 0 15px 30px rgba(0,0,0,0.9);
     }}
-    .drawer-brand {{
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        height: 100%; border-right: 1px solid #222; padding-right: 20px;
-    }}
+    .drawer-brand {{ display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
     .drawer-brand img {{ width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; }}
     .drawer-brand-title {{ font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }}
     .drawer-brand-sub {{ font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }}
@@ -74,30 +76,24 @@ st.markdown(f"""
     .toolbox-section-header {{ color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }}
 
     /* 5. MARKET TICKER */
-    .market-row {{
-        position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000;
-        border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden;
-    }}
+    .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden; }}
     .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 75s linear infinite; }}
     @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
     .m-item {{ font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }}
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 6. CUSTOM BUTTONS */
+    /* 6. CUSTOM BUTTONS (GLOBAL) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
         background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
-        border-radius: 4px !important; padding: 0 !important; margin: 0 !important;
-        transition: none !important; box-shadow: none !important;
+        border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important;
     }}
-
     /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important; height: 38px !important; font-size: 1.6rem !important;
         line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }}
-    
-    /* USER BUTTON (DEFAULT DESKTOP) */
+    /* USER BUTTON */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
         height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
         margin-top: 5px !important; background-image: none !important; display: flex !important;
@@ -108,7 +104,6 @@ st.markdown(f"""
         letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
         white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }}
-
     /* NO HOVER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * {{ color: #ffffff !important; }}
@@ -154,34 +149,51 @@ st.markdown(f"""
     .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
     /* ========================================= */
-    /* MOBILE FIXES (v9.2) - SUPER FIXED         */
+    /* MOBILE FIXES (v12.0) - THE FLEX HEADER    */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. BUTTON POSITIONING - NUCLEAR OPTION */
-        /* Αυτό στοχεύει την 3η στήλη στο Nav bar και την κολλάει πάνω δεξιά */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
-            position: fixed !important;
-            top: 10px !important;  /* Λίγο πιο κάτω από την κορυφή */
-            right: 15px !important;
-            z-index: 999999 !important; /* Πάνω από όλα τα επίπεδα */
-            width: auto !important;
-            min-width: auto !important;
-            background: transparent !important;
-            height: auto !important;
-            display: block !important;
-        }}
-        
-        /* Στυλ του κουμπιού για να φαίνεται πάνω από το μαύρο φόντο */
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-            background-color: #000 !important;
-            border: 1px solid #333 !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
-            margin: 0 !important;
-            width: 100px !important;
+        /* 1. FORCE TOP BAR TO BE A FLEX ROW (Η ΜΑΥΡΗ ΜΠΑΡΑ ΠΟΥ ΖΗΤΗΣΕΣ) */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) {{
+            background-color: #000000 !important;
+            padding: 5px 10px !important;
+            display: flex !important;
+            flex-direction: row !important; /* Καρφωτά οριζόντια */
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 0px !important;
         }}
 
-        /* 2. DATE POSITION */
+        /* Στήλη 1: Hamburger (Αριστερά) */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) {{
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: 50px !important;
+        }}
+
+        /* Στήλη 2: Κενό (Μέση - λειτουργεί ως ελατήριο) */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(2) {{
+            flex: 1 1 auto !important; /* Πιάνει όλο τον ενδιάμεσο χώρο */
+            width: auto !important;
+        }}
+
+        /* Στήλη 3: Sign In (Δεξιά) */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
+            flex: 0 0 auto !important;
+            width: auto !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+        }}
+        
+        /* Το Κουμπί στο κινητό */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
+            width: 100px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }}
+
+        /* 2. DATE POSITION (Reset) */
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
 
@@ -407,7 +419,7 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v9.2")
+            st.caption("Status: Online v12.0")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN CONTENT ---
