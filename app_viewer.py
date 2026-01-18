@@ -7,7 +7,7 @@ import base64
 from datetime import datetime, timedelta
 import os
 import streamlit.components.v1 as components
-import hashlib # Για κρυπτογράφηση κωδικών
+import hashlib
 
 # --- 1. SETUP ---
 st.set_page_config(
@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v9.0 - MOBILE ABSOLUTE HEADER) ---
+# --- 2. CSS & STYLING (v9.1 - FIXED MOBILE BTN & DARK MODAL) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -36,7 +36,29 @@ st.markdown(f"""
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. TOOLBOX DRAWER */
+    /* 3. MODAL / DIALOG STYLING (POP UP) */
+    div[role="dialog"] {{
+        background-color: #0b0d0f !important;
+        border: 1px solid #333 !important;
+    }}
+    div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, div[role="dialog"] p, div[role="dialog"] label {{
+        color: #ffffff !important;
+    }}
+    /* ΤΑ ΠΕΔΙΑ INPUT ΜΕΣΑ ΣΤΟ POP UP */
+    div[role="dialog"] input[type="text"],
+    div[role="dialog"] input[type="password"] {{
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 1px solid #ffffff !important; /* ΛΕΥΚΟ ΠΛΑΙΣΙΟ */
+        border-radius: 4px !important;
+    }}
+    /* Focus state για τα inputs */
+    div[role="dialog"] input:focus {{
+        border-color: #4ade80 !important; /* Πράσινο όταν γράφεις */
+        box-shadow: none !important;
+    }}
+
+    /* 4. TOOLBOX DRAWER */
     .menu-panel {{
         background-color: #050505;
         border-bottom: 1px solid #333;
@@ -46,77 +68,21 @@ st.markdown(f"""
         border-radius: 0px;
         box-shadow: 0 15px 30px rgba(0,0,0,0.9);
     }}
-    
-    /* Branding */
     .drawer-brand {{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        border-right: 1px solid #222;
-        padding-right: 20px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 100%; border-right: 1px solid #222; padding-right: 20px;
     }}
-    .drawer-brand img {{
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #333;
-        margin-bottom: 15px;
-    }}
-    .drawer-brand-title {{
-        font-family: 'Playfair Display', serif;
-        font-size: 1.1rem;
-        color: #fff;
-        margin-bottom: 5px;
-        text-align: center;
-    }}
-    .drawer-brand-sub {{
-        font-family: 'Inter', sans-serif;
-        font-size: 0.65rem;
-        color: #666;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        text-align: center;
-    }}
+    .drawer-brand img {{ width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; }}
+    .drawer-brand-title {{ font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }}
+    .drawer-brand-sub {{ font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }}
+    .drawer-mid {{ height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
+    .toolbox-title {{ font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }}
+    .toolbox-section-header {{ color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }}
 
-    /* Middle Column */
-    .drawer-mid {{
-        height: 100%;
-        border-right: 1px solid #222;
-        padding-right: 20px;
-    }}
-    
-    /* Titles */
-    .toolbox-title {{
-        font-family: 'Inter', sans-serif;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #fff;
-        margin-bottom: 20px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-    }}
-    .toolbox-section-header {{
-        color: #888;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-family: 'Inter', sans-serif;
-    }}
-
-    /* 4. MARKET TICKER */
+    /* 5. MARKET TICKER */
     .market-row {{
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 35px;
-        background-color: #000;
-        border-bottom: 1px solid #222;
-        z-index: 9999;
-        display: flex; align-items: center; overflow: hidden;
+        position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000;
+        border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden;
     }}
     .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 75s linear infinite; }}
     @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
@@ -124,95 +90,41 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 5. CUSTOM BUTTONS */
+    /* 6. CUSTOM BUTTONS */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
-        background-color: #000000 !important;
-        border: 1px solid #000000 !important;
-        color: white !important;
-        border-radius: 4px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        transition: none !important;
-        box-shadow: none !important;
+        background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
+        border-radius: 4px !important; padding: 0 !important; margin: 0 !important;
+        transition: none !important; box-shadow: none !important;
     }}
 
     /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
-        width: 40px !important;
-        height: 38px !important;
-        font-size: 1.6rem !important;
-        line-height: 1 !important;
-        color: #ffffff !important;
-        display: flex; align-items: center; justify-content: center;
+        width: 40px !important; height: 38px !important; font-size: 1.6rem !important;
+        line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }}
     
-    /* USER BUTTON */
+    /* USER BUTTON (DESKTOP) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-        height: 28px !important;
-        min-height: 28px !important;
-        width: 100% !important;
-        min-width: 100px !important;
-        margin-top: 5px !important;
-        background-image: none !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
+        margin-top: 5px !important; background-image: none !important; display: flex !important;
+        align-items: center !important; justify-content: center !important;
     }}
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button p {{
-        font-family: 'Inter', sans-serif !important;
-        font-size: 10px !important;
-        font-weight: 300 !important;
-        letter-spacing: 1px !important;
-        color: #ffffff !important;
-        text-transform: none !important;
-        white-space: nowrap !important;
-        line-height: 1 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        font-family: 'Inter', sans-serif !important; font-size: 10px !important; font-weight: 300 !important;
+        letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
+        white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }}
 
     /* NO HOVER */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{
-        background-color: #000000 !important;
-        border-color: #000000 !important;
-        color: #ffffff !important;
-    }}
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * {{ color: #ffffff !important; }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active,
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:focus {{
-        background-color: #000000 !important;
-        border-color: #000000 !important;
-        color: #ffffff !important;
-        box-shadow: none !important;
-    }}
-
-    /* 6. DATE DISPLAY (Desktop) */
-    .date-container {{
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        margin-bottom: -38px;
-        position: relative;
-        z-index: 1;
-        padding-right: 5px;
-        height: 40px;
-    }}
-    .date-text {{
-        font-family: 'Inter', sans-serif;
-        font-size: 11px;
-        color: #888;
-        font-weight: 400;
-        letter-spacing: 0.5px;
-        padding-top: 12px; 
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active, [data-testid="stHorizontalBlock"]:nth-of-type(1) button:focus {{
+        background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; box-shadow: none !important;
     }}
 
     /* 7. GENERAL UI */
     .block-container {{ padding-top: 4px !important; }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) {{
-        align-items: center !important;
-        gap: 0 !important;
-        padding-top: 10px !important;
-    }}
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) {{ align-items: center !important; gap: 0 !important; padding-top: 10px !important; }}
     .header-area {{ margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }}
     .logo-img-custom {{ width: 90px; height: auto; border-radius: 0px; }}
     .brand-title {{ font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }}
@@ -225,7 +137,6 @@ st.markdown(f"""
     .news-card:hover {{ border: 1px solid #222; background: #050505; }}
     .news-thumb {{ width: 100%; height: 160px; object-fit: cover; margin-bottom: 8px; filter: grayscale(20%); border-radius: 2px; border: 1px solid #222; }}
     .news-title {{ font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; text-decoration: none; display: block;}}
-    
     .bg-eng {{ background: #ea580c; color: white; }} .bg-law {{ background: #1e3a8a; color: white; }} .bg-fek {{ background: #e9e9d0; color: #000; }} .bg-sos {{ background: #dc2626; color: white; }} .bg-gen {{ background: #9ca3af; color: black; }}
     .meta-tag {{ font-family: 'Roboto Mono', monospace; font-size: 0.6rem; padding: 2px 6px; font-weight: 700; margin-right: 5px; display: inline-block; border-radius: 2px; }}
     
@@ -245,74 +156,55 @@ st.markdown(f"""
     a.side-link-title {{ font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; font-weight: 600 !important; color: #e0e0e0 !important; text-decoration: none !important; line-height: 1.3 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }}
     a.side-link-title:hover {{ color: #fff !important; }}
     .side-meta-date {{ font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }}
+    .date-container {{ display: flex; justify-content: flex-end; align-items: center; margin-bottom: -38px; position: relative; z-index: 1; padding-right: 5px; height: 40px; }}
+    .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
     /* ========================================= */
-    /* MOBILE RESPONSIVENESS FIXES (v9.0)        */
+    /* MOBILE FIXES (v9.1) - FIXED POSITIONING   */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. BUTTON POSITIONING - ABSOLUTE RIGHT */
-        /* Βρίσκουμε την 3η κολώνα (Sign in) και την καρφώνουμε πάνω δεξιά */
+        /* 1. BUTTON POSITIONING - FIXED */
+        /* Χρησιμοποιούμε FIXED για να το καρφώσουμε στην οθόνη και να μην το επηρεάζει το stacking του Streamlit */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
-            position: absolute !important;
-            top: 5px !important;
-            right: 15px !important; /* Λίγο περιθώριο από άκρη */
+            position: fixed !important;
+            top: 45px !important;  /* Ακριβώς κάτω από το ticker (35px + 10px) */
+            right: 15px !important;
             width: auto !important;
             min-width: auto !important;
-            flex: none !important;
-            z-index: 1000 !important;
+            z-index: 99999 !important;
+            background: transparent !important;
         }}
         
-        /* Εξασφαλίζουμε ότι το κουμπί δεν έχει extra margin */
+        /* Αναγκάζουμε το κουμπί να έχει μικρότερο πλάτος στο κινητό */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-            margin-top: 0px !important;
-            width: 90px !important; /* Σταθερό πλάτος για κινητά */
+            width: 100px !important;
+            padding: 0px !important;
+            margin: 0 !important;
+            background-color: #000 !important; /* Μαύρο φόντο για να μην φαίνονται γράμματα από πίσω */
+            border: 1px solid #333 !important;
         }}
 
         /* 2. DATE POSITION (Reset) */
-        .date-container {{
-            margin-bottom: 10px !important;
-            justify-content: flex-start !important;
-            padding-left: 5px !important;
-            height: auto !important;
-        }}
-        .date-text {{
-            padding-top: 0 !important;
-            font-size: 0.75rem !important;
-        }}
+        .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
+        .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
 
         /* 3. LATEST UPDATES SPACING */
-        .mobile-push-down {{
-            margin-top: 40px !important; 
-            display: block;
-        }}
+        .mobile-push-down {{ margin-top: 40px !important; display: block; }}
 
         /* 4. TIMESTAMP FIXES */
-        .news-card div:last-child, .side-meta-date {{
-            font-size: 0.65rem !important;
-            line-height: 1.2 !important;
-            margin-top: 4px !important;
-        }}
+        .news-card div:last-child, .side-meta-date {{ font-size: 0.65rem !important; line-height: 1.2 !important; margin-top: 4px !important; }}
 
-        /* Brand Header Scaling */
+        /* Brand & Hero */
         .brand-title {{ font-size: 2rem !important; }}
         .header-area {{ flex-direction: row !important; align-items: center !important; gap: 10px !important; }}
         .logo-img-custom {{ width: 60px !important; }}
-
-        /* Hero Container Height */
         .hero-container {{ height: 300px !important; }}
         .hero-text-box a {{ font-size: 1.2rem !important; }}
 
         /* Toolbox on Mobile */
         .menu-panel {{ padding: 10px !important; }}
-        .drawer-brand, .drawer-mid {{ 
-            border-right: none !important; 
-            border-bottom: 1px solid #222 !important;
-            padding-bottom: 15px !important;
-            margin-bottom: 15px !important;
-            padding-right: 0 !important;
-        }}
-        
+        .drawer-brand, .drawer-mid {{ border-right: none !important; border-bottom: 1px solid #222 !important; padding-bottom: 15px !important; margin-bottom: 15px !important; padding-right: 0 !important; }}
         .m-item {{ font-size: 0.6rem !important; padding: 0 10px !important; }}
         button[data-baseweb="tab"] {{ padding: 10px 5px !important; font-size: 0.7rem !important; }}
     }}
@@ -352,24 +244,18 @@ def analyze_content_deep(row):
     title = normalize_text(str(row.get('title', '')))
     ai_category = str(row.get('category', '')).upper()
     content_body = str(row.get('content', '')).upper() 
-    
     tags = set()
     trash_keywords = ["super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
     if any(kw in title for kw in trash_keywords): return ["TRASH"]
-
     if "ENG" in ai_category or "ENG" in content_body: tags.add("ENG")
     if "LAW" in ai_category or "LAW" in content_body: tags.add("LAW")
     if "FEK" in ai_category or "FEK" in content_body: tags.add("FEK")
-    
     eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "κτηματολογ", "πολεοδομ", "real estate", "κατασκευ", "νοκ", "γοκ", "τεε", "άδεια", "οικοδομ"]
     if any(kw in title for kw in eng_keywords): tags.add("ENG")
-
     law_keywords = ["δικαστ", "δικηγορ", "συμβολαιογραφ", "αρεο", "παγο", "στε", "εισαγγελ", "ποινικ", "αστικ", "δικη", "νομικ", "δικαιο"]
     if any(kw in title for kw in law_keywords): tags.add("LAW")
-    
     leg_keywords = ["φεκ", "νομος", "κυα", "εγκυκλιος", "τροπολογια", "αποφαση"]
     if any(kw in title for kw in leg_keywords): tags.add("FEK")
-
     if "SOS" in title.upper(): tags.add("SOS")
     if not tags: tags.add("GENERAL")
     return list(tags)
@@ -437,40 +323,25 @@ def register_subscriber(email, password):
     try:
         gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         sh = gc.open("laws_database").worksheet("subscribers")
-        # Ελέγχουμε αν υπάρχει ήδη
         existing = sh.col_values(1)
-        if email in existing:
-            return "EXISTS"
-        # Αποθηκεύουμε email, hash κωδικού και ημερομηνία
+        if email in existing: return "EXISTS"
         sh.append_row([email, hash_pass(password), str(datetime.now())])
         return "OK"
-    except Exception as e:
-        return str(e)
+    except Exception as e: return str(e)
 
 def login_subscriber(email, password):
     try:
         gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         sh = gc.open("laws_database").worksheet("subscribers")
-        data = sh.get_all_records() # Υποθέτουμε ότι η 1η γραμμή είναι headers (Email, Password, Date)
-        
-        # Αν δεν έχει headers, χρησιμοποιούμε get_all_values και loop
-        # Απλοποιημένη λογική: ψάχνουμε το email και ελέγχουμε τον κωδικό
-        # Για ασφάλεια στο demo, αν δεν υπάρχει στήλη Password, απλά ελέγχουμε το email
-        
         cell = sh.find(email)
-        if cell:
-            # Εδώ θα κάναμε έλεγχο κωδικού αν ξέραμε τη δομή. 
-            # Για την ώρα κάνουμε απλό login με email για συμβατότητα με την υπάρχουσα δομή
-            return True
+        if cell: return True # Simplified for demo
         return False
-    except:
-        return False
+    except: return False
 
 # --- 5. AUTH DIALOG (MODAL) ---
 @st.dialog("NomoTech | Συνδρομητές")
 def auth_dialog():
     tab1, tab2 = st.tabs(["ΣΥΝΔΕΣΗ", "ΕΓΓΡΑΦΗ"])
-    
     with tab1:
         l_email = st.text_input("Email", key="l_email")
         l_pass = st.text_input("Κωδικός", type="password", key="l_pass")
@@ -478,25 +349,18 @@ def auth_dialog():
             if login_subscriber(l_email, l_pass):
                 st.session_state.user_email = l_email
                 st.rerun()
-            else:
-                st.error("Λάθος στοιχεία ή δεν βρέθηκε ο χρήστης.")
-                
+            else: st.error("Λάθος στοιχεία.")
     with tab2:
         r_email = st.text_input("Email Εγγραφής", key="r_email")
         r_pass = st.text_input("Επιθυμητός Κωδικός", type="password", key="r_pass")
         if st.button("ΔΗΜΙΟΥΡΓΙΑ ΛΟΓΑΡΙΑΣΜΟΥ", use_container_width=True):
-            if "@" not in r_email:
-                st.error("Μη έγκυρο email.")
-            elif len(r_pass) < 4:
-                st.error("Ο κωδικός πρέπει να είναι τουλάχιστον 4 χαρακτήρες.")
+            if "@" not in r_email: st.error("Μη έγκυρο email.")
+            elif len(r_pass) < 4: st.error("Ο κωδικός πρέπει να είναι > 4 χαρακτήρες.")
             else:
                 res = register_subscriber(r_email, r_pass)
-                if res == "OK":
-                    st.success("Η εγγραφή ολοκληρώθηκε! Τώρα μπορείτε να συνδεθείτε.")
-                elif res == "EXISTS":
-                    st.warning("Αυτό το email χρησιμοποιείται ήδη.")
-                else:
-                    st.error("Σφάλμα σύνδεσης.")
+                if res == "OK": st.success("Εγγραφή επιτυχής! Συνδεθείτε.")
+                elif res == "EXISTS": st.warning("Το email υπάρχει ήδη.")
+                else: st.error("Σφάλμα.")
 
 # --- 6. TOP SECTION (UI) ---
 
@@ -513,125 +377,70 @@ st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10
 c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
 
 with c_nav_l:
-    if st.button("☰", key="nav_menu"):
-        toggle_menu()
+    if st.button("☰", key="nav_menu"): toggle_menu()
 
 with c_nav_r:
-    # ΛΟΓΙΚΗ ΚΟΥΜΠΙΟΥ: Αν δεν είμαστε συνδεδεμένοι -> Sign in/up -> Dialog
-    # Αν είμαστε συνδεδεμένοι -> Δείχνει το Email ή MEMBER
     btn_label = "Sign in/up"
-    if st.session_state.user_email:
-        btn_label = "MEMBER" # ή st.session_state.user_email[:5] + ".."
-        
+    if st.session_state.user_email: btn_label = "MEMBER"
     if st.button(btn_label, key="nav_user", help="Account"):
-        if not st.session_state.user_email:
-            auth_dialog()
-        else:
-            # Αν είναι ήδη συνδεδεμένος, μπορεί να κάνει αποσύνδεση ή να δει προφίλ
-            # Για τώρα, απλά δείχνουμε ένα toast
-            st.toast(f"Συνδεδεμένος ως: {st.session_state.user_email}")
+        if not st.session_state.user_email: auth_dialog()
+        else: st.toast(f"Logged in as: {st.session_state.user_email}")
 
 # C. THE TOOLBOX DRAWER
 if st.session_state.menu_open:
     st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
-    
-    # 1. HEADER
     st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
-    
-    # 2. COLUMNS
     col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
     
-    # Μέρος 1: Branding (Logo)
     with col_t1:
         logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
-        st.markdown(f"""
-        <div class="drawer-brand">
-            <img src="{logo_src}">
-            <div class="drawer-brand-title">NiKAS Technical</div>
-            <div class="drawer-brand-sub">ENGINEERING & CONSULTING</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Μέρος 2: Weather Widget (Meteoblue Wide)
+        st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
     with col_t2:
         st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
         components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
         st.markdown('</div>', unsafe_allow_html=True)
-
-    # Μέρος 3: Tools & Actions
     with col_t3:
         st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
-        
         tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
-        
         with tool_tabs[0]:
             amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
-            if amount > 0:
-                st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
-        
-        with tool_tabs[1]:
-            st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
-            
+            if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
+        with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
         with tool_tabs[2]:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v9.0")
-
+            st.caption("Status: Online v9.1")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN CONTENT ---
 c1, c2 = st.columns([1.5, 0.3])
-
 logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
 
 with c1:
-    st.markdown(f"""
-    <div class="header-area">
-        {logo_html}
-        <div style="display:flex; flex-direction:column; justify-content:center;">
-            <div class="brand-title">NomoTech</div>
-            <div class="brand-sub">Powered by NiKAS Technical</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="header-area">{logo_html}<div style="display:flex; flex-direction:column; justify-content:center;"><div class="brand-title">NomoTech</div><div class="brand-sub">Powered by NiKAS Technical</div></div></div>""", unsafe_allow_html=True)
 
 with c2:
     st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
     q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
 
-# WELCOME MESSAGE FOR SUBSCRIBERS
 if st.session_state.user_email:
-    st.markdown(f"""
-    <div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;">
-        <span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> 
-        <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
 
 df = load_data()
 if df.empty: 
     st.warning("Φόρτωση βάσης δεδομένων...")
     st.stop()
 
-# Search Logic
 if q:
     w = normalize_text(q).split()
     df = df[df.apply(lambda r: all(x in normalize_text(str(r['title'])+str(r['content'])) for x in w), axis=1)]
 
-# Latest News Ticker
 if not df.empty:
     txt = "   ///   ".join([f"{r['title']}" for i,r in df.head(10).iterrows()]) * 3
-    st.markdown(f"""
-    <div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;">
-        <div style="white-space:nowrap; animation: scroll-text 60s linear infinite;">
-            <span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 60s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
 
-# --- DATE DISPLAY INJECTION ---
 date_str = get_greek_date()
 st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
 
@@ -642,28 +451,15 @@ def render_hero(dataset):
     if dataset.empty: return
     if 'idx' not in st.session_state: st.session_state.idx = 0
     st.session_state.idx += 1
-    
     current_idx = st.session_state.idx % len(dataset)
     r = dataset.iloc[current_idx]
-    
     tags_html = get_tags_html(r)
-    
     safe_len = min(len(dataset), 10)
     dots_html = ""
     for i in range(safe_len):
         active_class = "active" if i == (current_idx % safe_len) else ""
         dots_html += f'<span class="dot {active_class}"></span>'
-
-    st.markdown(f"""
-    <div class="hero-container">
-        <img src="{get_img(r)}" class="hero-img">
-        <div class="hero-text-box">
-            <div style="margin-bottom:8px;">{tags_html}</div>
-            <a href="{r['link']}" target="_blank" style="color:white; font-size:1.6rem; font-weight:700; text-decoration:none; line-height:1.2;">{r['title']}</a>
-        </div>
-        <div class="slider-dots">{dots_html}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="hero-container"><img src="{get_img(r)}" class="hero-img"><div class="hero-text-box"><div style="margin-bottom:8px;">{tags_html}</div><a href="{r['link']}" target="_blank" style="color:white; font-size:1.6rem; font-weight:700; text-decoration:none; line-height:1.2;">{r['title']}</a></div><div class="slider-dots">{dots_html}</div></div>""", unsafe_allow_html=True)
 
 def render_newsroom(dataset, is_home=False):
     if dataset.empty: st.info("No data found."); return
@@ -673,23 +469,12 @@ def render_newsroom(dataset, is_home=False):
         side = dataset.iloc[0:4]
         bot = dataset.iloc[4:13]
         start = 13
-        
         c_hero, c_list = st.columns([2.3, 1])
         with c_hero: render_hero(feat)
         with c_list:
-            # Προσθήκη κλάσης 'mobile-push-down' για να κατέβει πιο κάτω στα κινητά
             st.markdown('<div class="mobile-push-down" style="border-bottom:2px solid white; color:white; font-weight:700; margin-bottom:0px;">LATEST UPDATES</div>', unsafe_allow_html=True)
             for _, r in side.iterrows():
-                st.markdown(f"""
-                <div class="side-row">
-                    <img src="{get_img(r)}" class="side-thumb">
-                    <div class="side-content">
-                        <a href="{r['link']}" target="_blank" class="side-link-title">{r['title']}</a>
-                        <div class="side-meta-date">{get_formatted_time(r['datetime_obj'])}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
+                st.markdown(f"""<div class="side-row"><img src="{get_img(r)}" class="side-thumb"><div class="side-content"><a href="{r['link']}" target="_blank" class="side-link-title">{r['title']}</a><div class="side-meta-date">{get_formatted_time(r['datetime_obj'])}</div></div></div>""", unsafe_allow_html=True)
         if not bot.empty:
             st.markdown("<br>", unsafe_allow_html=True)
             for i in range((len(bot)//3)+1):
@@ -699,20 +484,11 @@ def render_newsroom(dataset, is_home=False):
                     if idx < len(bot):
                         r = bot.iloc[idx]
                         with col:
-                             st.markdown(f"""
-                             <div class="side-row" style="border-top:1px solid #222;">
-                                <img src="{get_img(r)}" class="side-thumb">
-                                <div class="side-content">
-                                    <a href="{r['link']}" target="_blank" class="side-link-title">{r['title']}</a>
-                                    <div class="side-meta-date">{get_formatted_time(r['datetime_obj'])}</div>
-                                </div>
-                             </div>
-                             """, unsafe_allow_html=True)
+                             st.markdown(f"""<div class="side-row" style="border-top:1px solid #222;"><img src="{get_img(r)}" class="side-thumb"><div class="side-content"><a href="{r['link']}" target="_blank" class="side-link-title">{r['title']}</a><div class="side-meta-date">{get_formatted_time(r['datetime_obj'])}</div></div></div>""", unsafe_allow_html=True)
         st.markdown('<div style="border-bottom:2px solid #333; color:white; font-weight:800; font-size:1.4rem; margin:40px 0 20px 0;">ARCHIVE</div>', unsafe_allow_html=True)
 
     grid = dataset.iloc[start:]
     if grid.empty and not is_home: st.write("No more news."); return
-
     for i in range((len(grid)//3)+1):
         cols = st.columns(3)
         for j, col in enumerate(cols):
@@ -730,9 +506,7 @@ with tabs[3]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'FEK' in x)])
 with tabs[4]: 
     st.markdown("### 📊 Στατιστικά")
     col1, col2 = st.columns(2)
-    with col1:
-        st.bar_chart(df['source'].value_counts())
+    with col1: st.bar_chart(df['source'].value_counts())
     with col2:
         st.write(f"Total Articles: {len(df)}")
-        if st.secrets.get("admin_password") and st.text_input("Password", type="password") == st.secrets["admin_password"]:
-            st.dataframe(df)
+        if st.secrets.get("admin_password") and st.text_input("Password", type="password") == st.secrets["admin_password"]: st.dataframe(df)
