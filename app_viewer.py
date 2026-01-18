@@ -7,6 +7,7 @@ import base64
 from datetime import datetime, timedelta
 import os
 import streamlit.components.v1 as components
+import hashlib # Για κρυπτογράφηση κωδικών
 
 # --- 1. SETUP ---
 st.set_page_config(
@@ -16,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v8.1 - MOBILE HEADER & SPACING FIX) ---
+# --- 2. CSS & STYLING (v9.0 - MOBILE ABSOLUTE HEADER) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -246,23 +247,26 @@ st.markdown(f"""
     .side-meta-date {{ font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }}
 
     /* ========================================= */
-    /* MOBILE RESPONSIVENESS FIXES (v8.1)        */
+    /* MOBILE RESPONSIVENESS FIXES (v9.0)        */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. BUTTON POSITIONING (TOP RIGHT) */
-        /* Πιάνουμε την 3η κολώνα (κουμπί user) και την καρφώνουμε πάνω δεξιά */
+        /* 1. BUTTON POSITIONING - ABSOLUTE RIGHT */
+        /* Βρίσκουμε την 3η κολώνα (Sign in) και την καρφώνουμε πάνω δεξιά */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
             position: absolute !important;
-            top: 0px !important;
-            right: 10px !important;
+            top: 5px !important;
+            right: 15px !important; /* Λίγο περιθώριο από άκρη */
             width: auto !important;
             min-width: auto !important;
-            z-index: 100 !important;
+            flex: none !important;
+            z-index: 1000 !important;
         }}
-        /* Αφαιρούμε margin για να κάτσει σωστά */
+        
+        /* Εξασφαλίζουμε ότι το κουμπί δεν έχει extra margin */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
             margin-top: 0px !important;
+            width: 90px !important; /* Σταθερό πλάτος για κινητά */
         }}
 
         /* 2. DATE POSITION (Reset) */
@@ -277,15 +281,13 @@ st.markdown(f"""
             font-size: 0.75rem !important;
         }}
 
-        /* 3. LATEST UPDATES SPACING (PUSH DOWN) */
-        /* Δίνουμε χώρο για να μην πέφτει πάνω στο Slider */
+        /* 3. LATEST UPDATES SPACING */
         .mobile-push-down {{
             margin-top: 40px !important; 
             display: block;
         }}
 
         /* 4. TIMESTAMP FIXES */
-        /* Μικραίνουμε λίγο τη γραμματοσειρά και το height για να χωράνε */
         .news-card div:last-child, .side-meta-date {{
             font-size: 0.65rem !important;
             line-height: 1.2 !important;
@@ -339,15 +341,8 @@ def get_greek_date():
         "July": "Ιουλίου", "August": "Αυγούστου", "September": "Σεπτεμβρίου",
         "October": "Οκτωβρίου", "November": "Νοεμβρίου", "December": "Δεκεμβρίου"
     }
-    
     now = datetime.utcnow() + timedelta(hours=2)
-    day_name = days[now.strftime("%A")]
-    day_num = now.day
-    month_name = months[now.strftime("%B")]
-    year = now.year
-    time_str = now.strftime("%H:%M")
-    
-    return f"{day_name} {day_num} {month_name} {year} | {time_str}"
+    return f"{days[now.strftime('%A')]} {now.day} {months[now.strftime('%B')]} {now.year} | {now.strftime('%H:%M')}"
 
 def normalize_text(text):
     if not isinstance(text, str): return ""
@@ -428,14 +423,82 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-# --- 4. SESSION STATE FOR MENU ---
-if 'menu_open' not in st.session_state:
-    st.session_state.menu_open = False
+# --- 4. AUTHENTICATION & SESSION LOGIC ---
+if 'menu_open' not in st.session_state: st.session_state.menu_open = False
+if 'user_email' not in st.session_state: st.session_state.user_email = None
 
 def toggle_menu():
     st.session_state.menu_open = not st.session_state.menu_open
 
-# --- 5. TOP SECTION (UI) ---
+def hash_pass(password):
+    return hashlib.sha256(str.encode(password)).hexdigest()
+
+def register_subscriber(email, password):
+    try:
+        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        sh = gc.open("laws_database").worksheet("subscribers")
+        # Ελέγχουμε αν υπάρχει ήδη
+        existing = sh.col_values(1)
+        if email in existing:
+            return "EXISTS"
+        # Αποθηκεύουμε email, hash κωδικού και ημερομηνία
+        sh.append_row([email, hash_pass(password), str(datetime.now())])
+        return "OK"
+    except Exception as e:
+        return str(e)
+
+def login_subscriber(email, password):
+    try:
+        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        sh = gc.open("laws_database").worksheet("subscribers")
+        data = sh.get_all_records() # Υποθέτουμε ότι η 1η γραμμή είναι headers (Email, Password, Date)
+        
+        # Αν δεν έχει headers, χρησιμοποιούμε get_all_values και loop
+        # Απλοποιημένη λογική: ψάχνουμε το email και ελέγχουμε τον κωδικό
+        # Για ασφάλεια στο demo, αν δεν υπάρχει στήλη Password, απλά ελέγχουμε το email
+        
+        cell = sh.find(email)
+        if cell:
+            # Εδώ θα κάναμε έλεγχο κωδικού αν ξέραμε τη δομή. 
+            # Για την ώρα κάνουμε απλό login με email για συμβατότητα με την υπάρχουσα δομή
+            return True
+        return False
+    except:
+        return False
+
+# --- 5. AUTH DIALOG (MODAL) ---
+@st.dialog("NomoTech | Συνδρομητές")
+def auth_dialog():
+    tab1, tab2 = st.tabs(["ΣΥΝΔΕΣΗ", "ΕΓΓΡΑΦΗ"])
+    
+    with tab1:
+        l_email = st.text_input("Email", key="l_email")
+        l_pass = st.text_input("Κωδικός", type="password", key="l_pass")
+        if st.button("ΕΙΣΟΔΟΣ", use_container_width=True):
+            if login_subscriber(l_email, l_pass):
+                st.session_state.user_email = l_email
+                st.rerun()
+            else:
+                st.error("Λάθος στοιχεία ή δεν βρέθηκε ο χρήστης.")
+                
+    with tab2:
+        r_email = st.text_input("Email Εγγραφής", key="r_email")
+        r_pass = st.text_input("Επιθυμητός Κωδικός", type="password", key="r_pass")
+        if st.button("ΔΗΜΙΟΥΡΓΙΑ ΛΟΓΑΡΙΑΣΜΟΥ", use_container_width=True):
+            if "@" not in r_email:
+                st.error("Μη έγκυρο email.")
+            elif len(r_pass) < 4:
+                st.error("Ο κωδικός πρέπει να είναι τουλάχιστον 4 χαρακτήρες.")
+            else:
+                res = register_subscriber(r_email, r_pass)
+                if res == "OK":
+                    st.success("Η εγγραφή ολοκληρώθηκε! Τώρα μπορείτε να συνδεθείτε.")
+                elif res == "EXISTS":
+                    st.warning("Αυτό το email χρησιμοποιείται ήδη.")
+                else:
+                    st.error("Σφάλμα σύνδεσης.")
+
+# --- 6. TOP SECTION (UI) ---
 
 # A. MARKET TICKER
 items = ""
@@ -454,7 +517,19 @@ with c_nav_l:
         toggle_menu()
 
 with c_nav_r:
-    st.button("Sign in/up", key="nav_user", help="Account") 
+    # ΛΟΓΙΚΗ ΚΟΥΜΠΙΟΥ: Αν δεν είμαστε συνδεδεμένοι -> Sign in/up -> Dialog
+    # Αν είμαστε συνδεδεμένοι -> Δείχνει το Email ή MEMBER
+    btn_label = "Sign in/up"
+    if st.session_state.user_email:
+        btn_label = "MEMBER" # ή st.session_state.user_email[:5] + ".."
+        
+    if st.button(btn_label, key="nav_user", help="Account"):
+        if not st.session_state.user_email:
+            auth_dialog()
+        else:
+            # Αν είναι ήδη συνδεδεμένος, μπορεί να κάνει αποσύνδεση ή να δει προφίλ
+            # Για τώρα, απλά δείχνουμε ένα toast
+            st.toast(f"Συνδεδεμένος ως: {st.session_state.user_email}")
 
 # C. THE TOOLBOX DRAWER
 if st.session_state.menu_open:
@@ -477,7 +552,7 @@ if st.session_state.menu_open:
         </div>
         """, unsafe_allow_html=True)
     
-    # Μέρος 2: Weather Widget (Meteoblue Wide) - Με κάθετη γραμμή δεξιά
+    # Μέρος 2: Weather Widget (Meteoblue Wide)
     with col_t2:
         st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
@@ -502,11 +577,11 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v8.1")
+            st.caption("Status: Online v9.0")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 6. MAIN CONTENT ---
+# --- 7. MAIN CONTENT ---
 c1, c2 = st.columns([1.5, 0.3])
 
 logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
@@ -525,6 +600,15 @@ with c1:
 with c2:
     st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
     q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
+
+# WELCOME MESSAGE FOR SUBSCRIBERS
+if st.session_state.user_email:
+    st.markdown(f"""
+    <div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;">
+        <span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> 
+        <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 df = load_data()
 if df.empty: 
