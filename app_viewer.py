@@ -8,15 +8,23 @@ from datetime import datetime, timedelta
 import os
 import streamlit.components.v1 as components
 
-# --- 1. SETUP (Από το Perfect Layout) ---
+# --- 1. SESSION STATE SETUP (ΠΡΙΝ ΤΟ CONFIG) ---
+# Ελέγχουμε την κατάσταση της μπάρας για να ανοίγει με το κουμπί
+if 'sidebar_state' not in st.session_state:
+    st.session_state.sidebar_state = 'collapsed'
+
+def toggle_sidebar():
+    st.session_state.sidebar_state = 'expanded' if st.session_state.sidebar_state == 'collapsed' else 'collapsed'
+
+# --- 2. SETUP ---
 st.set_page_config(
     page_title="NomoTech | Enterprise",
     page_icon="⚖️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state=st.session_state.sidebar_state # Η κατάσταση ορίζεται από το κουμπί μας
 )
 
-# --- 2. CSS & STYLING (Το "Κοστούμι" v5.45) ---
+# --- 3. CSS & STYLING (v6.2 - CUSTOM TRIGGER RESTORED) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -28,14 +36,77 @@ st.markdown(f"""
         color: #e0e0e0 !important;
     }}
 
-    /* 2. HIDE DEFAULTS */
-    section[data-testid="stSidebar"] {{ display: none !important; }}
-    [data-testid="collapsedControl"] {{ display: none !important; }}
+    /* 2. SIDEBAR STYLING (THE TOOLBOX) */
+    section[data-testid="stSidebar"] {{
+        background-color: #050505 !important;
+        border-right: 1px solid #222 !important;
+        width: 350px !important;
+    }}
+    
+    /* Κρύβουμε το default βελάκι του Streamlit για να δουλεύει ΜΟΝΟ το δικό μας */
+    [data-testid="collapsedControl"] {{
+        display: none !important;
+    }}
+    
+    /* Τίτλοι Sidebar */
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3 {{
+        font-family: 'Inter', sans-serif !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px;
+        font-size: 1rem !important;
+        margin-top: 20px !important;
+    }}
+    
+    /* Inputs στη Sidebar */
+    section[data-testid="stSidebar"] .stNumberInput input,
+    section[data-testid="stSidebar"] .stTextInput input,
+    section[data-testid="stSidebar"] .stTextArea textarea {{
+        background-color: #111 !important;
+        color: #fff !important;
+        border: 1px solid #333 !important;
+        border-radius: 4px !important;
+    }}
+
+    /* Branding Card στη Sidebar */
+    .sidebar-brand {{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 0;
+        border-bottom: 1px solid #222;
+        margin-bottom: 20px;
+    }}
+    .sidebar-brand img {{
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #333;
+        margin-bottom: 10px;
+    }}
+    .sidebar-brand-title {{
+        font-family: 'Playfair Display', serif;
+        font-size: 1.2rem;
+        color: #fff;
+        letter-spacing: 1px;
+    }}
+    .sidebar-brand-sub {{
+        font-family: 'Inter', sans-serif;
+        font-size: 0.7rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }}
+
+    /* 3. HIDE DEFAULTS */
     header[data-testid="stHeader"] {{ display: none !important; }}
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. MARKET TICKER */
+    /* 4. MARKET TICKER */
     .market-row {{
         position: fixed;
         top: 0; left: 0;
@@ -51,7 +122,7 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 4. CUSTOM BUTTONS (NAV BAR ONLY) */
+    /* 5. CUSTOM BUTTONS (NAV BAR) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
         background-color: #000000 !important;
         border: 1px solid #000000 !important;
@@ -63,7 +134,7 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
 
-    /* HAMBURGER */
+    /* HAMBURGER (Left) - TO ΔΙΚΟ ΜΑΣ ΚΟΥΜΠΙ */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important;
         height: 38px !important;
@@ -73,7 +144,7 @@ st.markdown(f"""
         display: flex; align-items: center; justify-content: center;
     }}
     
-    /* USER BUTTON (COMPACT & HACKED) */
+    /* USER BUTTON (Right) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
         height: 28px !important;
         min-height: 28px !important;
@@ -85,7 +156,6 @@ st.markdown(f"""
         align-items: center !important;
         justify-content: center !important;
     }}
-
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button p {{
         font-family: 'Inter', sans-serif !important;
         font-size: 10px !important;
@@ -114,7 +184,7 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
 
-    /* 5. DATE DISPLAY (MOVED LOWER) */
+    /* 6. DATE DISPLAY */
     .date-container {{
         display: flex;
         justify-content: flex-end;
@@ -134,25 +204,13 @@ st.markdown(f"""
         padding-top: 12px; 
     }}
 
-    /* 6. MENU PANEL */
-    .menu-panel {{
-        background-color: #0b0d0f;
-        border: 1px solid #333;
-        padding: 15px;
-        margin-top: 5px;
-        border-radius: 4px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-    }}
-
-    /* 7. LAYOUT */
+    /* 7. GENERAL UI */
     .block-container {{ padding-top: 4px !important; }}
     [data-testid="stHorizontalBlock"]:nth-of-type(1) {{
         align-items: center !important;
         gap: 0 !important;
         padding-top: 10px !important;
     }}
-
-    /* 8. UI ELEMENTS */
     .header-area {{ margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }}
     .logo-img-custom {{ width: 90px; height: auto; border-radius: 0px; }}
     .brand-title {{ font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }}
@@ -188,7 +246,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. HELPERS & LOGIC (Από το App Viewer - Ο "Εγκέφαλος") ---
+# --- 4. HELPERS & LOGIC ---
 
 def get_image_as_base64(file_path):
     try:
@@ -197,6 +255,7 @@ def get_image_as_base64(file_path):
     except: return None
 
 main_logo_b64 = get_image_as_base64("LOGONOMO.JPG")
+nikas_logo_b64 = get_image_as_base64("logo.jpg") 
 
 def get_greek_date():
     days = {
@@ -219,29 +278,23 @@ def get_greek_date():
     
     return f"{day_name} {day_num} {month_name} {year} | {time_str}"
 
-# Κανονικοποίηση κειμένου για αναζήτηση
 def normalize_text(text):
     if not isinstance(text, str): return ""
     return "".join([c for c in unicodedata.normalize('NFKD', text) if not unicodedata.combining(c)]).lower()
 
-# Βαθιά Ανάλυση Περιεχομένου (Από το App Viewer)
 def analyze_content_deep(row):
     title = normalize_text(str(row.get('title', '')))
     ai_category = str(row.get('category', '')).upper()
     content_body = str(row.get('content', '')).upper() 
     
     tags = set()
-    
-    # Filter Trash
     trash_keywords = ["super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
     if any(kw in title for kw in trash_keywords): return ["TRASH"]
 
-    # Classification
     if "ENG" in ai_category or "ENG" in content_body: tags.add("ENG")
     if "LAW" in ai_category or "LAW" in content_body: tags.add("LAW")
     if "FEK" in ai_category or "FEK" in content_body: tags.add("FEK")
     
-    # Keyword Fallback
     eng_keywords = ["μηχανικ", "ακινητ", "εργα", "αυθαιρετ", "κτιρι", "ενεργειακ", "κτηματολογ", "πολεοδομ", "real estate", "κατασκευ", "νοκ", "γοκ", "τεε", "άδεια", "οικοδομ"]
     if any(kw in title for kw in eng_keywords): tags.add("ENG")
 
@@ -255,7 +308,6 @@ def analyze_content_deep(row):
     if not tags: tags.add("GENERAL")
     return list(tags)
 
-# Φόρτωση Δεδομένων
 @st.cache_data(ttl=600)
 def load_data():
     try:
@@ -264,8 +316,6 @@ def load_data():
         df = pd.DataFrame(raw)
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
         df = df.sort_values(by='datetime_obj', ascending=False)
-        
-        # Εφαρμογή της ανάλυσης tags
         records = df.to_dict('records')
         clean_records = []
         for r in records: 
@@ -273,13 +323,11 @@ def load_data():
             if "TRASH" not in tags: 
                 r['smart_tags'] = tags
                 clean_records.append(r)
-        
         return pd.DataFrame(clean_records)
     except: return pd.DataFrame()
 
 def get_img(row):
     i = str(row.get('image_url', '')).strip()
-    # Default images pool (Από το App Viewer)
     if not i.startswith('http'):
         tags = row.get('smart_tags', [])
         if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200"
@@ -299,7 +347,6 @@ def get_formatted_time(dt):
     else:
         return dt.strftime("%d/%m/%y")
 
-# Mapping tags to CSS classes for Perfect Layout
 def get_tags_html(row):
     tags = row.get('smart_tags', [])
     html = ""
@@ -310,21 +357,52 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-def save_subscriber(email):
-    try:
-        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        gc.open("laws_database").worksheet("subscribers").append_row([email, str(datetime.now())])
-        return "OK"
-    except: return "ERROR"
+# --- 5. THE ULTIMATE SIDEBAR (TOOLBOX) ---
+with st.sidebar:
+    # A. BRANDING CARD
+    logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
+    st.markdown(f"""
+    <div class="sidebar-brand">
+        <img src="{logo_src}">
+        <div class="sidebar-brand-title">NiKAS Technical</div>
+        <div class="sidebar-brand-sub">ENGINEERING & CONSULTING</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # B. WEATHER WIDGET (DARK MODE & RESPONSIVE)
+    st.markdown("### 🌤️ Live Καιρός (Αθήνα)")
+    components.html("""
+    <a class="weatherwidget-io" href="https://forecast7.com/en/37d9823d72/athens/" data-label_1="ATHENS" data-label_2="WEATHER" data-theme="dark" >ATHENS WEATHER</a>
+    <script>
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+    </script>
+    """, height=100)
 
-# --- 4. SESSION STATE ---
-if 'menu_open' not in st.session_state:
-    st.session_state.menu_open = False
+    st.markdown("---")
 
-def toggle_menu():
-    st.session_state.menu_open = not st.session_state.menu_open
+    # C. QUICK TOOLS
+    st.markdown("### 🧮 Quick Calculator (ΦΠΑ)")
+    amount = st.number_input("Καθαρό Ποσό (€)", min_value=0.0, step=10.0)
+    if amount > 0:
+        fpa = amount * 0.24
+        total = amount + fpa
+        st.info(f"ΦΠΑ (24%): €{fpa:.2f}")
+        st.success(f"**Τελικό: €{total:.2f}**")
+        
+    st.markdown("---")
+    
+    st.markdown("### 📅 Ημερολόγιο")
+    st.date_input("Επιλογή Ημ/νίας", label_visibility="collapsed")
+    
+    st.markdown("---")
+    
+    st.markdown("### 📝 Notes")
+    st.text_area("Σημειώσεις...", height=100, label_visibility="collapsed")
+    
+    st.caption("© 2026 NiKAS Technical")
 
-# --- 5. TOP SECTION (UI) ---
+
+# --- 6. TOP SECTION (UI) ---
 
 # A. MARKET TICKER
 items = ""
@@ -339,37 +417,15 @@ st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10
 c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
 
 with c_nav_l:
+    # ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΟΥΜΠΙ ΣΟΥ. ΠΑΤΑΕΙ ΚΑΙ ΑΝΟΙΓΕΙ ΤΗ ΜΠΑΡΑ.
     if st.button("☰", key="nav_menu"):
-        toggle_menu()
+        toggle_sidebar()
+        st.rerun()
 
 with c_nav_r:
     st.button("Sign in/up", key="nav_user", help="Account") 
 
-# C. DROPDOWN MENU
-if st.session_state.menu_open:
-    st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
-    st.markdown("### 🛠️ ΕΡΓΑΛΕΙΟΘΗΚΗ")
-    col_t1, col_t2, col_t3 = st.columns(3)
-    with col_t1: 
-        if st.button("🔄 ΑΝΑΝΕΩΣΗ", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-    with col_t2: st.button("📅 ΗΜΕΡΟΛΟΓΙΟ", use_container_width=True)
-    with col_t3: st.button("☁️ ΚΑΙΡΟΣ", use_container_width=True)
-    
-    st.markdown("---")
-    st.markdown("### 📬 Ενημέρωση")
-    email_in = st.text_input("Email", placeholder="me@example.com", key="sub_email")
-    if st.button("ΕΓΓΡΑΦΗ"):
-        if "@" in email_in:
-            if save_subscriber(email_in) == "OK": st.success("Εγγραφήκατε!")
-            else: st.error("Σφάλμα.")
-            
-    st.markdown("---")
-    st.caption("Status: Online | v5.45")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 6. MAIN CONTENT ---
+# --- 7. MAIN CONTENT ---
 c1, c2 = st.columns([1.5, 0.3])
 
 logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
@@ -427,9 +483,8 @@ def render_hero(dataset):
     
     tags_html = get_tags_html(r)
     
-    dots_html = ""
-    # Limit dots to max 10 to avoid overflow
     safe_len = min(len(dataset), 10)
+    dots_html = ""
     for i in range(safe_len):
         active_class = "active" if i == (current_idx % safe_len) else ""
         dots_html += f'<span class="dot {active_class}"></span>'
@@ -447,10 +502,7 @@ def render_hero(dataset):
 
 def render_newsroom(dataset, is_home=False):
     if dataset.empty: st.info("No data found."); return
-    
     start = 0
-    
-    # Αν είμαστε στην αρχική και δεν ψάχνουμε, δείχνουμε Hero + Side list
     if is_home and not q:
         feat = dataset.head(13)
         side = dataset.iloc[0:4]
@@ -492,7 +544,6 @@ def render_newsroom(dataset, is_home=False):
                              """, unsafe_allow_html=True)
         st.markdown('<div style="border-bottom:2px solid #333; color:white; font-weight:800; font-size:1.4rem; margin:40px 0 20px 0;">ARCHIVE</div>', unsafe_allow_html=True)
 
-    # Grid Display
     grid = dataset.iloc[start:]
     if grid.empty and not is_home: st.write("No more news."); return
 
@@ -506,8 +557,6 @@ def render_newsroom(dataset, is_home=False):
                 with col:
                     st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
 
-# --- RENDER TABS ---
-# Φιλτράρισμα με βάση τα smart_tags που φτιάξαμε στο load_data
 with tabs[0]: render_newsroom(df, is_home=True)
 with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
 with tabs[2]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'LAW' in x)])
@@ -519,6 +568,5 @@ with tabs[4]:
         st.bar_chart(df['source'].value_counts())
     with col2:
         st.write(f"Total Articles: {len(df)}")
-        # Admin Panel (Από το App Viewer)
         if st.secrets.get("admin_password") and st.text_input("Password", type="password") == st.secrets["admin_password"]:
             st.dataframe(df)
