@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v8.0 - MOBILE RESPONSIVE & REFINED UI) ---
+# --- 2. CSS & STYLING (v8.1 - MOBILE HEADER & SPACING FIX) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -35,7 +35,7 @@ st.markdown(f"""
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. TOOLBOX DRAWER (To "Συρτάρι") */
+    /* 3. TOOLBOX DRAWER */
     .menu-panel {{
         background-color: #050505;
         border-bottom: 1px solid #333;
@@ -46,14 +46,14 @@ st.markdown(f"""
         box-shadow: 0 15px 30px rgba(0,0,0,0.9);
     }}
     
-    /* Branding - Στήλη 1 */
+    /* Branding */
     .drawer-brand {{
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100%;
-        border-right: 1px solid #222; /* Γραμμή δεξιά */
+        border-right: 1px solid #222;
         padding-right: 20px;
     }}
     .drawer-brand img {{
@@ -80,14 +80,14 @@ st.markdown(f"""
         text-align: center;
     }}
 
-    /* Middle Column (Καιρός) - Στήλη 2 */
+    /* Middle Column */
     .drawer-mid {{
         height: 100%;
-        border-right: 1px solid #222; /* Η ΓΡΑΜΜΗ ΠΟΥ ΖΗΤΗΣΕΣ */
+        border-right: 1px solid #222;
         padding-right: 20px;
     }}
     
-    /* Τίτλος Εργαλειοθήκης (ΧΩΡΙΣ ΓΡΑΜΜΕΣ) */
+    /* Titles */
     .toolbox-title {{
         font-family: 'Inter', sans-serif;
         font-size: 1.2rem;
@@ -96,9 +96,7 @@ st.markdown(f"""
         margin-bottom: 20px;
         letter-spacing: 1px;
         text-transform: uppercase;
-        /* border-bottom αφαιρέθηκε */
     }}
-    
     .toolbox-section-header {{
         color: #888;
         font-size: 0.75rem;
@@ -187,12 +185,12 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
 
-    /* 6. DATE DISPLAY (DESKTOP DEFAULT) */
+    /* 6. DATE DISPLAY (Desktop) */
     .date-container {{
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        margin-bottom: -38px; /* Negative margin for Desktop alignment */
+        margin-bottom: -38px;
         position: relative;
         z-index: 1;
         padding-right: 5px;
@@ -248,34 +246,63 @@ st.markdown(f"""
     .side-meta-date {{ font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }}
 
     /* ========================================= */
-    /* MOBILE RESPONSIVENESS (MAX WIDTH 768px)   */
+    /* MOBILE RESPONSIVENESS FIXES (v8.1)        */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. Reset Date Position */
+        /* 1. BUTTON POSITIONING (TOP RIGHT) */
+        /* Πιάνουμε την 3η κολώνα (κουμπί user) και την καρφώνουμε πάνω δεξιά */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
+            position: absolute !important;
+            top: 0px !important;
+            right: 10px !important;
+            width: auto !important;
+            min-width: auto !important;
+            z-index: 100 !important;
+        }}
+        /* Αφαιρούμε margin για να κάτσει σωστά */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
+            margin-top: 0px !important;
+        }}
+
+        /* 2. DATE POSITION (Reset) */
         .date-container {{
-            margin-bottom: 10px !important; /* Κανονικό περιθώριο, όχι αρνητικό */
+            margin-bottom: 10px !important;
             justify-content: flex-start !important;
             padding-left: 5px !important;
             height: auto !important;
         }}
         .date-text {{
             padding-top: 0 !important;
-            font-size: 0.75rem !important; /* Λίγο μεγαλύτερη για να διαβάζεται */
+            font-size: 0.75rem !important;
         }}
 
-        /* 2. Brand Header Scaling */
+        /* 3. LATEST UPDATES SPACING (PUSH DOWN) */
+        /* Δίνουμε χώρο για να μην πέφτει πάνω στο Slider */
+        .mobile-push-down {{
+            margin-top: 40px !important; 
+            display: block;
+        }}
+
+        /* 4. TIMESTAMP FIXES */
+        /* Μικραίνουμε λίγο τη γραμματοσειρά και το height για να χωράνε */
+        .news-card div:last-child, .side-meta-date {{
+            font-size: 0.65rem !important;
+            line-height: 1.2 !important;
+            margin-top: 4px !important;
+        }}
+
+        /* Brand Header Scaling */
         .brand-title {{ font-size: 2rem !important; }}
         .header-area {{ flex-direction: row !important; align-items: center !important; gap: 10px !important; }}
         .logo-img-custom {{ width: 60px !important; }}
 
-        /* 3. Hero Container Height */
+        /* Hero Container Height */
         .hero-container {{ height: 300px !important; }}
         .hero-text-box a {{ font-size: 1.2rem !important; }}
 
-        /* 4. Toolbox on Mobile */
+        /* Toolbox on Mobile */
         .menu-panel {{ padding: 10px !important; }}
-        /* Στο κινητό οι στήλες γίνονται στοίβα, άρα βγάζουμε τα border-right */
         .drawer-brand, .drawer-mid {{ 
             border-right: none !important; 
             border-bottom: 1px solid #222 !important;
@@ -284,17 +311,8 @@ st.markdown(f"""
             padding-right: 0 !important;
         }}
         
-        /* 5. Latest News Ticker font */
         .m-item {{ font-size: 0.6rem !important; padding: 0 10px !important; }}
-
-        /* 6. Tabs Adjustment */
-        button[data-baseweb="tab"] {{
-            padding: 10px 5px !important;
-            font-size: 0.7rem !important;
-        }}
-        
-        /* 7. Hide Hamburger if conflicting (optional) */
-        /* [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{ margin-top: 5px !important; }} */
+        button[data-baseweb="tab"] {{ padding: 10px 5px !important; font-size: 0.7rem !important; }}
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -442,11 +460,11 @@ with c_nav_r:
 if st.session_state.menu_open:
     st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
     
-    # 1. HEADER (Custom Title Bar - CLEAN, NO LINES)
+    # 1. HEADER
     st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
     
-    # 2. COLUMNS (Με μεγαλύτερο κενό/gap)
-    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") # Large gap for better spacing
+    # 2. COLUMNS
+    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
     
     # Μέρος 1: Branding (Logo)
     with col_t1:
@@ -461,7 +479,6 @@ if st.session_state.menu_open:
     
     # Μέρος 2: Weather Widget (Meteoblue Wide) - Με κάθετη γραμμή δεξιά
     with col_t2:
-        # Wrap σε div με class drawer-mid για να πάρει το border-right
         st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
         components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
@@ -485,7 +502,7 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v8.0")
+            st.caption("Status: Online v8.1")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -576,7 +593,8 @@ def render_newsroom(dataset, is_home=False):
         c_hero, c_list = st.columns([2.3, 1])
         with c_hero: render_hero(feat)
         with c_list:
-            st.markdown('<div style="border-bottom:2px solid white; color:white; font-weight:700; margin-bottom:0px;">LATEST UPDATES</div>', unsafe_allow_html=True)
+            # Προσθήκη κλάσης 'mobile-push-down' για να κατέβει πιο κάτω στα κινητά
+            st.markdown('<div class="mobile-push-down" style="border-bottom:2px solid white; color:white; font-weight:700; margin-bottom:0px;">LATEST UPDATES</div>', unsafe_allow_html=True)
             for _, r in side.iterrows():
                 st.markdown(f"""
                 <div class="side-row">
