@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v9.1 - FIXED MOBILE BTN & DARK MODAL) ---
+# --- 2. CSS & STYLING (v9.2 - FINAL FIXES) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -36,26 +36,20 @@ st.markdown(f"""
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. MODAL / DIALOG STYLING (POP UP) */
+    /* 3. MODAL / DIALOG STYLING (CLEAN & DARK) */
     div[role="dialog"] {{
         background-color: #0b0d0f !important;
         border: 1px solid #333 !important;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.9) !important;
     }}
     div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, div[role="dialog"] p, div[role="dialog"] label {{
         color: #ffffff !important;
     }}
-    /* ΤΑ ΠΕΔΙΑ INPUT ΜΕΣΑ ΣΤΟ POP UP */
-    div[role="dialog"] input[type="text"],
-    div[role="dialog"] input[type="password"] {{
-        background-color: #000000 !important;
-        color: #ffffff !important;
-        border: 1px solid #ffffff !important; /* ΛΕΥΚΟ ΠΛΑΙΣΙΟ */
-        border-radius: 4px !important;
-    }}
-    /* Focus state για τα inputs */
-    div[role="dialog"] input:focus {{
-        border-color: #4ade80 !important; /* Πράσινο όταν γράφεις */
-        box-shadow: none !important;
+    /* Επαναφορά στο Default Dark Style για να φτιάξει το "ματάκι" */
+    div[role="dialog"] input {{
+        background-color: #111 !important;
+        color: #fff !important;
+        border-color: #333 !important;
     }}
 
     /* 4. TOOLBOX DRAWER */
@@ -103,7 +97,7 @@ st.markdown(f"""
         line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }}
     
-    /* USER BUTTON (DESKTOP) */
+    /* USER BUTTON (DEFAULT DESKTOP) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
         height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
         margin-top: 5px !important; background-image: none !important; display: flex !important;
@@ -160,32 +154,34 @@ st.markdown(f"""
     .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
     /* ========================================= */
-    /* MOBILE FIXES (v9.1) - FIXED POSITIONING   */
+    /* MOBILE FIXES (v9.2) - SUPER FIXED         */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. BUTTON POSITIONING - FIXED */
-        /* Χρησιμοποιούμε FIXED για να το καρφώσουμε στην οθόνη και να μην το επηρεάζει το stacking του Streamlit */
+        /* 1. BUTTON POSITIONING - NUCLEAR OPTION */
+        /* Αυτό στοχεύει την 3η στήλη στο Nav bar και την κολλάει πάνω δεξιά */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
             position: fixed !important;
-            top: 45px !important;  /* Ακριβώς κάτω από το ticker (35px + 10px) */
+            top: 10px !important;  /* Λίγο πιο κάτω από την κορυφή */
             right: 15px !important;
+            z-index: 999999 !important; /* Πάνω από όλα τα επίπεδα */
             width: auto !important;
             min-width: auto !important;
-            z-index: 99999 !important;
             background: transparent !important;
+            height: auto !important;
+            display: block !important;
         }}
         
-        /* Αναγκάζουμε το κουμπί να έχει μικρότερο πλάτος στο κινητό */
+        /* Στυλ του κουμπιού για να φαίνεται πάνω από το μαύρο φόντο */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-            width: 100px !important;
-            padding: 0px !important;
-            margin: 0 !important;
-            background-color: #000 !important; /* Μαύρο φόντο για να μην φαίνονται γράμματα από πίσω */
+            background-color: #000 !important;
             border: 1px solid #333 !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
+            margin: 0 !important;
+            width: 100px !important;
         }}
 
-        /* 2. DATE POSITION (Reset) */
+        /* 2. DATE POSITION */
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
 
@@ -334,7 +330,7 @@ def login_subscriber(email, password):
         gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         sh = gc.open("laws_database").worksheet("subscribers")
         cell = sh.find(email)
-        if cell: return True # Simplified for demo
+        if cell: return True 
         return False
     except: return False
 
@@ -411,7 +407,7 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v9.1")
+            st.caption("Status: Online v9.2")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN CONTENT ---
