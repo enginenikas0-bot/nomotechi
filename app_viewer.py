@@ -8,23 +8,15 @@ from datetime import datetime, timedelta
 import os
 import streamlit.components.v1 as components
 
-# --- 1. SESSION STATE SETUP (ΠΡΙΝ ΤΟ CONFIG) ---
-# Ελέγχουμε την κατάσταση της μπάρας για να ανοίγει με το κουμπί
-if 'sidebar_state' not in st.session_state:
-    st.session_state.sidebar_state = 'collapsed'
-
-def toggle_sidebar():
-    st.session_state.sidebar_state = 'expanded' if st.session_state.sidebar_state == 'collapsed' else 'collapsed'
-
-# --- 2. SETUP ---
+# --- 1. SETUP ---
 st.set_page_config(
     page_title="NomoTech | Enterprise",
     page_icon="⚖️",
     layout="wide",
-    initial_sidebar_state=st.session_state.sidebar_state # Η κατάσταση ορίζεται από το κουμπί μας
+    initial_sidebar_state="collapsed"
 )
 
-# --- 3. CSS & STYLING (v6.2 - CUSTOM TRIGGER RESTORED) ---
+# --- 2. CSS & STYLING (v6.3 - HIDDEN TRIGGER FIX) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -36,19 +28,21 @@ st.markdown(f"""
         color: #e0e0e0 !important;
     }}
 
-    /* 2. SIDEBAR STYLING (THE TOOLBOX) */
+    /* 2. SIDEBAR STYLING */
     section[data-testid="stSidebar"] {{
         background-color: #050505 !important;
         border-right: 1px solid #222 !important;
         width: 350px !important;
     }}
     
-    /* Κρύβουμε το default βελάκι του Streamlit για να δουλεύει ΜΟΝΟ το δικό μας */
+    /* ΚΡΥΒΟΥΜΕ ΤΟ NATIVE ΚΟΥΜΠΙ ΑΛΛΑ ΤΟ ΑΦΗΝΟΥΜΕ "ΠΑΤΗΣΙΜΟ" ΓΙΑ ΤΗ JAVASCRIPT */
     [data-testid="collapsedControl"] {{
-        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: block !important; /* Πρέπει να υπάρχει για να το βρει η JS */
     }}
     
-    /* Τίτλοι Sidebar */
+    /* Typography Sidebar */
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
     section[data-testid="stSidebar"] h3 {{
@@ -60,7 +54,7 @@ st.markdown(f"""
         margin-top: 20px !important;
     }}
     
-    /* Inputs στη Sidebar */
+    /* Inputs Sidebar */
     section[data-testid="stSidebar"] .stNumberInput input,
     section[data-testid="stSidebar"] .stTextInput input,
     section[data-testid="stSidebar"] .stTextArea textarea {{
@@ -70,7 +64,7 @@ st.markdown(f"""
         border-radius: 4px !important;
     }}
 
-    /* Branding Card στη Sidebar */
+    /* Branding Card */
     .sidebar-brand {{
         display: flex;
         flex-direction: column;
@@ -122,7 +116,7 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 5. CUSTOM BUTTONS (NAV BAR) */
+    /* 5. CUSTOM BUTTONS */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
         background-color: #000000 !important;
         border: 1px solid #000000 !important;
@@ -134,7 +128,7 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
 
-    /* HAMBURGER (Left) - TO ΔΙΚΟ ΜΑΣ ΚΟΥΜΠΙ */
+    /* HAMBURGER (Left) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important;
         height: 38px !important;
@@ -246,7 +240,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HELPERS & LOGIC ---
+# --- 3. HELPERS & LOGIC ---
 
 def get_image_as_base64(file_path):
     try:
@@ -357,7 +351,7 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-# --- 5. THE ULTIMATE SIDEBAR (TOOLBOX) ---
+# --- 4. THE ULTIMATE SIDEBAR (TOOLBOX) ---
 with st.sidebar:
     # A. BRANDING CARD
     logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
@@ -369,14 +363,9 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # B. WEATHER WIDGET (DARK MODE & RESPONSIVE)
+    # B. WEATHER WIDGET (METEOBLUE - RELIABLE)
     st.markdown("### 🌤️ Live Καιρός (Αθήνα)")
-    components.html("""
-    <a class="weatherwidget-io" href="https://forecast7.com/en/37d9823d72/athens/" data-label_1="ATHENS" data-label_2="WEATHER" data-theme="dark" >ATHENS WEATHER</a>
-    <script>
-    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-    </script>
-    """, height=100)
+    components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=240, scrolling=False)
 
     st.markdown("---")
 
@@ -402,7 +391,7 @@ with st.sidebar:
     st.caption("© 2026 NiKAS Technical")
 
 
-# --- 6. TOP SECTION (UI) ---
+# --- 5. TOP SECTION (UI) ---
 
 # A. MARKET TICKER
 items = ""
@@ -417,15 +406,22 @@ st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10
 c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
 
 with c_nav_l:
-    # ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΟΥΜΠΙ ΣΟΥ. ΠΑΤΑΕΙ ΚΑΙ ΑΝΟΙΓΕΙ ΤΗ ΜΠΑΡΑ.
+    # ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΟΛΠΟ: Οταν πατάς το κουμπί, τρέχει JavaScript που πατάει το ΚΡΥΦΟ βελάκι
     if st.button("☰", key="nav_menu"):
-        toggle_sidebar()
-        st.rerun()
+        js = '''
+        <script>
+            var sidebarBtn = window.parent.document.querySelector('button[data-testid="collapsedControl"]');
+            if (sidebarBtn) {
+                sidebarBtn.click();
+            }
+        </script>
+        '''
+        components.html(js, height=0, width=0)
 
 with c_nav_r:
     st.button("Sign in/up", key="nav_user", help="Account") 
 
-# --- 7. MAIN CONTENT ---
+# --- 6. MAIN CONTENT ---
 c1, c2 = st.columns([1.5, 0.3])
 
 logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
