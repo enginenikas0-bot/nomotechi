@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v13.0 - LASER FOCUSED MOBILE FIX) ---
+# --- 2. CSS & STYLING (v4.0.1 - STABLE BASE + TIMESTAMP FIX) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -36,7 +36,7 @@ st.markdown(f"""
     [data-testid="stToolbar"] {{ display: none !important; }}
     [data-testid="stDecoration"] {{ display: none !important; }}
 
-    /* 3. MODAL / DIALOG STYLING (DARK & CLEAN) */
+    /* 3. MODAL / DIALOG STYLING */
     div[role="dialog"] {{
         background-color: #0b0d0f !important;
         border: 1px solid #333 !important;
@@ -83,17 +83,19 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 6. CUSTOM BUTTONS (GLOBAL) */
-    [data-testid="stHorizontalBlock"] button {{
+    /* 6. CUSTOM BUTTONS */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
         background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
         border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important;
     }}
+
     /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important; height: 38px !important; font-size: 1.6rem !important;
         line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }}
-    /* USER BUTTON */
+    
+    /* USER BUTTON (DESKTOP) */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
         height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
         margin-top: 5px !important; background-image: none !important; display: flex !important;
@@ -104,18 +106,17 @@ st.markdown(f"""
         letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
         white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }}
+
     /* NO HOVER */
-    [data-testid="stHorizontalBlock"] button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
-    [data-testid="stHorizontalBlock"] button:hover * {{ color: #ffffff !important; }}
-    [data-testid="stHorizontalBlock"] button:active, [data-testid="stHorizontalBlock"] button:focus {{
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * {{ color: #ffffff !important; }}
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active, [data-testid="stHorizontalBlock"]:nth-of-type(1) button:focus {{
         background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; box-shadow: none !important;
     }}
 
     /* 7. GENERAL UI */
     .block-container {{ padding-top: 4px !important; }}
-    /* ΜΟΝΟ για την πρώτη γραμμή (Navbar) σε Desktop */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) {{ align-items: center !important; gap: 0 !important; padding-top: 10px !important; }}
-    
     .header-area {{ margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }}
     .logo-img-custom {{ width: 90px; height: auto; border-radius: 0px; }}
     .brand-title {{ font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }}
@@ -151,62 +152,46 @@ st.markdown(f"""
     .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
     /* ========================================= */
-    /* MOBILE FIXES (v13.0) - TARGETED NAV ONLY  */
+    /* MOBILE FIXES (v4.0.1 - FIXED LAYOUT)      */
     /* ========================================= */
     @media only screen and (max-width: 768px) {{
         
-        /* 1. ΣΤΟΧΕΥΟΥΜΕ ΜΟΝΟ ΤΗΝ ΚΥΡΙΑ ΓΡΑΜΜΗ ΤΟΥ MENU */
-        /* Χρησιμοποιούμε τον selector '>' για να πιάσουμε το horizontal block που είναι ΑΜΕΣΟ παιδί του κυρίως layout */
-        /* Αυτό ΔΕΝ επηρεάζει τα tabs γιατί είναι βαθύτερα στο DOM */
-        [data-testid="block-container"] > div > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:nth-of-type(1) {{
-            background-color: #000000 !important;
-            padding: 5px 10px !important;
-            display: flex !important;
-            flex-direction: row !important; /* Καρφωτά οριζόντια */
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            width: 100% !important;
-            gap: 0px !important;
-        }}
-
-        /* Στήλη 1: Hamburger */
-        [data-testid="block-container"] > div > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) {{
-            flex: 0 0 auto !important;
+        /* 1. BUTTON POSITIONING - NUCLEAR OPTION */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
+            position: fixed !important;
+            top: 10px !important;
+            right: 15px !important;
+            z-index: 999999 !important;
             width: auto !important;
-            min-width: 50px !important;
-        }}
-
-        /* Στήλη 2: Κενό (Spacer) */
-        [data-testid="block-container"] > div > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(2) {{
-            flex: 1 1 auto !important;
-            width: auto !important;
-        }}
-
-        /* Στήλη 3: Sign In */
-        [data-testid="block-container"] > div > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
-            flex: 0 0 auto !important;
-            width: auto !important;
-            display: flex !important;
-            justify-content: flex-end !important;
+            min-width: auto !important;
+            background: transparent !important;
+            height: auto !important;
+            display: block !important;
         }}
         
-        /* Κουμπί στο κινητό */
-        [data-testid="block-container"] > div > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-            width: 100px !important;
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
+            background-color: #000 !important;
+            border: 1px solid #333 !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
             margin: 0 !important;
-            padding: 0 !important;
+            width: 100px !important;
         }}
 
-        /* 2. DATE POSITION (Reset) */
+        /* 2. DATE POSITION */
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
 
         /* 3. LATEST UPDATES SPACING */
         .mobile-push-down {{ margin-top: 40px !important; display: block; }}
 
-        /* 4. TIMESTAMP FIXES */
-        .news-card div:last-child, .side-meta-date {{ font-size: 0.65rem !important; line-height: 1.2 !important; margin-top: 4px !important; }}
+        /* 4. TIMESTAMP FIXES - THE TWEAK */
+        .news-card div:last-child, .side-meta-date {{ 
+            font-size: 0.55rem !important; /* MIKROTERO */
+            letter-spacing: -0.5px !important; /* PIO KONTA */
+            line-height: 1 !important; 
+            margin-top: 2px !important;
+            white-space: nowrap !important; /* NA MHN SPAEI SE GRAMMES */
+        }}
 
         /* Brand & Hero */
         .brand-title {{ font-size: 2rem !important; }}
@@ -424,7 +409,7 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v13.0")
+            st.caption("Status: Online v9.2")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 7. MAIN CONTENT ---
