@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v7.1 - CLEAN MINIMAL TOOLBOX) ---
+# --- 2. CSS & STYLING (v8.0 - MOBILE RESPONSIVE & REFINED UI) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -37,24 +37,24 @@ st.markdown(f"""
 
     /* 3. TOOLBOX DRAWER (To "Συρτάρι") */
     .menu-panel {{
-        background-color: #050505; /* Απόλυτο μαύρο/ανθρακί */
+        background-color: #050505;
         border-bottom: 1px solid #333;
-        padding: 25px; /* Λίγο παραπάνω padding */
+        padding: 25px;
         margin-top: 5px;
         margin-bottom: 25px;
-        border-radius: 0px; /* Πιο αυστηρό τετράγωνο */
+        border-radius: 0px;
         box-shadow: 0 15px 30px rgba(0,0,0,0.9);
     }}
     
-    /* Branding μέσα στο Drawer */
+    /* Branding - Στήλη 1 */
     .drawer-brand {{
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100%;
-        border-right: 1px solid #222;
-        padding-right: 15px;
+        border-right: 1px solid #222; /* Γραμμή δεξιά */
+        padding-right: 20px;
     }}
     .drawer-brand img {{
         width: 70px;
@@ -69,6 +69,7 @@ st.markdown(f"""
         font-size: 1.1rem;
         color: #fff;
         margin-bottom: 5px;
+        text-align: center;
     }}
     .drawer-brand-sub {{
         font-family: 'Inter', sans-serif;
@@ -76,9 +77,17 @@ st.markdown(f"""
         color: #666;
         letter-spacing: 1.5px;
         text-transform: uppercase;
+        text-align: center;
+    }}
+
+    /* Middle Column (Καιρός) - Στήλη 2 */
+    .drawer-mid {{
+        height: 100%;
+        border-right: 1px solid #222; /* Η ΓΡΑΜΜΗ ΠΟΥ ΖΗΤΗΣΕΣ */
+        padding-right: 20px;
     }}
     
-    /* Τίτλος Εργαλειοθήκης */
+    /* Τίτλος Εργαλειοθήκης (ΧΩΡΙΣ ΓΡΑΜΜΕΣ) */
     .toolbox-title {{
         font-family: 'Inter', sans-serif;
         font-size: 1.2rem;
@@ -86,17 +95,15 @@ st.markdown(f"""
         color: #fff;
         margin-bottom: 20px;
         letter-spacing: 1px;
-        border-bottom: 1px solid #222;
-        padding-bottom: 10px;
         text-transform: uppercase;
+        /* border-bottom αφαιρέθηκε */
     }}
     
-    /* Section Headers μέσα στο Drawer */
     .toolbox-section-header {{
         color: #888;
         font-size: 0.75rem;
         font-weight: 600;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         text-transform: uppercase;
         letter-spacing: 1px;
         font-family: 'Inter', sans-serif;
@@ -180,12 +187,12 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
 
-    /* 6. DATE DISPLAY */
+    /* 6. DATE DISPLAY (DESKTOP DEFAULT) */
     .date-container {{
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        margin-bottom: -38px;
+        margin-bottom: -38px; /* Negative margin for Desktop alignment */
         position: relative;
         z-index: 1;
         padding-right: 5px;
@@ -239,6 +246,56 @@ st.markdown(f"""
     a.side-link-title {{ font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; font-weight: 600 !important; color: #e0e0e0 !important; text-decoration: none !important; line-height: 1.3 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }}
     a.side-link-title:hover {{ color: #fff !important; }}
     .side-meta-date {{ font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }}
+
+    /* ========================================= */
+    /* MOBILE RESPONSIVENESS (MAX WIDTH 768px)   */
+    /* ========================================= */
+    @media only screen and (max-width: 768px) {{
+        
+        /* 1. Reset Date Position */
+        .date-container {{
+            margin-bottom: 10px !important; /* Κανονικό περιθώριο, όχι αρνητικό */
+            justify-content: flex-start !important;
+            padding-left: 5px !important;
+            height: auto !important;
+        }}
+        .date-text {{
+            padding-top: 0 !important;
+            font-size: 0.75rem !important; /* Λίγο μεγαλύτερη για να διαβάζεται */
+        }}
+
+        /* 2. Brand Header Scaling */
+        .brand-title {{ font-size: 2rem !important; }}
+        .header-area {{ flex-direction: row !important; align-items: center !important; gap: 10px !important; }}
+        .logo-img-custom {{ width: 60px !important; }}
+
+        /* 3. Hero Container Height */
+        .hero-container {{ height: 300px !important; }}
+        .hero-text-box a {{ font-size: 1.2rem !important; }}
+
+        /* 4. Toolbox on Mobile */
+        .menu-panel {{ padding: 10px !important; }}
+        /* Στο κινητό οι στήλες γίνονται στοίβα, άρα βγάζουμε τα border-right */
+        .drawer-brand, .drawer-mid {{ 
+            border-right: none !important; 
+            border-bottom: 1px solid #222 !important;
+            padding-bottom: 15px !important;
+            margin-bottom: 15px !important;
+            padding-right: 0 !important;
+        }}
+        
+        /* 5. Latest News Ticker font */
+        .m-item {{ font-size: 0.6rem !important; padding: 0 10px !important; }}
+
+        /* 6. Tabs Adjustment */
+        button[data-baseweb="tab"] {{
+            padding: 10px 5px !important;
+            font-size: 0.7rem !important;
+        }}
+        
+        /* 7. Hide Hamburger if conflicting (optional) */
+        /* [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{ margin-top: 5px !important; }} */
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -381,16 +438,15 @@ with c_nav_l:
 with c_nav_r:
     st.button("Sign in/up", key="nav_user", help="Account") 
 
-# C. THE TOOLBOX DRAWER (To περιεχόμενο της Εργαλειοθήκης)
+# C. THE TOOLBOX DRAWER
 if st.session_state.menu_open:
     st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
     
-    # 1. HEADER (Custom Title Bar) - ΜΑΥΡΗ ΜΠΑΡΑ ΜΕ ΤΙΤΛΟ
+    # 1. HEADER (Custom Title Bar - CLEAN, NO LINES)
     st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
     
     # 2. COLUMNS (Με μεγαλύτερο κενό/gap)
-    # Χρησιμοποιούμε gap="medium" για να μεγαλώσουμε το κενό μεταξύ των στηλών
-    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="medium")
+    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") # Large gap for better spacing
     
     # Μέρος 1: Branding (Logo)
     with col_t1:
@@ -403,16 +459,18 @@ if st.session_state.menu_open:
         </div>
         """, unsafe_allow_html=True)
     
-    # Μέρος 2: Weather Widget (Meteoblue Wide) - Χωρίς Emoji
+    # Μέρος 2: Weather Widget (Meteoblue Wide) - Με κάθετη γραμμή δεξιά
     with col_t2:
+        # Wrap σε div με class drawer-mid για να πάρει το border-right
+        st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
         components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    # Μέρος 3: Tools & Actions - Χωρίς Emojis
+    # Μέρος 3: Tools & Actions
     with col_t3:
         st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
         
-        # Tabs για εργαλεία (ΚΕΦΑΛΑΙΑ, ΧΩΡΙΣ EMOJIS)
         tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
         
         with tool_tabs[0]:
@@ -427,7 +485,7 @@ if st.session_state.menu_open:
             if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            st.caption("Status: Online v7.1")
+            st.caption("Status: Online v8.0")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
