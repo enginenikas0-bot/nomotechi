@@ -22,9 +22,9 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
-# RSS URLS 
+# RSS URLS (Michanikos -> HTML Page)
 RSS_FEEDS = {
-    "🏗️ Michanikos": "https://www.michanikos.gr/discover/all.xml/",
+    "🏗️ Michanikos": "https://www.michanikos.gr/index/articles/", 
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🏗️ B2Green": "https://news.b2green.gr/feed",
@@ -55,6 +55,13 @@ def setup_db():
 def get_date_obj(entry):
     try:
         dt = datetime.now()
+        # Αν είναι entry από το Michanikos (HTML Scraping)
+        if isinstance(entry, dict) and 'published_parsed' in entry:
+             if isinstance(entry['published_parsed'], datetime):
+                 return entry['published_parsed']
+             return datetime.now()
+
+        # Κανονικό RSS entry
         if entry.get('published_parsed'): dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
         elif entry.get('updated_parsed'): dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
         return dt + timedelta(hours=2)
@@ -65,11 +72,8 @@ def get_date_obj(entry):
 def fallback_classify(title, source):
     """Backup classification logic if AI fails"""
     t = title.lower()
-    # ENG keywords
     if any(k in t for k in ["μηχανικ", "εργα", "αυθαιρετ", "δομηση", "ενεργεια", "ακινητ", "ktimatologio", "τεε", "οικοδομ", "εξοικονομ"]): return "ENG"
-    # LAW keywords
     if any(k in t for k in ["δικαστ", "συμβουλιο", "αρεο", "δικηγορ", "αρειο", "αστυνομ", "νομικ", "δσα", "στε"]): return "LAW"
-    # FEK keywords
     if any(k in t for k in ["φεκ", "νομος", "αποφαση", "εγκυκλιος", "τροπολογια", "ααδε"]): return "FEK"
     return "GEN"
 
@@ -85,7 +89,6 @@ def fetch_article_image(url, session):
             soup = BeautifulSoup(response.content, 'html.parser')
             img_url = ""
             
-            # 1. Meta Tags 
             meta = soup.find("meta", attrs={"property": "og:image"})
             if meta: img_url = meta.get("content")
             
@@ -101,7 +104,6 @@ def fetch_article_image(url, session):
                 link = soup.find("link", attrs={"rel": "image_src"})
                 if link: img_url = link.get("href")
             
-            # 2. Deep Scan
             if not img_url:
                 main_content = soup.find("article") or soup.find("main") or soup.find("div", class_="post-content") or soup.find("div", class_="entry-content")
                 if main_content:
@@ -109,7 +111,6 @@ def fetch_article_image(url, session):
                     if first_img:
                         img_url = first_img.get("src") or first_img.get("data-src")
             
-            # 3. Absolute URL
             if img_url: return urljoin(url, img_url)
                 
     except Exception as e:
@@ -209,58 +210,92 @@ def sort_and_clean_database(worksheet):
     except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v3.7 (XML + Filter + Capital Fix) Started...")
+    print("🚀 NomoTech Bot v4.1 (Clean HTML Fix) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
     new_rows, current_time = [], datetime.now()
     session = requests.Session()
     
-    # Headers για να περνάνε τα site (Chrome spoofing)
-    headers = {
+    # Headers
+    session.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-    }
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'el-GR,el;q=0.9,en;q=0.8',
+        'Referer': 'https://www.google.com/'
+    })
 
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
             time.sleep(random.uniform(1, 3))
             
-            # --- FIX: Αφαιρούμε το ?v=random από Michanikos, Taxheaven ΚΑΙ Capital ---
-            url_to_fetch = feed_url
-            if "Michanikos" not in source_name and "Taxheaven" not in source_name and "Capital" not in source_name:
-                 url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
+            # --- MICHANIKOS: HTML SCRAPING ---
+            if "Michanikos" in source_name:
+                resp = session.get(feed_url, timeout=25, verify=False)
+                if resp.status_code != 200:
+                    print(f"❌ HTTP {resp.status_code}"); continue
+                
+                soup = BeautifulSoup(resp.content, 'html.parser')
+                fake_entries = []
+                
+                # Βρίσκουμε links. ΑΥΤΟ ΕΙΝΑΙ ΤΟ ΦΙΛΤΡΟ ΓΙΑ ΤΑ "FILES"
+                for a in soup.find_all('a', href=True):
+                    href = a['href']
+                    text = a.get_text().strip()
+                    
+                    # Κρατάμε ΜΟΝΟ αν έχει '/articles/view/'
+                    # ΠΕΤΑΜΕ αν έχει '/files/' ή '/topic/' ή οτιδήποτε άλλο
+                    if '/articles/view/' in href and len(text) > 10:
+                        
+                        full_url = urljoin(feed_url, href)
+                        if full_url in existing_links: continue # Έλεγχος διπλότυπων
 
-            resp = session.get(url_to_fetch, headers=headers, timeout=25, verify=False)
+                        fake_entries.append({
+                            'link': full_url,
+                            'title': text,
+                            'summary': text,
+                            'published_parsed': datetime.now() 
+                        })
+                        if len(fake_entries) >= 10: break 
+                
+                class FakeFeed: pass
+                feed = FakeFeed()
+                feed.entries = fake_entries
             
-            if resp.status_code != 200:
-                print(f"❌ HTTP {resp.status_code}"); continue
-            
-            resp.encoding = resp.apparent_encoding if resp.encoding == 'ISO-8859-1' else resp.encoding
-            feed = feedparser.parse(resp.content)
-            
-            if not feed.entries:
-                print(f"⚠️ 0 (Block?)"); continue
+            # --- ΟΛΑ ΤΑ ΑΛΛΑ (RSS) ---
+            else:
+                # ΔΙΟΡΘΩΣΗ ΓΙΑ CAPITAL/TAXHEAVEN: Χωρίς ?v=random
+                url_to_fetch = feed_url
+                if "Taxheaven" not in source_name and "Capital" not in source_name:
+                     url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
+
+                resp = session.get(url_to_fetch, timeout=25, verify=False)
+                if resp.status_code != 200:
+                    print(f"❌ HTTP {resp.status_code}"); continue
+                
+                resp.encoding = resp.apparent_encoding if resp.encoding == 'ISO-8859-1' else resp.encoding
+                feed = feedparser.parse(resp.content)
+            # ----------------------------------------
+
+            if not hasattr(feed, 'entries') or not feed.entries:
+                print(f"⚠️ 0"); continue
 
             count = 0
             for entry in feed.entries[:40]:
-                link = entry.get('link', '')
-                
-                # === ΤΟ ΦΙΛΤΡΟ ΠΟΥ ΖΗΤΗΣΕΣ ΓΙΑ ΤΟ MICHANIKOS ===
-                # Φιλτράρουμε μόνο τα άρθρα και αρχεία (πετάμε τα forum topics)
-                if "Michanikos" in source_name:
-                    if "/topic/" in link: continue 
-                    if "/articles/" not in link and "/record/" not in link and "/file/" not in link: continue
-                # ===============================================
+                if isinstance(entry, dict): 
+                    link = entry['link']; title = entry['title']; summary = entry['summary']
+                else: 
+                    link = entry.get('link', ''); title = entry.get('title', 'No Title'); summary = entry.get('summary', title)
 
                 if not link or link in existing_links: continue
-                if (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
+                # Skip date check for Michanikos (since we fetch live page)
+                if "Michanikos" not in source_name:
+                    if (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
                 
                 try:
-                    title = entry.get('title', 'No Title')
                     full_text = scrape_full_text(link, session) or title
-                    cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
+                    cat_tag, ai_article = analyze_with_ai(client, title, full_text, summary)
                     img_url = fetch_article_image(link, session)
                     
                     new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
