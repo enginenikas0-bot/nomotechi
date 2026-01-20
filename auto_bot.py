@@ -74,7 +74,6 @@ def fallback_classify(title, source):
 
 def fetch_article_image(url, session):
     try:
-        # Ενισχυμένα Headers και εδώ για να μην τρώμε πόρτα στις εικόνες
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Referer': 'https://www.google.com/',
@@ -118,7 +117,6 @@ def fetch_article_image(url, session):
 
 def scrape_full_text(url, session):
     try:
-        # Ενισχυμένα Headers
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Referer': 'https://www.google.com/'
@@ -221,47 +219,48 @@ def run_scraper():
     new_rows, current_time = [], datetime.now()
     session = requests.Session()
     
-    # === STEALTH MODE UPDATE ===
-    # Ρυθμίζουμε το session να μοιάζει με Google Chrome για να περνάει τα blocks
-    session.headers.update({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    # === ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ MICHANIKOS/TAXHEAVEN ===
+    # ΑΥΤΑ ΤΑ HEADERS "ΞΕΓΕΛΑΝΕ" ΤΟ SERVER ΟΤΙ ΕΙΣΑΙ ΚΑΝΟΝΙΚΟΣ CHROME
+    real_browser_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'el-GR,el;q=0.9,en;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
         'Referer': 'https://www.google.com/',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
-        'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
         'Sec-Ch-Ua-Mobile': '?0',
         'Sec-Ch-Ua-Platform': '"Windows"',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'cross-site',
+        'Sec-Fetch-Site': 'none',
         'Sec-Fetch-User': '?1'
-    })
-    # ==========================
+    }
+    # ========================================================
 
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            # Τυχαία καθυστέρηση για να μην φαινόμαστε σαν bot
+            # Μικρή τυχαία καθυστέρηση (ανθρώπινη συμπεριφορά)
             time.sleep(random.uniform(1, 3))
             
-            # ΔΕΝ χρησιμοποιούμε το ?v=random γιατί χαλάει το Michanikos
-            # Χρησιμοποιούμε το Stealth Session
-            resp = session.get(feed_url, timeout=25, verify=False)
+            # ΑΦΑΙΡΕΣΑΜΕ ΤΟ ?v=random ΓΙΑΤΙ ΜΠΛΟΚΑΡΕΙ ΤΟ MICHANIKOS
+            # Χρησιμοποιούμε τα ενισχυμένα headers
+            resp = session.get(feed_url, headers=real_browser_headers, timeout=25, verify=False)
             
-            # Αναγκαστικό encoding για σωστά Ελληνικά
+            # Αναγκαστική κωδικοποίηση (fix για ελληνικά)
             resp.encoding = resp.apparent_encoding if resp.encoding == 'ISO-8859-1' else resp.encoding
-            
+
             if resp.status_code != 200:
                 print(f"❌ HTTP {resp.status_code}"); continue
             
-            # Parsing του περιεχομένου που κατέβηκε με το "καλό" session
+            # Περνάμε το περιεχόμενο στο feedparser
             feed = feedparser.parse(resp.content)
             
             if not feed.entries:
-                print("⚠️ 0 άρθρα (Πιθανό Block ή Κενό).")
+                # Αν είναι κενό, σημαίνει ότι το site μας έκοψε ή είναι άδειο
+                print(f"⚠️ 0 άρθρα (Size: {len(resp.content)}b - Πιθανό Block).")
                 continue
 
             count = 0
@@ -271,7 +270,6 @@ def run_scraper():
                 if (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
                 
                 title = entry.get('title', 'No Title')
-                # Χρήση του stealth session και στο scraping
                 full_text = scrape_full_text(link, session) or title
                 cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
                 img_url = fetch_article_image(link, session)
@@ -280,7 +278,7 @@ def run_scraper():
                 existing_links.add(link)
                 count += 1
             print(f"✅ {count}")
-        except Exception as e: print(f"❌ Error: {str(e)[:30]}")
+        except Exception as e: print(f"❌ Error: {str(e)[:15]}")
         
     if new_rows: worksheet.append_rows(new_rows)
     sort_and_clean_database(worksheet)
