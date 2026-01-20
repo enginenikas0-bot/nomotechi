@@ -22,9 +22,9 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
-# RSS URLS 
+# RSS URLS (Ενημερωμένο με το Link που βρήκες)
 RSS_FEEDS = {
-    "🏗️ Michanikos": "https://www.michanikos.gr/rss/1-news.xml/",
+    "🏗️ Michanikos": "https://www.michanikos.gr/index/articles/",
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🏗️ B2Green": "https://news.b2green.gr/feed",
@@ -60,7 +60,8 @@ def get_date_obj(entry):
         return dt + timedelta(hours=2)
     except: return datetime.now()
 
-# --- Η ΣΥΝΑΡΤΗΣΗ ΠΟΥ ΕΛΕΙΠΕ (Κρίσιμη για να μην κρασάρει) ---
+# --- ΟΙ ΣΥΝΑΡΤΗΣΕΙΣ ΣΟΥ ΑΚΡΙΒΩΣ ΟΠΩΣ ΗΤΑΝ ---
+
 def fallback_classify(title, source):
     """Backup classification logic if AI fails"""
     t = title.lower()
@@ -133,7 +134,6 @@ def analyze_with_ai(client, title, content, original_summary):
     if not client: return fallback_classify(title, ""), original_summary
     try:
         time.sleep(6) 
-        # --- ΤΟ PROMPT ΜΕ ΤΗΝ ΠΡΟΣΘΗΚΗ ΓΙΑ ΤΑ ΕΛΛΗΝΙΚΑ ---
         prompt = f"""
         ROLE: Specialized Intelligence Analyst for NomoTech.gr.
         TASK: Analyze article and assign ALL applicable CATEGORIES (ENG, LAW, FEK, GEN). 
@@ -173,7 +173,6 @@ def analyze_with_ai(client, title, content, original_summary):
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
         
-        # --- ΕΔΩ ΕΙΝΑΙ Η ΚΡΙΣΙΜΗ ΑΛΛΑΓΗ (CATEGORIES FIX) ---
         clean_text = text.replace("CATEGORIES:", "").replace("Category:", "").replace("Output:", "").replace("Tags:", "").strip()
         
         if "|||" in clean_text:
@@ -182,14 +181,12 @@ def analyze_with_ai(client, title, content, original_summary):
             
         # 2. Fail-safe: Αν το AI ξέχασε το ||| αλλά έγραψε ENG στην αρχή
         if clean_text.startswith("ENG") or clean_text.startswith("LAW") or clean_text.startswith("FEK"):
-            # Παίρνουμε τα πρώτα γράμματα ως Tag και το υπόλοιπο ως κείμενο
             split_point = max(clean_text.find(" "), clean_text.find(":"))
             if split_point > 0:
                 possible_tag = clean_text[:split_point].strip(" .:-").upper()
                 possible_summary = clean_text[split_point:].strip(" .:-")
                 return possible_tag, possible_summary
 
-        # Αν αποτύχουν όλα, fallback
         return fallback_classify(title, ""), clean_text
         
     except Exception as e:
@@ -212,71 +209,97 @@ def sort_and_clean_database(worksheet):
     except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v2.1.8 (Final Master) Started...")
+    print("🚀 NomoTech Bot v3.0.3 (Original + Michanikos Fix) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
     new_rows, current_time = [], datetime.now()
     session = requests.Session()
     
-    # === ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ MICHANIKOS/TAXHEAVEN ===
-    # ΑΥΤΑ ΤΑ HEADERS "ΞΕΓΕΛΑΝΕ" ΤΟ SERVER ΟΤΙ ΕΙΣΑΙ ΚΑΝΟΝΙΚΟΣ CHROME
-    real_browser_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'el-GR,el;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Referer': 'https://www.google.com/',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': '"Windows"',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1'
-    }
-    # ========================================================
-
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            # Μικρή τυχαία καθυστέρηση (ανθρώπινη συμπεριφορά)
-            time.sleep(random.uniform(1, 3))
+            # Απλά headers για να μην τρώμε πόρτα
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+            }
             
-            # ΑΦΑΙΡΕΣΑΜΕ ΤΟ ?v=random ΓΙΑΤΙ ΜΠΛΟΚΑΡΕΙ ΤΟ MICHANIKOS
-            # Χρησιμοποιούμε τα ενισχυμένα headers
-            resp = session.get(feed_url, headers=real_browser_headers, timeout=25, verify=False)
+            # --- CUSTOM LOGIC ΓΙΑ MICHANIKOS (Επειδή είναι HTML και όχι XML) ---
+            if "Michanikos" in source_name:
+                resp = session.get(feed_url, headers=headers, timeout=25, verify=False)
+                if resp.status_code != 200:
+                    print(f"❌ HTTP {resp.status_code}"); continue
+                
+                # Φτιάχνουμε "ψεύτικο" feed object για να μην αλλάξουμε τον κώδικα παρακάτω
+                soup = BeautifulSoup(resp.content, 'html.parser')
+                fake_entries = []
+                
+                # Βρίσκουμε τα links των άρθρων στη σελίδα
+                # Συνήθως τα άρθρα έχουν link που περιέχει "/article/" ή "/news/"
+                for a in soup.find_all('a', href=True):
+                    href = a['href']
+                    text = a.get_text().strip()
+                    # Φιλτράρουμε για να πάρουμε μόνο τα άρθρα
+                    if len(text) > 15 and ('/article/' in href or '/news/' in href):
+                        full_url = urljoin(feed_url, href)
+                        fake_entries.append({
+                            'link': full_url,
+                            'title': text,
+                            'summary': text, # Προσωρινή περίληψη ο τίτλος
+                            'published_parsed': time.localtime() # Βάζουμε τρέχουσα ώρα
+                        })
+                        if len(fake_entries) >= 10: break # Σταματάμε στα 10
+                
+                # Δημιουργία εικονικού αντικειμένου feed
+                class FakeFeed: pass
+                feed = FakeFeed()
+                feed.entries = fake_entries
             
-            # Αναγκαστική κωδικοποίηση (fix για ελληνικά)
-            resp.encoding = resp.apparent_encoding if resp.encoding == 'ISO-8859-1' else resp.encoding
+            # --- STANDARD LOGIC ΓΙΑ ΟΛΑ ΤΑ ΑΛΛΑ (RSS) ---
+            else:
+                # Χρησιμοποιούμε ?v=random για τα υπόλοιπα εκτός αν δημιουργεί πρόβλημα
+                url_to_fetch = feed_url
+                if "Taxheaven" not in source_name and "Capital" not in source_name:
+                     url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
 
-            if resp.status_code != 200:
-                print(f"❌ HTTP {resp.status_code}"); continue
+                resp = session.get(url_to_fetch, headers=headers, timeout=25, verify=False)
+                if resp.status_code != 200:
+                    print(f"❌ HTTP {resp.status_code}"); continue
+                
+                feed = feedparser.parse(resp.content)
             
-            # Περνάμε το περιεχόμενο στο feedparser
-            feed = feedparser.parse(resp.content)
-            
-            if not feed.entries:
-                # Αν είναι κενό, σημαίνει ότι το site μας έκοψε ή είναι άδειο
-                print(f"⚠️ 0 άρθρα (Size: {len(resp.content)}b - Πιθανό Block).")
-                continue
+            # ----------------------------------------
 
             count = 0
+            # Αν δεν έχει entries, πάμε παρακάτω
+            if not hasattr(feed, 'entries') or not feed.entries:
+                 print(f"⚠️ 0"); continue
+
             for entry in feed.entries[:40]:
-                link = entry.get('link', '')
+                # Διαχείριση διαφορετικής δομής (Dict για Michanikos vs Feedparser Object για τα άλλα)
+                if isinstance(entry, dict): 
+                    link = entry['link']
+                    title = entry['title']
+                    summary = entry['summary']
+                else: 
+                    link = entry.get('link', '')
+                    title = entry.get('title', 'No Title')
+                    summary = entry.get('summary', title)
+
                 if not link or link in existing_links: continue
                 if (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
                 
-                title = entry.get('title', 'No Title')
-                full_text = scrape_full_text(link, session) or title
-                cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
-                img_url = fetch_article_image(link, session)
-                
-                new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
-                existing_links.add(link)
-                count += 1
+                try:
+                    full_text = scrape_full_text(link, session) or title
+                    cat_tag, ai_article = analyze_with_ai(client, title, full_text, summary)
+                    img_url = fetch_article_image(link, session)
+                    
+                    new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
+                    existing_links.add(link)
+                    count += 1
+                except Exception as e: print(f"!", end="")
+            
             print(f"✅ {count}")
         except Exception as e: print(f"❌ Error: {str(e)[:15]}")
         
