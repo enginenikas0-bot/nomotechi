@@ -22,8 +22,9 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
-# RSS URLS (Michanikos -> HTML Page)
+# RSS URLS 
 RSS_FEEDS = {
+    # Χρησιμοποιούμε την HTML σελίδα άρθρων
     "🏗️ Michanikos": "https://www.michanikos.gr/index/articles/", 
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
@@ -55,19 +56,18 @@ def setup_db():
 def get_date_obj(entry):
     try:
         dt = datetime.now()
-        # Αν είναι entry από το Michanikos (HTML Scraping)
+        # Για Michanikos (HTML) επιστρέφουμε τρέχουσα ώρα ή parsed object αν υπάρχει
         if isinstance(entry, dict) and 'published_parsed' in entry:
              if isinstance(entry['published_parsed'], datetime):
                  return entry['published_parsed']
              return datetime.now()
 
-        # Κανονικό RSS entry
         if entry.get('published_parsed'): dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
         elif entry.get('updated_parsed'): dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
         return dt + timedelta(hours=2)
     except: return datetime.now()
 
-# --- ΟΙ ΣΥΝΑΡΤΗΣΕΙΣ ΣΟΥ ΑΚΡΙΒΩΣ ΟΠΩΣ ΗΤΑΝ ---
+# --- ΟΙ ΣΥΝΑΡΤΗΣΕΙΣ ΣΟΥ (ΑΜΕΤΑΒΛΗΤΕΣ) ---
 
 def fallback_classify(title, source):
     """Backup classification logic if AI fails"""
@@ -210,14 +210,14 @@ def sort_and_clean_database(worksheet):
     except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v4.1 (Clean HTML Fix) Started...")
+    print("🚀 NomoTech Bot v4.2 (Michanikos Final Fix) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
     new_rows, current_time = [], datetime.now()
     session = requests.Session()
     
-    # Headers
+    # Headers Chrome
     session.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -230,7 +230,7 @@ def run_scraper():
         try:
             time.sleep(random.uniform(1, 3))
             
-            # --- MICHANIKOS: HTML SCRAPING ---
+            # --- MICHANIKOS HTML SCRAPER ---
             if "Michanikos" in source_name:
                 resp = session.get(feed_url, timeout=25, verify=False)
                 if resp.status_code != 200:
@@ -239,33 +239,38 @@ def run_scraper():
                 soup = BeautifulSoup(resp.content, 'html.parser')
                 fake_entries = []
                 
-                # Βρίσκουμε links. ΑΥΤΟ ΕΙΝΑΙ ΤΟ ΦΙΛΤΡΟ ΓΙΑ ΤΑ "FILES"
+                # Βρίσκουμε links που έχουν "/index/articles/" μέσα
+                # ΔΕΝ ψάχνουμε πλέον για "view", αλλά φιλτράρουμε κατηγορίες και σελίδες
                 for a in soup.find_all('a', href=True):
                     href = a['href']
                     text = a.get_text().strip()
                     
-                    # Κρατάμε ΜΟΝΟ αν έχει '/articles/view/'
-                    # ΠΕΤΑΜΕ αν έχει '/files/' ή '/topic/' ή οτιδήποτε άλλο
-                    if '/articles/view/' in href and len(text) > 10:
+                    if '/index/articles/' in href and len(text) > 15:
+                        # Αποκλείουμε κατηγορίες, σελίδες, σχόλια, αρχεία
+                        if '/category/' in href or '/page/' in href or '#comments' in href: continue
+                        if '/files/' in href or '/file/' in href: continue
                         
                         full_url = urljoin(feed_url, href)
-                        if full_url in existing_links: continue # Έλεγχος διπλότυπων
+                        
+                        if full_url in existing_links: continue
 
-                        fake_entries.append({
-                            'link': full_url,
-                            'title': text,
-                            'summary': text,
-                            'published_parsed': datetime.now() 
-                        })
+                        # Πρέπει να μοιάζει με άρθρο (συνήθως τελειώνει σε -r{id})
+                        if "-r" in full_url or "/articles/" in full_url:
+                            fake_entries.append({
+                                'link': full_url,
+                                'title': text,
+                                'summary': text,
+                                'published_parsed': datetime.now() 
+                            })
+                        
                         if len(fake_entries) >= 10: break 
                 
                 class FakeFeed: pass
                 feed = FakeFeed()
                 feed.entries = fake_entries
             
-            # --- ΟΛΑ ΤΑ ΑΛΛΑ (RSS) ---
+            # --- STANDARD RSS ---
             else:
-                # ΔΙΟΡΘΩΣΗ ΓΙΑ CAPITAL/TAXHEAVEN: Χωρίς ?v=random
                 url_to_fetch = feed_url
                 if "Taxheaven" not in source_name and "Capital" not in source_name:
                      url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
@@ -276,7 +281,7 @@ def run_scraper():
                 
                 resp.encoding = resp.apparent_encoding if resp.encoding == 'ISO-8859-1' else resp.encoding
                 feed = feedparser.parse(resp.content)
-            # ----------------------------------------
+            # --------------------
 
             if not hasattr(feed, 'entries') or not feed.entries:
                 print(f"⚠️ 0"); continue
@@ -289,7 +294,7 @@ def run_scraper():
                     link = entry.get('link', ''); title = entry.get('title', 'No Title'); summary = entry.get('summary', title)
 
                 if not link or link in existing_links: continue
-                # Skip date check for Michanikos (since we fetch live page)
+                # Skip date check for Michanikos
                 if "Michanikos" not in source_name:
                     if (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
                 
