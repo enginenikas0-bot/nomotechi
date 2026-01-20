@@ -237,6 +237,9 @@ def run_scraper():
                 
                 soup = BeautifulSoup(resp.content, 'html.parser')
                 fake_entries = []
+
+                months = ['Ιανουαρίου', 'Φεβρουαρίου', 'Μαρτίου', 'Απριλίου', 'Μαΐου', 'Ιουνίου', 
+                          'Ιουλίου', 'Αυγούστου', 'Σεπτεμβρίου', 'Οκτωβρίου', 'Νοεμβρίου', 'Δεκεμβρίου', "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
                 
                 # Βρίσκουμε links που έχουν "/index/articles/" μέσα
                 # ΔΕΝ ψάχνουμε πλέον για "view", αλλά φιλτράρουμε κατηγορίες και σελίδες
@@ -248,6 +251,10 @@ def run_scraper():
                         # Αποκλείουμε κατηγορίες, σελίδες, σχόλια, αρχεία
                         if '/category/' in href or '/page/' in href or '#comments' in href: continue
                         if '/files/' in href or '/file/' in href: continue
+
+                        # --- ΝΕΟ FIX: Αν ο τίτλος είναι ημερομηνία, τον αγνοούμε ---
+                        if any(m in text for m in months) and len(text) < 35: continue
+                        # -------------------------------------------------------------
                         
                         full_url = urljoin(feed_url, href)
                         
@@ -320,4 +327,5 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
 
