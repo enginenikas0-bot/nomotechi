@@ -22,9 +22,9 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
-# RSS URLS (Ενημερωμένο με το Link που βρήκες)
+# RSS URLS (Ενημερωμένο link για Michanikos)
 RSS_FEEDS = {
-    "🏗️ Michanikos": "https://www.michanikos.gr/index/articles/",
+    "🏗️ Michanikos": "https://www.michanikos.gr/discover/all.xml/", 
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🏗️ B2Green": "https://news.b2green.gr/feed",
@@ -209,98 +209,72 @@ def sort_and_clean_database(worksheet):
     except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v3.0.3 (Original + Michanikos Fix) Started...")
+    print("🚀 NomoTech Bot v3.6 (XML + Filter) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
     new_rows, current_time = [], datetime.now()
     session = requests.Session()
     
+    # Headers για να περνάνε τα site (Chrome spoofing)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+    }
+
     for source_name, feed_url in RSS_FEEDS.items():
         print(f"📡 {source_name}...", end=" ", flush=True)
         try:
-            # Απλά headers για να μην τρώμε πόρτα
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-            }
+            time.sleep(random.uniform(1, 3))
             
-            # --- CUSTOM LOGIC ΓΙΑ MICHANIKOS (Επειδή είναι HTML και όχι XML) ---
-            if "Michanikos" in source_name:
-                resp = session.get(feed_url, headers=headers, timeout=25, verify=False)
-                if resp.status_code != 200:
-                    print(f"❌ HTTP {resp.status_code}"); continue
-                
-                # Φτιάχνουμε "ψεύτικο" feed object για να μην αλλάξουμε τον κώδικα παρακάτω
-                soup = BeautifulSoup(resp.content, 'html.parser')
-                fake_entries = []
-                
-                # Βρίσκουμε τα links των άρθρων στη σελίδα
-                # Συνήθως τα άρθρα έχουν link που περιέχει "/article/" ή "/news/"
-                for a in soup.find_all('a', href=True):
-                    href = a['href']
-                    text = a.get_text().strip()
-                    # Φιλτράρουμε για να πάρουμε μόνο τα άρθρα
-                    if len(text) > 15 and ('/article/' in href or '/news/' in href):
-                        full_url = urljoin(feed_url, href)
-                        fake_entries.append({
-                            'link': full_url,
-                            'title': text,
-                            'summary': text, # Προσωρινή περίληψη ο τίτλος
-                            'published_parsed': time.localtime() # Βάζουμε τρέχουσα ώρα
-                        })
-                        if len(fake_entries) >= 10: break # Σταματάμε στα 10
-                
-                # Δημιουργία εικονικού αντικειμένου feed
-                class FakeFeed: pass
-                feed = FakeFeed()
-                feed.entries = fake_entries
-            
-            # --- STANDARD LOGIC ΓΙΑ ΟΛΑ ΤΑ ΑΛΛΑ (RSS) ---
-            else:
-                # Χρησιμοποιούμε ?v=random για τα υπόλοιπα εκτός αν δημιουργεί πρόβλημα
-                url_to_fetch = feed_url
-                if "Taxheaven" not in source_name and "Capital" not in source_name:
-                     url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
+            # Αφαιρούμε το ?v=random από το Michanikos και το Taxheaven για να μην χαλάνε
+            url_to_fetch = feed_url
+            if "Michanikos" not in source_name and "Taxheaven" not in source_name:
+                 url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
 
-                resp = session.get(url_to_fetch, headers=headers, timeout=25, verify=False)
-                if resp.status_code != 200:
-                    print(f"❌ HTTP {resp.status_code}"); continue
-                
-                feed = feedparser.parse(resp.content)
+            resp = session.get(url_to_fetch, headers=headers, timeout=25, verify=False)
             
-            # ----------------------------------------
+            if resp.status_code != 200:
+                print(f"❌ HTTP {resp.status_code}"); continue
+            
+            resp.encoding = resp.apparent_encoding if resp.encoding == 'ISO-8859-1' else resp.encoding
+            feed = feedparser.parse(resp.content)
+            
+            if not feed.entries:
+                print(f"⚠️ 0 (Block?)"); continue
 
             count = 0
-            # Αν δεν έχει entries, πάμε παρακάτω
-            if not hasattr(feed, 'entries') or not feed.entries:
-                 print(f"⚠️ 0"); continue
-
             for entry in feed.entries[:40]:
-                # Διαχείριση διαφορετικής δομής (Dict για Michanikos vs Feedparser Object για τα άλλα)
-                if isinstance(entry, dict): 
-                    link = entry['link']
-                    title = entry['title']
-                    summary = entry['summary']
-                else: 
-                    link = entry.get('link', '')
-                    title = entry.get('title', 'No Title')
-                    summary = entry.get('summary', title)
+                link = entry.get('link', '')
+                
+                # === ΤΟ ΦΙΛΤΡΟ ΠΟΥ ΖΗΤΗΣΕΣ ΓΙΑ ΤΟ MICHANIKOS ===
+                # Αγνοούμε τα Forum topics (έχουν /topic/ στο URL)
+                # Κρατάμε μόνο όσα έχουν /articles/ ή /record/
+                if "Michanikos" in source_name:
+                    if "/topic/" in link: continue 
+                    if "/articles/" not in link and "/record/" not in link: continue
+                # ===============================================
 
                 if not link or link in existing_links: continue
                 if (current_time - get_date_obj(entry)).days > FETCH_DAYS_LIMIT: continue
                 
                 try:
+                    title = entry.get('title', 'No Title')
                     full_text = scrape_full_text(link, session) or title
-                    cat_tag, ai_article = analyze_with_ai(client, title, full_text, summary)
+                    cat_tag, ai_article = analyze_with_ai(client, title, full_text, entry.get('summary', title))
                     img_url = fetch_article_image(link, session)
                     
                     new_rows.append([str(hash(link)), source_name, title, ai_article, link, get_date_obj(entry).strftime("%Y-%m-%d %H:%M:%S"), cat_tag, img_url])
                     existing_links.add(link)
                     count += 1
-                except Exception as e: print(f"!", end="")
+                    print("✅", end="", flush=True)
+                except Exception as inner_e:
+                    print("!", end="")
+                    continue
             
-            print(f"✅ {count}")
+            if count == 0: print(" (Up to date)")
+            else: print(f" ({count} νέα)")
+
         except Exception as e: print(f"❌ Error: {str(e)[:15]}")
         
     if new_rows: worksheet.append_rows(new_rows)
