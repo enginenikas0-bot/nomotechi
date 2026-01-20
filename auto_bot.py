@@ -22,9 +22,9 @@ SPREADSHEET_NAME = "laws_database"
 FETCH_DAYS_LIMIT = 20 
 DB_RETENTION_DAYS = 31
 
-# RSS URLS (Ενημερωμένο link για Michanikos)
+# RSS URLS 
 RSS_FEEDS = {
-    "🏗️ Michanikos": "https://www.michanikos.gr/discover/all.xml/", 
+    "🏗️ Michanikos": "https://www.michanikos.gr/discover/all.xml/",
     "🏗️ TEE": "https://web.tee.gr/feed/",
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🏗️ B2Green": "https://news.b2green.gr/feed",
@@ -209,7 +209,7 @@ def sort_and_clean_database(worksheet):
     except Exception as e: print(f"⚠️ Clean Error: {e}")
 
 def run_scraper():
-    print("🚀 NomoTech Bot v3.6 (XML + Filter) Started...")
+    print("🚀 NomoTech Bot v3.7 (XML + Filter + Capital Fix) Started...")
     client, worksheet = setup_ai(), setup_db()
     try: existing_links = set(worksheet.col_values(5))
     except: existing_links = set()
@@ -227,9 +227,9 @@ def run_scraper():
         try:
             time.sleep(random.uniform(1, 3))
             
-            # Αφαιρούμε το ?v=random από το Michanikos και το Taxheaven για να μην χαλάνε
+            # --- FIX: Αφαιρούμε το ?v=random από Michanikos, Taxheaven ΚΑΙ Capital ---
             url_to_fetch = feed_url
-            if "Michanikos" not in source_name and "Taxheaven" not in source_name:
+            if "Michanikos" not in source_name and "Taxheaven" not in source_name and "Capital" not in source_name:
                  url_to_fetch = f"{feed_url}?v={random.randint(1,999)}"
 
             resp = session.get(url_to_fetch, headers=headers, timeout=25, verify=False)
@@ -248,11 +248,10 @@ def run_scraper():
                 link = entry.get('link', '')
                 
                 # === ΤΟ ΦΙΛΤΡΟ ΠΟΥ ΖΗΤΗΣΕΣ ΓΙΑ ΤΟ MICHANIKOS ===
-                # Αγνοούμε τα Forum topics (έχουν /topic/ στο URL)
-                # Κρατάμε μόνο όσα έχουν /articles/ ή /record/
+                # Φιλτράρουμε μόνο τα άρθρα και αρχεία (πετάμε τα forum topics)
                 if "Michanikos" in source_name:
                     if "/topic/" in link: continue 
-                    if "/articles/" not in link and "/record/" not in link: continue
+                    if "/articles/" not in link and "/record/" not in link and "/file/" not in link: continue
                 # ===============================================
 
                 if not link or link in existing_links: continue
