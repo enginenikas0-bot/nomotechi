@@ -30,13 +30,12 @@ RSS_FEEDS = {
     "🏗️ Ypodomes": "https://ypodomes.com/feed/",
     "🏗️ B2Green": "https://news.b2green.gr/feed",
     "🏗️ PEDMEDE": "https://pedmede.gr/feed/",
-    "🏗️ ELINYAE": "https://www.elinyae.gr/rss.xml",
     "⚖️ Dikastiko": "https://www.dikastiko.gr/feed/",
     "⚖️ Dikastiko Rep": "https://www.dikastikoreportaz.gr/feed/",
     "⚖️ Syntagma": "https://www.syntagmawatch.gr/feed/",
     "⚖️ DSA": "https://www.dsa.gr/rss.xml",
     "📜 E-Nomothesia": "https://www.e-nomothesia.gr/rss.xml",
-    "📜 Taxheaven": "https://www.taxheaven.gr/rss", 
+    "📜 Taxheaven": "https://www.taxheaven.gr/laws/cat1/6", 
     "💰 Capital": "https://www.capital.gr/rss" 
 }
 
@@ -321,3 +320,4 @@ def run_scraper():
 
 if __name__ == "__main__":
     run_scraper()
+
