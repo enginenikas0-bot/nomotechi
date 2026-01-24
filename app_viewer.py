@@ -284,26 +284,38 @@ def analyze_content_deep(row):
 @st.cache_data(ttl=600)
 def load_data():
     try:
-        # Χρήση της νέας συνάρτησης σύνδεσης
-        gc = get_db_connection()
-        
-        # Άνοιγμα του Sheet "laws_database"
+        # 1. Προσπάθεια σύνδεσης μέσω Render (Environment Variable)
+        if "GCP_CREDENTIALS" in os.environ:
+            creds_json = os.environ["GCP_CREDENTIALS"]
+            creds_dict = json.loads(creds_json)
+            
+            # Fix για τα κενά στο Render
+            if "\\n" in creds_dict["private_key"]:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+            gc = gspread.authorize(creds)
+            
+        # 2. Προσπάθεια σύνδεσης τοπικά (Secrets) - fallback
+        elif "gcp_service_account" in st.secrets:
+            gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        else:
+            return pd.DataFrame() # Αν αποτύχουν όλα, επιστρέφει κενό αντί να κρασάρει
+
+        # Ανάγνωση δεδομένων
         raw = gc.open("laws_database").sheet1.get_all_records()
         
         df = pd.DataFrame(raw)
-        df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
-        df = df.sort_values(by='datetime_obj', ascending=False)
+        # Μετατροπή ημερομηνίας και ταξινόμηση
+        if 'last_update' in df.columns:
+            df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
+            df = df.sort_values(by='datetime_obj', ascending=False)
         
-        records = df.to_dict('records')
-        clean_records = []
-        for r in records: 
-            tags = analyze_content_deep(r)
-            if "TRASH" not in tags: 
-                r['smart_tags'] = tags
-                clean_records.append(r)
-        return pd.DataFrame(clean_records)
+        return df
+
     except Exception as e:
-        print(f"DB Error: {e}") # Για να φαίνεται στα Logs
+        print(f"❌ DB ERROR: {e}") # Θα φανεί στα Logs του Render
         return pd.DataFrame()
 
 def get_img(row):
@@ -537,7 +549,47 @@ with tabs[4]:
     with col1: st.bar_chart(df['source'].value_counts())
     with col2:
         st.write(f"Total Articles: {len(df)}")
-        if st.secrets.get("admin_password") and st.text_input("Password", type="password") == st.secrets["admin_password"]: st.dataframe(df)
+        # --- LOGIN SYSTEM FIXED FOR RENDER ---
+def check_password():
+    """Returns `True` if the user had a correct password."""
+
+    def password_entered():
+        # Ελέγχει αν ο κωδικός που έγραψε ο χρήστης ταιριάζει με του Render Η' των Secrets
+        entered = st.session_state["password"]
+        correct_pass = os.environ.get("admin_password") or st.secrets.get("admin_password")
+        
+        if entered == correct_pass:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show input for password.
+        st.text_input("Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
+        return False
+    elif not st.session_state["password_correct"]:
+        # Password not correct, show input + error.
+        st.text_input("Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
+        st.error("😕 Λάθος κωδικός")
+        return False
+    else:
+        # Password correct.
+        return True
+
+if check_password():
+    # ΕΔΩ ΞΕΚΙΝΑΕΙ ΤΟ ΚΥΡΙΩΣ ΠΡΟΓΡΑΜΜΑ
+    try:
+        df = load_data()
+        if df.empty:
+            st.error("Η βάση δεδομένων δεν φόρτωσε. Ελέγξτε τα Logs στο Render.")
+        else:
+            # ... ο υπόλοιπος κώδικας σου για τα Tabs ...
+            # (Δεν χρειάζεται να αλλάξεις τα tabs, μόνο το check_password από πάνω)
+            pass 
+    except Exception as e:
+        st.error(f"Critical Error: {e}")
+
 
 
 
