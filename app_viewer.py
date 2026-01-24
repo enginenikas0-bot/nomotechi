@@ -11,6 +11,27 @@ import hashlib
 import json
 from oauth2client.service_account import ServiceAccountCredentials
 
+def get_db_connection():
+    # ΕΛΕΓΧΟΣ: Αν τρέχουμε στο Render (Environment Variable)
+    if "GCP_CREDENTIALS" in os.environ:
+        creds_json = os.environ["GCP_CREDENTIALS"]
+        creds_dict = json.loads(creds_json)
+        # FIX: Διόρθωση για τα κενά (newlines) στο Render
+        if "\\n" in creds_dict["private_key"]:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+        
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        return gspread.authorize(creds)
+    
+    # ΕΛΕΓΧΟΣ: Αν τρέχουμε τοπικά ή στο Streamlit Cloud (Secrets)
+    elif "gcp_service_account" in st.secrets:
+        return gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+    
+    else:
+        st.error("❌ Σφάλμα: Δεν βρέθηκαν κωδικοί (GCP_CREDENTIALS).")
+        st.stop()
+
 # --- 1. SETUP ---
 st.set_page_config(
     page_title="NomoTech | Enterprise",
@@ -263,11 +284,16 @@ def analyze_content_deep(row):
 @st.cache_data(ttl=600)
 def load_data():
     try:
-        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        # Χρήση της νέας συνάρτησης σύνδεσης
+        gc = get_db_connection()
+        
+        # Άνοιγμα του Sheet "laws_database"
         raw = gc.open("laws_database").sheet1.get_all_records()
+        
         df = pd.DataFrame(raw)
         df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
         df = df.sort_values(by='datetime_obj', ascending=False)
+        
         records = df.to_dict('records')
         clean_records = []
         for r in records: 
@@ -276,7 +302,9 @@ def load_data():
                 r['smart_tags'] = tags
                 clean_records.append(r)
         return pd.DataFrame(clean_records)
-    except: return pd.DataFrame()
+    except Exception as e:
+        print(f"DB Error: {e}") # Για να φαίνεται στα Logs
+        return pd.DataFrame()
 
 def get_img(row):
     i = str(row.get('image_url', '')).strip()
@@ -510,5 +538,6 @@ with tabs[4]:
     with col2:
         st.write(f"Total Articles: {len(df)}")
         if st.secrets.get("admin_password") and st.text_input("Password", type="password") == st.secrets["admin_password"]: st.dataframe(df)
+
 
 
