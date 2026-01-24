@@ -222,22 +222,26 @@ def analyze_content_deep(row):
 @st.cache_data(ttl=600)
 def load_data():
     try:
-        # 1. Προσπάθεια σύνδεσης μέσω Render (Environment Variable)
-        if "GCP_CREDENTIALS" in os.environ:
+        # 1. Προσπάθεια ανάγνωσης από το Secret File του Render (ΑΥΤΟ ΕΙΝΑΙ Η ΛΥΣΗ ΓΙΑ ΤΟ PADDING)
+        if os.path.exists("service_account.json"):
+            gc = gspread.service_account(filename="service_account.json")
+            
+        # 2. Fallback: Προσπάθεια σύνδεσης μέσω Render Env (για ασφάλεια)
+        elif "GCP_CREDENTIALS" in os.environ:
             creds_json = os.environ["GCP_CREDENTIALS"]
             creds_dict = json.loads(creds_json)
-            # Fix για τα κενά στο Render
             if "\\n" in creds_dict["private_key"]:
                 creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
             gc = gspread.authorize(creds)
             
-        # 2. Προσπάθεια σύνδεσης τοπικά (Secrets) - fallback
+        # 3. Fallback για τοπική χρήση (Secrets)
         elif "gcp_service_account" in st.secrets:
             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         else:
-            return pd.DataFrame() # Αν αποτύχουν όλα, επιστρέφει κενό
+            st.error("❌ Δεν βρέθηκε αρχείο σύνδεσης.")
+            return pd.DataFrame()
 
         # Ανάγνωση δεδομένων
         raw = gc.open("laws_database").sheet1.get_all_records()
@@ -294,7 +298,7 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-# --- 4. AUTHENTICATION & SESSION LOGIC ---
+# --- 4. AUTHENTICATION (SUBSCRIBERS) ---
 if 'menu_open' not in st.session_state: st.session_state.menu_open = False
 if 'user_email' not in st.session_state: st.session_state.user_email = None
 
@@ -304,21 +308,25 @@ def toggle_menu():
 def hash_pass(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
+def get_gc_auth():
+    if os.path.exists("service_account.json"):
+         return gspread.service_account(filename="service_account.json")
+    elif "GCP_CREDENTIALS" in os.environ:
+         creds_json = os.environ["GCP_CREDENTIALS"]
+         creds_dict = json.loads(creds_json)
+         if "\\n" in creds_dict["private_key"]:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+         return gspread.authorize(creds)
+    elif "gcp_service_account" in st.secrets:
+         return gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+    return None
+
 def register_subscriber(email, password):
     try:
-        # Χρησιμοποιούμε την ίδια λογική σύνδεσης και εδώ
-        if "GCP_CREDENTIALS" in os.environ:
-             creds_json = os.environ["GCP_CREDENTIALS"]
-             creds_dict = json.loads(creds_json)
-             if "\\n" in creds_dict["private_key"]:
-                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-             gc = gspread.authorize(creds)
-        elif "gcp_service_account" in st.secrets:
-             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        else: return "ERROR"
-
+        gc = get_gc_auth()
+        if not gc: return "ERROR"
         sh = gc.open("laws_database").worksheet("subscribers")
         existing = sh.col_values(1)
         if email in existing: return "EXISTS"
@@ -328,19 +336,8 @@ def register_subscriber(email, password):
 
 def login_subscriber(email, password):
     try:
-        # Χρησιμοποιούμε την ίδια λογική σύνδεσης και εδώ
-        if "GCP_CREDENTIALS" in os.environ:
-             creds_json = os.environ["GCP_CREDENTIALS"]
-             creds_dict = json.loads(creds_json)
-             if "\\n" in creds_dict["private_key"]:
-                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-             gc = gspread.authorize(creds)
-        elif "gcp_service_account" in st.secrets:
-             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        else: return False
-
+        gc = get_gc_auth()
+        if not gc: return False
         sh = gc.open("laws_database").worksheet("subscribers")
         cell = sh.find(email)
         if cell: return True 
@@ -424,117 +421,98 @@ def render_newsroom(dataset, is_home=False, q=None):
                 with col:
                     st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
 
-# --- 6. SECURITY & MAIN EXECUTION ---
-def check_password():
-    """Returns `True` if the user had a correct password."""
-    def password_entered():
-        entered = st.session_state["password"]
-        correct_pass = os.environ.get("admin_password") or st.secrets.get("admin_password")
-        if entered == correct_pass:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]
-        else:
-            st.session_state["password_correct"] = False
+# --- 6. MAIN EXECUTION ---
+# A. MARKET TICKER
+items = ""
+data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
+for n,v,c,d in data:
+    col = "m-green" if d=="u" else "m-red"
+    arr = "▲" if d=="u" else "▼"
+    items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
+st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
-    if "password_correct" not in st.session_state:
-        st.text_input("🔒 Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
-        return False
-    elif not st.session_state["password_correct"]:
-        st.text_input("🔒 Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
-        st.error("😕 Λάθος κωδικός")
-        return False
-    else:
-        return True
+# B. NAV BAR
+c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
+with c_nav_l:
+    if st.button("☰", key="nav_menu"): toggle_menu()
+with c_nav_r:
+    btn_label = "Sign in/up"
+    if st.session_state.user_email: btn_label = "MEMBER"
+    if st.button(btn_label, key="nav_user", help="Account"):
+        if not st.session_state.user_email: auth_dialog()
+        else: st.toast(f"Logged in as: {st.session_state.user_email}")
 
-# !!! ΤΟ SITE ΦΟΡΤΩΝΕΙ ΜΟΝΟ ΑΝ ΠΕΡΑΣΕΙ ΤΟΝ ΚΩΔΙΚΟ !!!
-if check_password():
-    
-    # A. MARKET TICKER
-    items = ""
-    data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
-    for n,v,c,d in data:
-        col = "m-green" if d=="u" else "m-red"
-        arr = "▲" if d=="u" else "▼"
-        items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
-    st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
-
-    # B. NAV BAR
-    c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
-    with c_nav_l:
-        if st.button("☰", key="nav_menu"): toggle_menu()
-    with c_nav_r:
-        btn_label = "Sign in/up"
-        if st.session_state.user_email: btn_label = "MEMBER"
-        if st.button(btn_label, key="nav_user", help="Account"):
-            if not st.session_state.user_email: auth_dialog()
-            else: st.toast(f"Logged in as: {st.session_state.user_email}")
-
-    # C. THE TOOLBOX DRAWER
-    if st.session_state.menu_open:
-        st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
-        col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
-        with col_t1:
-            logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
-            st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
-        with col_t2:
-            st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
-            st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
-            components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
-            st.markdown('</div>', unsafe_allow_html=True)
-        with col_t3:
-            st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
-            tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
-            with tool_tabs[0]:
-                amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
-                if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
-            with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
-            with tool_tabs[2]:
-                if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
+# C. THE TOOLBOX DRAWER (EDW EINAI O KODIKOS ANANEWSHS)
+if st.session_state.menu_open:
+    st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
+    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
+    with col_t1:
+        logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
+        st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
+    with col_t2:
+        st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
+        st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
+        components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col_t3:
+        st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+        tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
+        with tool_tabs[0]:
+            amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
+            if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
+        with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
+        with tool_tabs[2]:
+            # ΕΔΩ ΕΙΝΑΙ Η ΠΡΟΣΤΑΣΙΑ ΓΙΑ ΤΗΝ ΑΝΑΝΕΩΣΗ
+            admin_pass = st.text_input("Admin Password", type="password", key="sys_pass")
+            if st.button("ΑΝΑΝΕΩΣΗ SITE", use_container_width=True):
+                correct = os.environ.get("admin_password") or st.secrets.get("admin_password")
+                if admin_pass == correct:
                     st.cache_data.clear()
                     st.rerun()
-                st.caption("Status: Online v9.2")
-        st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.error("Λάθος κωδικός!")
+            st.caption("Status: Online v9.2")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # D. MAIN CONTENT
-    c1, c2 = st.columns([1.5, 0.3])
-    logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
+# D. MAIN CONTENT (ΕΛΕΥΘΕΡΟ)
+c1, c2 = st.columns([1.5, 0.3])
+logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
 
-    with c1:
-        st.markdown(f"""<div class="header-area">{logo_html}<div style="display:flex; flex-direction:column; justify-content:center;"><div class="brand-title">NomoTech</div><div class="brand-sub">Powered by NiKAS Technical</div></div></div>""", unsafe_allow_html=True)
+with c1:
+    st.markdown(f"""<div class="header-area">{logo_html}<div style="display:flex; flex-direction:column; justify-content:center;"><div class="brand-title">NomoTech</div><div class="brand-sub">Powered by NiKAS Technical</div></div></div>""", unsafe_allow_html=True)
 
-    with c2:
-        st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
-        q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
+with c2:
+    st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
+    q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
 
-    if st.session_state.user_email:
-        st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
+if st.session_state.user_email:
+    st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
 
-    df = load_data()
-    if df.empty: 
-        st.warning("Φόρτωση βάσης δεδομένων... (Αν αργεί πολύ, ελέγξτε τα Logs στο Render)")
-        # ΔΕΝ κάνουμε stop εδώ για να μην κρασάρει, απλά δείχνει κενό
-    else:
-        if q:
-            w = normalize_text(q).split()
-            df = df[df.apply(lambda r: all(x in normalize_text(str(r['title'])+str(r['content'])) for x in w), axis=1)]
+df = load_data()
+if df.empty: 
+    st.warning("Φόρτωση βάσης δεδομένων... (Αν αργεί πολύ, ελέγξτε τα Logs στο Render)")
+else:
+    if q:
+        w = normalize_text(q).split()
+        df = df[df.apply(lambda r: all(x in normalize_text(str(r['title'])+str(r['content'])) for x in w), axis=1)]
 
-        if not df.empty:
-            txt = "   ///   ".join([f"{r['title']}" for i,r in df.head(10).iterrows()]) * 3
-            st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 60s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
+    if not df.empty:
+        txt = "   ///   ".join([f"{r['title']}" for i,r in df.head(10).iterrows()]) * 3
+        st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 60s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
 
-        date_str = get_greek_date()
-        st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
+    date_str = get_greek_date()
+    st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
 
-        tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
+    tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
-        with tabs[0]: render_newsroom(df, is_home=True, q=q)
-        with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
-        with tabs[2]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'LAW' in x)])
-        with tabs[3]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'FEK' in x)])
-        with tabs[4]: 
-            st.markdown("### 📊 Στατιστικά")
-            col1, col2 = st.columns(2)
-            with col1: st.bar_chart(df['source'].value_counts())
-            with col2:
-                st.write(f"Total Articles: {len(df)}")
+    with tabs[0]: render_newsroom(df, is_home=True, q=q)
+    with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
+    with tabs[2]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'LAW' in x)])
+    with tabs[3]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'FEK' in x)])
+    with tabs[4]: 
+        st.markdown("### 📊 Στατιστικά")
+        col1, col2 = st.columns(2)
+        with col1: st.bar_chart(df['source'].value_counts())
+        with col2:
+            st.write(f"Total Articles: {len(df)}")
