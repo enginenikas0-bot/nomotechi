@@ -6,31 +6,10 @@ import unicodedata
 import base64
 from datetime import datetime, timedelta
 import os
+import json
 import streamlit.components.v1 as components
 import hashlib
-import json
 from oauth2client.service_account import ServiceAccountCredentials
-
-def get_db_connection():
-    # ΕΛΕΓΧΟΣ: Αν τρέχουμε στο Render (Environment Variable)
-    if "GCP_CREDENTIALS" in os.environ:
-        creds_json = os.environ["GCP_CREDENTIALS"]
-        creds_dict = json.loads(creds_json)
-        # FIX: Διόρθωση για τα κενά (newlines) στο Render
-        if "\\n" in creds_dict["private_key"]:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        return gspread.authorize(creds)
-    
-    # ΕΛΕΓΧΟΣ: Αν τρέχουμε τοπικά ή στο Streamlit Cloud (Secrets)
-    elif "gcp_service_account" in st.secrets:
-        return gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-    
-    else:
-        st.error("❌ Σφάλμα: Δεν βρέθηκαν κωδικοί (GCP_CREDENTIALS).")
-        st.stop()
 
 # --- 1. SETUP ---
 st.set_page_config(
@@ -40,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v4.0.1 - STABLE BASE + TIMESTAMP FIX) ---
+# --- 2. CSS & STYLING (v4.0.1) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -68,7 +47,6 @@ st.markdown(f"""
     div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, div[role="dialog"] p, div[role="dialog"] label {{
         color: #ffffff !important;
     }}
-    /* Default Dark Inputs */
     div[role="dialog"] input {{
         background-color: #111 !important;
         color: #fff !important;
@@ -111,14 +89,12 @@ st.markdown(f"""
         background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
         border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important;
     }}
-
     /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
         width: 40px !important; height: 38px !important; font-size: 1.6rem !important;
         line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }}
-    
-    /* USER BUTTON (DESKTOP) */
+    /* USER BUTTON */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
         height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
         margin-top: 5px !important; background-image: none !important; display: flex !important;
@@ -129,13 +105,7 @@ st.markdown(f"""
         letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
         white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }}
-
-    /* NO HOVER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * {{ color: #ffffff !important; }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active, [data-testid="stHorizontalBlock"]:nth-of-type(1) button:focus {{
-        background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; box-shadow: none !important;
-    }}
 
     /* 7. GENERAL UI */
     .block-container {{ padding-top: 4px !important; }}
@@ -144,7 +114,6 @@ st.markdown(f"""
     .logo-img-custom {{ width: 90px; height: auto; border-radius: 0px; }}
     .brand-title {{ font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }}
     .brand-sub {{ font-family: 'Inter', sans-serif !important; font-size: 0.8rem; color: #888; margin-top: 5px; letter-spacing: 0.5px; }}
-
     div[data-baseweb="input"] {{ background-color: #000 !important; border: 1px solid #333 !important; border-radius: 2px !important; height: 35px !important; max-width: 250px !important; }}
     .stTextInput input {{ color: #ccc !important; font-size: 0.85rem !important; }}
 
@@ -174,56 +143,25 @@ st.markdown(f"""
     .date-container {{ display: flex; justify-content: flex-end; align-items: center; margin-bottom: -38px; position: relative; z-index: 1; padding-right: 5px; height: 40px; }}
     .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
-    /* ========================================= */
-    /* MOBILE FIXES (v4.0.1 - FIXED LAYOUT)      */
-    /* ========================================= */
+    /* MOBILE FIXES */
     @media only screen and (max-width: 768px) {{
-        
-        /* 1. BUTTON POSITIONING - NUCLEAR OPTION */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
-            position: fixed !important;
-            top: 10px !important;
-            right: 15px !important;
-            z-index: 999999 !important;
-            width: auto !important;
-            min-width: auto !important;
-            background: transparent !important;
-            height: auto !important;
-            display: block !important;
+            position: fixed !important; top: 10px !important; right: 15px !important; z-index: 999999 !important;
+            width: auto !important; min-width: auto !important; background: transparent !important; height: auto !important; display: block !important;
         }}
-        
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-            background-color: #000 !important;
-            border: 1px solid #333 !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
-            margin: 0 !important;
-            width: 100px !important;
+            background-color: #000 !important; border: 1px solid #333 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
+            margin: 0 !important; width: 100px !important;
         }}
-
-        /* 2. DATE POSITION */
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
-
-        /* 3. LATEST UPDATES SPACING */
         .mobile-push-down {{ margin-top: 40px !important; display: block; }}
-
-        /* 4. TIMESTAMP FIXES - THE TWEAK */
-        .news-card div:last-child, .side-meta-date {{ 
-            font-size: 0.55rem !important; /* MIKROTERO */
-            letter-spacing: -0.5px !important; /* PIO KONTA */
-            line-height: 1 !important; 
-            margin-top: 2px !important;
-            white-space: nowrap !important; /* NA MHN SPAEI SE GRAMMES */
-        }}
-
-        /* Brand & Hero */
+        .news-card div:last-child, .side-meta-date {{ font-size: 0.55rem !important; letter-spacing: -0.5px !important; line-height: 1 !important; margin-top: 2px !important; white-space: nowrap !important; }}
         .brand-title {{ font-size: 2rem !important; }}
         .header-area {{ flex-direction: row !important; align-items: center !important; gap: 10px !important; }}
         .logo-img-custom {{ width: 60px !important; }}
         .hero-container {{ height: 300px !important; }}
         .hero-text-box a {{ font-size: 1.2rem !important; }}
-
-        /* Toolbox on Mobile */
         .menu-panel {{ padding: 10px !important; }}
         .drawer-brand, .drawer-mid {{ border-right: none !important; border-bottom: 1px solid #222 !important; padding-bottom: 15px !important; margin-bottom: 15px !important; padding-right: 0 !important; }}
         .m-item {{ font-size: 0.6rem !important; padding: 0 10px !important; }}
@@ -288,11 +226,9 @@ def load_data():
         if "GCP_CREDENTIALS" in os.environ:
             creds_json = os.environ["GCP_CREDENTIALS"]
             creds_dict = json.loads(creds_json)
-            
             # Fix για τα κενά στο Render
             if "\\n" in creds_dict["private_key"]:
                 creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-            
             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
             gc = gspread.authorize(creds)
@@ -301,21 +237,30 @@ def load_data():
         elif "gcp_service_account" in st.secrets:
             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         else:
-            return pd.DataFrame() # Αν αποτύχουν όλα, επιστρέφει κενό αντί να κρασάρει
+            return pd.DataFrame() # Αν αποτύχουν όλα, επιστρέφει κενό
 
         # Ανάγνωση δεδομένων
         raw = gc.open("laws_database").sheet1.get_all_records()
-        
         df = pd.DataFrame(raw)
+        
         # Μετατροπή ημερομηνίας και ταξινόμηση
         if 'last_update' in df.columns:
             df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
             df = df.sort_values(by='datetime_obj', ascending=False)
         
-        return df
+        # Smart Tags & Filtering
+        records = df.to_dict('records')
+        clean_records = []
+        for r in records: 
+            tags = analyze_content_deep(r)
+            if "TRASH" not in tags: 
+                r['smart_tags'] = tags
+                clean_records.append(r)
+        
+        return pd.DataFrame(clean_records)
 
     except Exception as e:
-        print(f"❌ DB ERROR: {e}") # Θα φανεί στα Logs του Render
+        print(f"❌ DB ERROR: {e}") 
         return pd.DataFrame()
 
 def get_img(row):
@@ -361,7 +306,19 @@ def hash_pass(password):
 
 def register_subscriber(email, password):
     try:
-        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        # Χρησιμοποιούμε την ίδια λογική σύνδεσης και εδώ
+        if "GCP_CREDENTIALS" in os.environ:
+             creds_json = os.environ["GCP_CREDENTIALS"]
+             creds_dict = json.loads(creds_json)
+             if "\\n" in creds_dict["private_key"]:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+             gc = gspread.authorize(creds)
+        elif "gcp_service_account" in st.secrets:
+             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        else: return "ERROR"
+
         sh = gc.open("laws_database").worksheet("subscribers")
         existing = sh.col_values(1)
         if email in existing: return "EXISTS"
@@ -371,14 +328,25 @@ def register_subscriber(email, password):
 
 def login_subscriber(email, password):
     try:
-        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        # Χρησιμοποιούμε την ίδια λογική σύνδεσης και εδώ
+        if "GCP_CREDENTIALS" in os.environ:
+             creds_json = os.environ["GCP_CREDENTIALS"]
+             creds_dict = json.loads(creds_json)
+             if "\\n" in creds_dict["private_key"]:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+             gc = gspread.authorize(creds)
+        elif "gcp_service_account" in st.secrets:
+             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        else: return False
+
         sh = gc.open("laws_database").worksheet("subscribers")
         cell = sh.find(email)
         if cell: return True 
         return False
     except: return False
 
-# --- 5. AUTH DIALOG (MODAL) ---
 @st.dialog("NomoTech | Συνδρομητές")
 def auth_dialog():
     tab1, tab2 = st.tabs(["ΣΥΝΔΕΣΗ", "ΕΓΓΡΑΦΗ"])
@@ -402,90 +370,7 @@ def auth_dialog():
                 elif res == "EXISTS": st.warning("Το email υπάρχει ήδη.")
                 else: st.error("Σφάλμα.")
 
-# --- 6. TOP SECTION (UI) ---
-
-# A. MARKET TICKER
-items = ""
-data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
-for n,v,c,d in data:
-    col = "m-green" if d=="u" else "m-red"
-    arr = "▲" if d=="u" else "▼"
-    items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
-st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
-
-# B. NAV BAR
-c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
-
-with c_nav_l:
-    if st.button("☰", key="nav_menu"): toggle_menu()
-
-with c_nav_r:
-    btn_label = "Sign in/up"
-    if st.session_state.user_email: btn_label = "MEMBER"
-    if st.button(btn_label, key="nav_user", help="Account"):
-        if not st.session_state.user_email: auth_dialog()
-        else: st.toast(f"Logged in as: {st.session_state.user_email}")
-
-# C. THE TOOLBOX DRAWER
-if st.session_state.menu_open:
-    st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
-    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
-    
-    with col_t1:
-        logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
-        st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
-    with col_t2:
-        st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
-        st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
-        components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with col_t3:
-        st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
-        tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
-        with tool_tabs[0]:
-            amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
-            if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
-        with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
-        with tool_tabs[2]:
-            if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
-            st.caption("Status: Online v9.2")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 7. MAIN CONTENT ---
-c1, c2 = st.columns([1.5, 0.3])
-logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
-
-with c1:
-    st.markdown(f"""<div class="header-area">{logo_html}<div style="display:flex; flex-direction:column; justify-content:center;"><div class="brand-title">NomoTech</div><div class="brand-sub">Powered by NiKAS Technical</div></div></div>""", unsafe_allow_html=True)
-
-with c2:
-    st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
-    q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
-
-if st.session_state.user_email:
-    st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
-
-df = load_data()
-if df.empty: 
-    st.warning("Φόρτωση βάσης δεδομένων...")
-    st.stop()
-
-if q:
-    w = normalize_text(q).split()
-    df = df[df.apply(lambda r: all(x in normalize_text(str(r['title'])+str(r['content'])) for x in w), axis=1)]
-
-if not df.empty:
-    txt = "   ///   ".join([f"{r['title']}" for i,r in df.head(10).iterrows()]) * 3
-    st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 60s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
-
-date_str = get_greek_date()
-st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
-
-tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
-
+# --- 5. RENDER FUNCTIONS ---
 @st.fragment(run_every=5.0)
 def render_hero(dataset):
     if dataset.empty: return
@@ -501,7 +386,7 @@ def render_hero(dataset):
         dots_html += f'<span class="dot {active_class}"></span>'
     st.markdown(f"""<div class="hero-container"><img src="{get_img(r)}" class="hero-img"><div class="hero-text-box"><div style="margin-bottom:8px;">{tags_html}</div><a href="{r['link']}" target="_blank" style="color:white; font-size:1.6rem; font-weight:700; text-decoration:none; line-height:1.2;">{r['title']}</a></div><div class="slider-dots">{dots_html}</div></div>""", unsafe_allow_html=True)
 
-def render_newsroom(dataset, is_home=False):
+def render_newsroom(dataset, is_home=False, q=None):
     if dataset.empty: st.info("No data found."); return
     start = 0
     if is_home and not q:
@@ -539,57 +424,117 @@ def render_newsroom(dataset, is_home=False):
                 with col:
                     st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
 
-with tabs[0]: render_newsroom(df, is_home=True)
-with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
-with tabs[2]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'LAW' in x)])
-with tabs[3]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'FEK' in x)])
-with tabs[4]: 
-    st.markdown("### 📊 Στατιστικά")
-    col1, col2 = st.columns(2)
-    with col1: st.bar_chart(df['source'].value_counts())
-    with col2:
-        st.write(f"Total Articles: {len(df)}")
-        # --- LOGIN SYSTEM FIXED FOR RENDER ---
+# --- 6. SECURITY & MAIN EXECUTION ---
 def check_password():
     """Returns `True` if the user had a correct password."""
-
     def password_entered():
-        # Ελέγχει αν ο κωδικός που έγραψε ο χρήστης ταιριάζει με του Render Η' των Secrets
         entered = st.session_state["password"]
         correct_pass = os.environ.get("admin_password") or st.secrets.get("admin_password")
-        
         if entered == correct_pass:
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store password
+            del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
 
     if "password_correct" not in st.session_state:
-        # First run, show input for password.
-        st.text_input("Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
+        st.text_input("🔒 Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
         return False
     elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error.
-        st.text_input("Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
+        st.text_input("🔒 Κωδικός Πρόσβασης", type="password", on_change=password_entered, key="password")
         st.error("😕 Λάθος κωδικός")
         return False
     else:
-        # Password correct.
         return True
 
+# !!! ΤΟ SITE ΦΟΡΤΩΝΕΙ ΜΟΝΟ ΑΝ ΠΕΡΑΣΕΙ ΤΟΝ ΚΩΔΙΚΟ !!!
 if check_password():
-    # ΕΔΩ ΞΕΚΙΝΑΕΙ ΤΟ ΚΥΡΙΩΣ ΠΡΟΓΡΑΜΜΑ
-    try:
-        df = load_data()
-        if df.empty:
-            st.error("Η βάση δεδομένων δεν φόρτωσε. Ελέγξτε τα Logs στο Render.")
-        else:
-            # ... ο υπόλοιπος κώδικας σου για τα Tabs ...
-            # (Δεν χρειάζεται να αλλάξεις τα tabs, μόνο το check_password από πάνω)
-            pass 
-    except Exception as e:
-        st.error(f"Critical Error: {e}")
+    
+    # A. MARKET TICKER
+    items = ""
+    data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
+    for n,v,c,d in data:
+        col = "m-green" if d=="u" else "m-red"
+        arr = "▲" if d=="u" else "▼"
+        items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
+    st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
+    # B. NAV BAR
+    c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
+    with c_nav_l:
+        if st.button("☰", key="nav_menu"): toggle_menu()
+    with c_nav_r:
+        btn_label = "Sign in/up"
+        if st.session_state.user_email: btn_label = "MEMBER"
+        if st.button(btn_label, key="nav_user", help="Account"):
+            if not st.session_state.user_email: auth_dialog()
+            else: st.toast(f"Logged in as: {st.session_state.user_email}")
 
+    # C. THE TOOLBOX DRAWER
+    if st.session_state.menu_open:
+        st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
+        col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
+        with col_t1:
+            logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
+            st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
+        with col_t2:
+            st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
+            st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
+            components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
+            st.markdown('</div>', unsafe_allow_html=True)
+        with col_t3:
+            st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+            tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
+            with tool_tabs[0]:
+                amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
+                if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
+            with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
+            with tool_tabs[2]:
+                if st.button("ΑΝΑΝΕΩΣΗ", use_container_width=True):
+                    st.cache_data.clear()
+                    st.rerun()
+                st.caption("Status: Online v9.2")
+        st.markdown('</div>', unsafe_allow_html=True)
 
+    # D. MAIN CONTENT
+    c1, c2 = st.columns([1.5, 0.3])
+    logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
 
+    with c1:
+        st.markdown(f"""<div class="header-area">{logo_html}<div style="display:flex; flex-direction:column; justify-content:center;"><div class="brand-title">NomoTech</div><div class="brand-sub">Powered by NiKAS Technical</div></div></div>""", unsafe_allow_html=True)
+
+    with c2:
+        st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
+        q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
+
+    if st.session_state.user_email:
+        st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
+
+    df = load_data()
+    if df.empty: 
+        st.warning("Φόρτωση βάσης δεδομένων... (Αν αργεί πολύ, ελέγξτε τα Logs στο Render)")
+        # ΔΕΝ κάνουμε stop εδώ για να μην κρασάρει, απλά δείχνει κενό
+    else:
+        if q:
+            w = normalize_text(q).split()
+            df = df[df.apply(lambda r: all(x in normalize_text(str(r['title'])+str(r['content'])) for x in w), axis=1)]
+
+        if not df.empty:
+            txt = "   ///   ".join([f"{r['title']}" for i,r in df.head(10).iterrows()]) * 3
+            st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 60s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
+
+        date_str = get_greek_date()
+        st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
+
+        tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
+
+        with tabs[0]: render_newsroom(df, is_home=True, q=q)
+        with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
+        with tabs[2]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'LAW' in x)])
+        with tabs[3]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'FEK' in x)])
+        with tabs[4]: 
+            st.markdown("### 📊 Στατιστικά")
+            col1, col2 = st.columns(2)
+            with col1: st.bar_chart(df['source'].value_counts())
+            with col2:
+                st.write(f"Total Articles: {len(df)}")
