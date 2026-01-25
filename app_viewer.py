@@ -78,7 +78,7 @@ st.markdown(f"""
 
     /* 5. MARKET TICKER */
     .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden; }}
-    .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 75s linear infinite; }}
+    .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }}
     @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
     .m-item {{ font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }}
     .m-val {{ color: #fff; font-weight: 700; }}
@@ -516,3 +516,4 @@ else:
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
+
