@@ -90,7 +90,21 @@ st.markdown("""
     .drawer-mid { height: 100%; border-right: 1px solid #222; padding-right: 20px; }
     .toolbox-title { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
     .toolbox-section-header { color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }
-    .market-row { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9000; display: flex; align-items: center; overflow: hidden; }
+    
+    /* MARKET TICKER - FIXED Z-INDEX */
+    .market-row { 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 35px; 
+        background-color: #000; 
+        border-bottom: 1px solid #222; 
+        z-index: 999999 !important; /* ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ - ΠΟΛΥ ΨΗΛΑ */
+        display: flex; 
+        align-items: center; 
+        overflow: hidden; 
+    }
     .scrolling-wrapper { display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }
     @keyframes scroll-text { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
     .m-item { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }
