@@ -33,44 +33,32 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (UNIVERSAL SINGLE LINE FIX) ---
+# --- 2. CSS & STYLING (FONT SIZE REDUCTION FOR SIGN IN) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
     
     .stApp, html, body, [class*="css"] {{ background-color: #000000 !important; font-family: 'Inter', sans-serif !important; color: #e0e0e0 !important; }}
+    
+    /* ΚΡΥΨΙΜΟ ΤΟΥ 'RUNNING MAN' (Speed Hack) */
+    div[data-testid="stStatusWidget"] {{ visibility: hidden !important; }}
+    
     section[data-testid="stSidebar"] {{ display: none !important; }}
     [data-testid="collapsedControl"] {{ display: none !important; }}
     header[data-testid="stHeader"] {{ display: none !important; }}
     [data-testid="stToolbar"] {{ display: none !important; }}
     
-    /* MODAL STYLING */
+    /* MODAL & UI */
     div[role="dialog"] {{ background-color: #0b0d0f !important; border: 1px solid #333 !important; }}
     div[role="dialog"] input {{ background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }}
+    .menu-panel {{ background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }}
     
-    /* DRAWER STYLING */
-    .menu-panel {{
-        background-color: #050505;
-        border-bottom: 1px solid #333;
-        padding: 25px;
-        margin-top: 5px;
-        margin-bottom: 25px;
-        border-radius: 0px;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.9);
-    }}
+    /* DRAWER LOGO */
     .drawer-brand {{ display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
-    
-    /* LOGO DRAWER (NO BORDER) */
-    .drawer-brand img {{ 
-        width: 70px; 
-        height: 70px; 
-        border-radius: 50%; 
-        object-fit: cover; 
-        margin-bottom: 15px; 
-    }}
-
+    .drawer-brand img {{ width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; }}
     .drawer-brand-title {{ font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }}
     .drawer-brand-sub {{ font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }}
+    
     .drawer-mid {{ height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
     .toolbox-title {{ font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }}
     .toolbox-section-header {{ color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }}
@@ -83,58 +71,48 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* BUTTONS GENERAL (BLACK BORDER EVERYWHERE) */
+    /* BUTTONS GENERAL */
     button {{
         border: 1px solid #000 !important; 
         background-color: #000 !important;
         color: white !important;
-        transition: transform 0.1s ease !important;
+        transition: background-color 0.1s ease !important;
         z-index: 9999999 !important;
         position: relative;
     }}
-    button:active {{ transform: scale(0.95); border-color: #333 !important; }}
+    button:active {{ background-color: #222 !important; border-color: #333 !important; }}
     [data-testid="stHorizontalBlock"] {{ z-index: 9999999 !important; position: relative; }}
 
-    /* ============================================================ */
-    /* SIGN IN BUTTON FIX (UNIVERSAL - DESKTOP & MOBILE)           */
-    /* ============================================================ */
-    /* Αυτό πιάνει το κουμπί Sign in/up ΠΑΝΤΟΥ και το αναγκάζει σε μία γραμμή */
+    /* SIGN IN BUTTON (DESKTOP) */
     [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
-        width: auto !important;           /* Να ανοίγει όσο χρειάζεται */
-        min-width: 120px !important;      /* Ελάχιστο πλάτος για ασφάλεια */
-        white-space: nowrap !important;   /* ΑΠΑΓΟΡΕΥΕΤΑΙ Η ΑΛΛΑΓΗ ΓΡΑΜΜΗΣ */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 0 15px !important;
-        box-shadow: none !important;
+        width: auto !important; 
+        min-width: 120px !important; 
+        white-space: nowrap !important;
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: center !important; 
+        padding: 0 10px !important;
+        font-size: 0.75rem !important; /* Μίκρυνση γραμματοσειράς */
+        letter-spacing: 0.5px !important;
     }}
 
-    /* ============================================================ */
-    /* MOBILE SPECIFIC ADJUSTMENTS                                  */
-    /* ============================================================ */
+    /* MOBILE FIXES */
     @media only screen and (max-width: 768px) {{
         [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{ width: 50px !important; height: 50px !important; font-size: 2rem !important; border: 1px solid #000 !important; }}
         
-        /* Θέση στο κινητό (πάνω δεξιά σταθερά) */
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ 
-            position: fixed !important; 
-            top: 10px !important; 
-            right: 10px !important; 
-            z-index: 9999999 !important; 
-            width: auto !important; 
-            display: block !important; 
-        }}
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999999 !important; width: auto !important; display: block !important; }}
         
-        /* Στυλ στο κινητό (Extra touch friendly) */
+        /* SIGN IN BUTTON (MOBILE) - SMALLER TEXT */
         [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
             background-color: #000 !important; 
             border: 1px solid #000 !important; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important; 
             height: 45px !important; 
-            /* Κρατάμε και εδώ το nowrap για σιγουριά */
+            width: auto !important; 
+            min-width: 100px !important; 
             white-space: nowrap !important; 
-            font-size: 0.85rem !important;    
+            padding: 0 5px !important; 
+            font-size: 0.75rem !important; /* Μικρή γραμματοσειρά για να χωράει */
         }}
         
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
@@ -152,7 +130,7 @@ st.markdown(f"""
         button[data-baseweb="tab"] {{ padding: 10px 5px !important; font-size: 0.7rem !important; }}
     }}
 
-    /* OTHER UI */
+    /* Content UI */
     .block-container {{ padding-top: 4px !important; }}
     [data-testid="stHorizontalBlock"]:nth-of-type(1) {{ align-items: center !important; gap: 0 !important; padding-top: 10px !important; }}
     .header-area {{ margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }}
@@ -306,9 +284,12 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-# --- 4. AUTHENTICATION ---
+# --- 4. AUTHENTICATION & CALLBACKS (INSTANT ACTION) ---
 if 'menu_open' not in st.session_state: st.session_state.menu_open = False
 if 'user_email' not in st.session_state: st.session_state.user_email = None
+
+def toggle_menu_callback():
+    st.session_state.menu_open = not st.session_state.menu_open
 
 def hash_pass(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
@@ -426,7 +407,7 @@ def render_newsroom(dataset, is_home=False, q=None):
                 with col:
                     st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
 
-# --- 6. NAVIGATION & TOOLBOX FRAGMENT (INSTANT ACTION) ---
+# --- 6. NAVIGATION FRAGMENT (OPTIMIZED) ---
 @st.fragment
 def render_navbar_and_toolbox():
     # A. MARKET TICKER
@@ -438,26 +419,28 @@ def render_navbar_and_toolbox():
         items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
     st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
-    # B. BUTTONS (Top Nav)
+    # B. BUTTONS (Top Nav) - Using Callbacks for INSTANT CLICK
     c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
     with c_nav_l:
-        if st.button("☰", key="nav_menu"): 
-            st.session_state.menu_open = not st.session_state.menu_open
-            st.rerun() 
+        st.button("☰", key="nav_menu", on_click=toggle_menu_callback)
             
     with c_nav_r:
         btn_label = "Sign in/up"
         if st.session_state.user_email: btn_label = "MEMBER"
-        if st.button(btn_label, key="nav_user"):
-            if not st.session_state.user_email: auth_dialog()
-            else: st.toast(f"Logged in as: {st.session_state.user_email}")
+        # Αν είναι MEMBER δεν κάνει τίποτα (toast), αλλιώς ανοίγει dialog
+        if st.session_state.user_email:
+             if st.button(btn_label, key="nav_user"): st.toast(f"Logged in: {st.session_state.user_email}")
+        else:
+             # Κουμπί που ανοίγει το Dialog (server action, αλλά γρήγορο)
+             if st.button(btn_label, key="nav_user"): auth_dialog()
 
-    # C. TOOLBOX DRAWER
+    # C. TOOLBOX DRAWER (Render ONLY if open to save resources)
     if st.session_state.menu_open:
         st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
         col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
         with col_t1:
+            # Φορτώνουμε την εικόνα εδώ για να μην βαραίνει το main loop
             logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
             st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
         with col_t2:
@@ -497,7 +480,6 @@ with c1:
 with c2:
     st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
     q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
-    # --- ΑΦΑΙΡΕΘΗΚΕ ΤΟ ΚΕΙΜΕΝΟ SEO ΕΔΩ ΟΠΩΣ ΖΗΤΗΣΕΣ ---
 
 if st.session_state.user_email:
     st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
