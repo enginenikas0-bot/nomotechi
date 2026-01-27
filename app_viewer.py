@@ -35,14 +35,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (SURGICAL FIXES) ---
+# --- 2. CSS & STYLING (FIX: Z-INDEX HIERARCHY FOR POP-UP) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
     
     .stApp, html, body, [class*="css"] {{ background-color: #000000 !important; font-family: 'Inter', sans-serif !important; color: #e0e0e0 !important; }}
     
-    /* HIDE LOADING INDICATORS FOR CLEAN LOOK */
+    /* HIDE LOADING INDICATORS */
     div[data-testid="stStatusWidget"] {{ visibility: hidden !important; }}
     
     section[data-testid="stSidebar"] {{ display: none !important; }}
@@ -50,41 +50,58 @@ st.markdown(f"""
     header[data-testid="stHeader"] {{ display: none !important; }}
     [data-testid="stToolbar"] {{ display: none !important; }}
     
-    /* MODAL & UI */
-    div[role="dialog"] {{ background-color: #0b0d0f !important; border: 1px solid #333 !important; }}
+    /* === 1. MODAL (POP-UP) - THE KING (HIGHEST Z-INDEX) === */
+    div[data-testid="stModal"], div[role="dialog"], .stDialog {
+        z-index: 2147483647 !important; /* Maximum possible value */
+    }
+    div[role="dialog"] {{ 
+        background-color: #0b0d0f !important; 
+        border: 1px solid #333 !important;
+        box-shadow: 0 0 50px rgba(0,0,0,0.9) !important;
+    }}
+    /* Backdrop styling to cover weird glitches */
+    div[data-testid="stModalBackground"] {{
+        backdrop-filter: blur(5px);
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 2147483646 !important;
+    }}
     div[role="dialog"] input {{ background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }}
-    .menu-panel {{ background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }}
+
+    /* === 2. NAVBAR - THE VICE KING (HIGH Z-INDEX BUT LOWER THAN MODAL) === */
+    [data-testid="stHorizontalBlock"] {{ 
+        z-index: 9999 !important; /* High enough to be clickable, low enough to be behind modal */
+        position: relative; 
+    }}
     
-    /* DRAWER LOGO */
+    /* Buttons in Navbar */
+    button {{
+        border: 1px solid #000 !important; 
+        background-color: #000 !important;
+        color: white !important;
+        transition: transform 0.05s ease-in-out !important;
+        z-index: 10000 !important; /* Slightly higher than navbar container */
+        position: relative;
+        touch-action: manipulation;
+    }}
+    button:active {{ transform: scale(0.90); background-color: #222 !important; }}
+
+    /* DRAWER STYLING */
+    .menu-panel {{ background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }}
     .drawer-brand {{ display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
     .drawer-brand img {{ width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; }}
     .drawer-brand-title {{ font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }}
     .drawer-brand-sub {{ font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }}
-    
     .drawer-mid {{ height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
     .toolbox-title {{ font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }}
     .toolbox-section-header {{ color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }}
 
     /* MARKET TICKER */
-    .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden; }}
+    .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9000; display: flex; align-items: center; overflow: hidden; }}
     .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }}
     @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
     .m-item {{ font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }}
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
-
-    /* BUTTONS GENERAL - FAST REACTION */
-    button {{
-        border: 1px solid #000 !important; 
-        background-color: #000 !important;
-        color: white !important;
-        transition: transform 0.05s ease-in-out !important; /* Instant feel */
-        z-index: 9999999 !important;
-        position: relative;
-        touch-action: manipulation; /* Removes tap delay on mobile */
-    }}
-    button:active {{ transform: scale(0.90); background-color: #222 !important; }}
-    [data-testid="stHorizontalBlock"] {{ z-index: 9999999 !important; position: relative; }}
 
     /* SIGN IN BUTTON (DESKTOP) */
     [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
@@ -93,30 +110,29 @@ st.markdown(f"""
         padding: 0 10px !important; font-size: 0.8rem !important;
     }}
 
-    /* === MOBILE FIXES (THE SURGERY) === */
+    /* === MOBILE FIXES === */
     @media only screen and (max-width: 768px) {{
-        /* Hamburger */
         [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{ 
             width: 45px !important; height: 45px !important; font-size: 1.8rem !important; border: 1px solid #000 !important; 
         }}
         
-        /* Fixed Position Container for Sign In */
         [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ 
-            position: fixed !important; top: 8px !important; right: 8px !important; z-index: 9999999 !important; 
+            position: fixed !important; top: 8px !important; right: 8px !important; 
+            z-index: 10001 !important; /* Higher than navbar, lower than modal */
             width: auto !important; display: block !important; 
         }}
         
-        /* SIGN IN BUTTON (MOBILE) - TINY FONT, SINGLE LINE FORCED */
+        /* SIGN IN BUTTON (MOBILE) - TINY & CLEAN */
         [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
             background-color: #000 !important; 
             border: 1px solid #000 !important; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.8) !important; 
             height: 40px !important; 
             width: auto !important; 
-            min-width: 80px !important; /* Smaller min-width */
-            white-space: nowrap !important; /* NO WRAPPING */
-            padding: 0 5px !important; /* Minimal padding */
-            font-size: 11px !important; /* SMALL FONT */
+            min-width: 80px !important; 
+            white-space: nowrap !important; 
+            padding: 0 5px !important; 
+            font-size: 11px !important; 
             font-weight: 600 !important;
             line-height: 40px !important;
         }}
