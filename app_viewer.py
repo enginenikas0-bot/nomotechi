@@ -36,7 +36,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (ADDED GRID CSS) ---
+# --- 2. CSS & STYLING (FIXED GRID CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -98,21 +98,18 @@ st.markdown("""
     .m-val { color: #fff; font-weight: 700; }
     .m-green { color: #4ade80; } .m-red { color: #f87171; }
 
-    /* --- NEW CSS GRID FOR NEWS (INSTANT LOAD) --- */
+    /* CSS GRID FOR NEWS */
     .news-grid-container {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3 Columns Default */
+        grid-template-columns: repeat(3, 1fr);
         gap: 20px;
         margin-top: 15px;
     }
     
-    /* MOBILE GRID FIX */
+    /* MOBILE */
     @media only screen and (max-width: 768px) {
-        .news-grid-container {
-            grid-template-columns: 1fr; /* 1 Column on Mobile */
-            gap: 15px;
-        }
-        /* Previous mobile rules */
+        .news-grid-container { grid-template-columns: 1fr; gap: 15px; }
+        
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) { position: fixed !important; top: 10px !important; right: 15px !important; z-index: 999999 !important; width: auto !important; min-width: auto !important; background: transparent !important; height: auto !important; display: block !important; }
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button { background-color: #000000 !important; border: 1px solid #333 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important; margin: 0 !important; width: 100px !important; }
         .date-container { margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }
@@ -139,12 +136,12 @@ st.markdown("""
     div[data-baseweb="input"] { background-color: #000 !important; border: 1px solid #333 !important; border-radius: 2px !important; height: 35px !important; max-width: 250px !important; }
     .stTextInput input { color: #ccc !important; font-size: 0.85rem !important; }
     
-    /* NEWS CARD CSS (Compatible with Grid) */
+    /* NEWS CARD CSS */
     .news-card { background-color: #000; padding: 10px; height: 100%; display: flex; flex-direction: column; }
     .news-card:hover { background: #050505; }
     .news-card a { text-decoration: none; display: flex; flex-direction: column; height: 100%; }
     .news-thumb { width: 100%; height: 160px; object-fit: cover; margin-bottom: 8px; filter: grayscale(20%); border: 1px solid #222; }
-    .news-title { font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; margin-bottom: auto; }
+    .news-title { font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; margin-bottom: auto; display: block; }
     .news-meta { font-size: 0.7rem; color: #666; margin-top: 8px; border-top: 1px solid #222; padding-top: 5px; }
     
     .bg-eng { background: #ea580c; color: white; } .bg-law { background: #1e3a8a; color: white; } .bg-fek { background: #e9e9d0; color: #000; } .bg-sos { background: #dc2626; color: white; } .bg-gen { background: #9ca3af; color: black; }
@@ -169,6 +166,27 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 3. HELPERS & LOGIC ---
+
+@st.cache_resource
+def init_google_connection():
+    try:
+        if os.path.exists("service_account.json"):
+             creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        elif "GCP_CREDENTIALS" in os.environ:
+             creds_json = os.environ["GCP_CREDENTIALS"]
+             creds_dict = json.loads(creds_json)
+             if "\\n" in creds_dict["private_key"]:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        elif "gcp_service_account" in st.secrets:
+             creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        else:
+             return None
+        return gspread.authorize(creds)
+    except Exception as e:
+        print(f"Connection Error: {e}")
+        return None
 
 @st.cache_data(ttl=900)
 def get_market_data():
@@ -270,27 +288,6 @@ def analyze_content_deep(row):
     if "SOS" in title.upper(): tags.add("SOS")
     if not tags: tags.add("GENERAL")
     return list(tags)
-
-@st.cache_resource
-def init_google_connection():
-    try:
-        if os.path.exists("service_account.json"):
-             creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-        elif "GCP_CREDENTIALS" in os.environ:
-             creds_json = os.environ["GCP_CREDENTIALS"]
-             creds_dict = json.loads(creds_json)
-             if "\\n" in creds_dict["private_key"]:
-                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        elif "gcp_service_account" in st.secrets:
-             creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-        else:
-             return None
-        return gspread.authorize(creds)
-    except Exception as e:
-        print(f"Connection Error: {e}")
-        return None
 
 @st.cache_data(ttl=600)
 def load_data():
@@ -432,19 +429,17 @@ def render_hero(dataset):
         dots_html += f'<span class="dot {active_class}"></span>'
     st.markdown(f"""<div class="hero-container"><img src="{get_img(r)}" class="hero-img"><div class="hero-text-box"><div style="margin-bottom:8px;">{tags_html}</div><a href="{r['link']}" target="_blank" style="color:white; font-size:1.6rem; font-weight:700; text-decoration:none; line-height:1.2;">{r['title']}</a></div><div class="slider-dots">{dots_html}</div></div>""", unsafe_allow_html=True)
 
-# --- REWRITTEN RENDER_NEWSROOM WITH CSS GRID (INSTANT LOAD) ---
+# --- REWRITTEN RENDER_NEWSROOM (FIXED: NO INDENTATION IN HTML STRING) ---
 def render_newsroom(dataset, is_home=False, q=None):
     if dataset.empty: st.info("No data found."); return
     start = 0
-    LIMIT = 30 # Κόφτης για ταχύτητα
+    LIMIT = 30
     
-    # 1. RENDER HERO & SIDEBAR (Μόνο στο Home)
     if is_home and not q:
         feat = dataset.head(13)
         side = dataset.iloc[0:4]
         bot = dataset.iloc[4:13]
         start = 13
-        
         c_hero, c_list = st.columns([2.3, 1])
         with c_hero: render_hero(feat)
         with c_list:
@@ -463,30 +458,17 @@ def render_newsroom(dataset, is_home=False, q=None):
                              st.markdown(f"""<div class="side-row" style="border-top:1px solid #222;"><img src="{get_img(r)}" class="side-thumb"><div class="side-content"><a href="{r['link']}" target="_blank" class="side-link-title">{r['title']}</a><div class="side-meta-date">{get_formatted_time(r['datetime_obj'])}</div></div></div>""", unsafe_allow_html=True)
         st.markdown('<div style="border-bottom:2px solid #333; color:white; font-weight:800; font-size:1.4rem; margin:40px 0 20px 0;">ARCHIVE</div>', unsafe_allow_html=True)
 
-    # 2. RENDER GRID USING CSS (INSTANT)
     grid_df = dataset.iloc[start:start+LIMIT]
-    
     if grid_df.empty and not is_home: st.write("No more news."); return
     
-    # Χτίζουμε ΟΛΟ το HTML σε ένα string για να σταλεί με τη μία
+    # --- FIX: ONE-LINE HTML STRING TO PREVENT MARKDOWN CODE BLOCKS ---
     grid_html = ""
     for _, r in grid_df.iterrows():
         tags_html = get_tags_html(r)
-        card_html = f"""
-        <div class="news-card">
-            <a href="{r['link']}" target="_blank">
-                <img src="{get_img(r)}" class="news-thumb">
-                <div style="margin-bottom:5px;">{tags_html}</div>
-                <span class="news-title">{r['title']}</span>
-                <div class="news-meta">
-                    {str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}
-                </div>
-            </a>
-        </div>
-        """
+        # IMPORTANT: No indentation inside the f-string!
+        card_html = f"""<div class="news-card"><a href="{r['link']}" target="_blank"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div class="news-meta">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>"""
         grid_html += card_html
         
-    # Τοποθετούμε το HTML μέσα στο Grid Container
     st.markdown(f'<div class="news-grid-container">{grid_html}</div>', unsafe_allow_html=True)
 
 # --- 6. NAVIGATION FRAGMENT ---
@@ -577,7 +559,6 @@ else:
 
     tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
-    # RENDER TABS WITH CSS GRID (MUCH FASTER)
     with tabs[0]: render_newsroom(df, is_home=True, q=q)
     with tabs[1]: render_newsroom(df[df['is_eng']] if 'is_eng' in df.columns else df)
     with tabs[2]: render_newsroom(df[df['is_law']] if 'is_law' in df.columns else df)
