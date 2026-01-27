@@ -35,7 +35,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (MERGED: LATEST FIXES + BUTTONS FROM FILE) ---
+# --- 2. CSS & STYLING (ALL FIXES INCLUDED) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -68,13 +68,12 @@ st.markdown("""
 
     /* === 2. NAVBAR CONTAINER === */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) { 
-        z-index: 9999 !important; /* Below modal, above content */
+        z-index: 9999 !important; 
         position: relative; 
         align-items: center !important; gap: 0 !important; padding-top: 10px !important;
     }
 
     /* === 3. BUTTONS (STYLES FROM UPLOADED FILE) === */
-    /* General Button Reset in Navbar */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {
         background-color: #000000 !important;
         border: 1px solid #000000 !important; color: white !important;
@@ -83,21 +82,20 @@ st.markdown("""
         z-index: 10000 !important;
     }
 
-    /* HAMBURGER (From File) */
+    /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {
         width: 40px !important;
         height: 38px !important; font-size: 1.6rem !important;
         line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }
     
-    /* USER BUTTON DESKTOP (From File) */
+    /* USER BUTTON DESKTOP */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {
         height: 28px !important;
         min-height: 28px !important; width: 100% !important; min-width: 100px !important;
         margin-top: 5px !important; background-image: none !important; display: flex !important;
         align-items: center !important; justify-content: center !important;
     }
-    /* Inner text styling to ensure single line */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button p {
         font-family: 'Inter', sans-serif !important;
         font-size: 10px !important; font-weight: 300 !important;
@@ -106,7 +104,7 @@ st.markdown("""
         line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }
 
-    /* NO HOVER EFFECTS (From File) */
+    /* NO HOVER EFFECTS */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover { background-color: #000000 !important;
     border-color: #000000 !important; color: #ffffff !important; }
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * { color: #ffffff !important; }
@@ -135,7 +133,6 @@ st.markdown("""
 
     /* === MOBILE FIXES (FROM FILE + Z-INDEX ADJUSTMENT) === */
     @media only screen and (max-width: 768px) {
-        /* BUTTON POSITIONING */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {
             position: fixed !important;
             top: 10px !important;
@@ -244,8 +241,34 @@ def analyze_content_deep(row):
     ai_category = str(row.get('category', '')).upper()
     content_body = str(row.get('content', '')).upper() 
     tags = set()
-    trash_keywords = ["super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip"]
-    if any(kw in title for kw in trash_keywords): return ["TRASH"]
+    
+    # 1. ΛΕΞΕΙΣ "ΔΙΑΣΩΣΗΣ" (Αν έχει αυτές, ΔΕΝ το πετάμε ακόμα κι αν λέει για ομάδες)
+    # Πχ: "Νέο γήπεδο Παναθηναϊκού" -> ΣΩΖΕΤΑΙ
+    keep_keywords = [
+        "γηπεδο", "stadium", "βοτανικος", "νεα τουμπα", "αναπλαση",
+        "κατασκευη", "εργο", "αδεια", "πολεοδομ", "διαγωνισμος",
+        "μελετη", "εγκαταστασεις", "υποδομες"
+    ]
+    
+    # 2. ΦΙΛΤΡΑ ΑΘΛΗΤΙΚΩΝ / "ΣΚΟΥΠΙΔΙΩΝ"
+    trash_keywords = [
+        # Γενικά
+        "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip",
+        # Αθλητικά / Ομάδες
+        "ολυμπιακος", "παναθηναϊκος", "παναθηναικος", "αεκ", "παοκ", "αρης", "aris", "paok", "aek", "olympiacos", "olympiakos", "panathinaikos",
+        "ποδοσφαιρο", "μπασκετ", "basket", "football", "soccer", "champions league", "europa", "conference", "fifa", "uefa", "nba", "euroleague",
+        "αθλητικ", "superleague", "mundial", "euro", "πρωταθλημα", "κυπελλο ελλαδας", "atromitos", "volos", "lamia", "panserraikos", "ofhi", "ofi"
+    ]
+    
+    # ΕΛΕΓΧΟΣ:
+    # Αν έχει λέξη διάσωσης (π.χ. "γήπεδο"), το αγνοούμε και προχωράμε.
+    is_relevant_eng = any(kw in title for kw in keep_keywords)
+    
+    # Αν ΔΕΝ είναι σχετικό με μηχανικούς (π.χ. "Νίκησε ο Παναθηναϊκός"), τότε τσέκαρε αν είναι στα "σκουπίδια"
+    if not is_relevant_eng:
+         if any(kw in title for kw in trash_keywords): return ["TRASH"]
+    
+    # Κανονική Κατηγοριοποίηση
     if "ENG" in ai_category or "ENG" in content_body: tags.add("ENG")
     if "LAW" in ai_category or "LAW" in content_body: tags.add("LAW")
     if "FEK" in ai_category or "FEK" in content_body: tags.add("FEK")
@@ -543,7 +566,7 @@ else:
     date_str = get_greek_date()
     st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
 
-    tabs = st.tabs(["ΓΕΝΙΚΑ", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
+    tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
     with tabs[0]: render_newsroom(df, is_home=True, q=q)
     with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
