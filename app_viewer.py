@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 import hashlib
 from oauth2client.service_account import ServiceAccountCredentials
 from PIL import Image
-import yfinance as yf  # <-- NEW: ΓΙΑ ΤΙΣ ΜΕΤΟΧΕΣ
+import yfinance as yf
 
 # --- 1. SETUP ---
 
@@ -36,7 +36,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING ---
+# --- 2. CSS & STYLING (ADDED GRID CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -51,13 +51,13 @@ st.markdown("""
     header[data-testid="stHeader"] { display: none !important; }
     [data-testid="stToolbar"] { display: none !important; }
     
-    /* MODAL (POP-UP) */
+    /* MODAL */
     div[data-testid="stModal"], div[role="dialog"], .stDialog { z-index: 2147483647 !important; }
     div[role="dialog"] { background-color: #0b0d0f !important; border: 1px solid #333 !important; box-shadow: 0 0 50px rgba(0,0,0,0.9) !important; }
     div[data-testid="stModalBackground"] { backdrop-filter: blur(5px); background-color: rgba(0, 0, 0, 0.7); z-index: 2147483646 !important; }
     div[role="dialog"] input { background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }
 
-    /* NAVBAR CONTAINER */
+    /* NAVBAR */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) { z-index: 9999 !important; position: relative; align-items: center !important; gap: 0 !important; padding-top: 10px !important; }
 
     /* BUTTONS */
@@ -65,12 +65,10 @@ st.markdown("""
         background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
         border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important; z-index: 10000 !important;
     }
-    
     /* HAMBURGER */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {
         width: 40px !important; height: 38px !important; font-size: 1.6rem !important; line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }
-    
     /* USER BUTTON */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {
         height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important; margin-top: 5px !important; background-image: none !important; display: flex; align-items: center; justify-content: center;
@@ -92,28 +90,29 @@ st.markdown("""
     .toolbox-title { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
     .toolbox-section-header { color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }
     
-    /* MARKET TICKER - FIXED Z-INDEX */
-    .market-row { 
-        position: fixed; 
-        top: 0; 
-        left: 0; 
-        width: 100%; 
-        height: 35px; 
-        background-color: #000; 
-        border-bottom: 1px solid #222; 
-        z-index: 999999 !important; 
-        display: flex; 
-        align-items: center; 
-        overflow: hidden; 
-    }
+    /* MARKET TICKER */
+    .market-row { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 999999 !important; display: flex; align-items: center; overflow: hidden; }
     .scrolling-wrapper { display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }
     @keyframes scroll-text { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
     .m-item { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }
     .m-val { color: #fff; font-weight: 700; }
     .m-green { color: #4ade80; } .m-red { color: #f87171; }
 
-    /* MOBILE */
+    /* --- NEW CSS GRID FOR NEWS (INSTANT LOAD) --- */
+    .news-grid-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 Columns Default */
+        gap: 20px;
+        margin-top: 15px;
+    }
+    
+    /* MOBILE GRID FIX */
     @media only screen and (max-width: 768px) {
+        .news-grid-container {
+            grid-template-columns: 1fr; /* 1 Column on Mobile */
+            gap: 15px;
+        }
+        /* Previous mobile rules */
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) { position: fixed !important; top: 10px !important; right: 15px !important; z-index: 999999 !important; width: auto !important; min-width: auto !important; background: transparent !important; height: auto !important; display: block !important; }
         [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button { background-color: #000000 !important; border: 1px solid #333 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important; margin: 0 !important; width: 100px !important; }
         .date-container { margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }
@@ -139,10 +138,15 @@ st.markdown("""
     .brand-sub { font-family: 'Inter', sans-serif !important; font-size: 0.8rem; color: #888; margin-top: 5px; letter-spacing: 0.5px; }
     div[data-baseweb="input"] { background-color: #000 !important; border: 1px solid #333 !important; border-radius: 2px !important; height: 35px !important; max-width: 250px !important; }
     .stTextInput input { color: #ccc !important; font-size: 0.85rem !important; }
-    .news-card { margin-bottom: 25px; padding: 10px; }
+    
+    /* NEWS CARD CSS (Compatible with Grid) */
+    .news-card { background-color: #000; padding: 10px; height: 100%; display: flex; flex-direction: column; }
     .news-card:hover { background: #050505; }
+    .news-card a { text-decoration: none; display: flex; flex-direction: column; height: 100%; }
     .news-thumb { width: 100%; height: 160px; object-fit: cover; margin-bottom: 8px; filter: grayscale(20%); border: 1px solid #222; }
-    .news-title { font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; text-decoration: none; display: block;}
+    .news-title { font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; margin-bottom: auto; }
+    .news-meta { font-size: 0.7rem; color: #666; margin-top: 8px; border-top: 1px solid #222; padding-top: 5px; }
+    
     .bg-eng { background: #ea580c; color: white; } .bg-law { background: #1e3a8a; color: white; } .bg-fek { background: #e9e9d0; color: #000; } .bg-sos { background: #dc2626; color: white; } .bg-gen { background: #9ca3af; color: black; }
     .meta-tag { font-family: 'Roboto Mono', monospace; font-size: 0.6rem; padding: 2px 6px; font-weight: 700; margin-right: 5px; display: inline-block; border-radius: 2px; }
     button[data-baseweb="tab"] { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: #777; }
@@ -166,8 +170,7 @@ st.markdown("""
 
 # --- 3. HELPERS & LOGIC ---
 
-# --- NEW: LIVE MARKET DATA ---
-@st.cache_data(ttl=900) # Ανανέωση κάθε 15 λεπτά για να μην κολλάει
+@st.cache_data(ttl=900)
 def get_market_data():
     symbols = {
         "ATHEX": "^ATG", 
@@ -178,21 +181,18 @@ def get_market_data():
     }
     results = []
     try:
-        # Κατεβάζουμε όλα μαζί για ταχύτητα
         tickers = yf.Tickers(" ".join(symbols.values()))
         for name, sym in symbols.items():
             try:
                 hist = tickers.tickers[sym].history(period="2d")
                 if len(hist) >= 1:
                     close = hist['Close'].iloc[-1]
-                    # Υπολογισμός αλλαγής (αν υπάρχει προηγούμενη μέρα)
                     if len(hist) > 1:
                         prev = hist['Close'].iloc[-2]
                         change = ((close - prev) / prev) * 100
                     else:
                         change = 0.0
                     
-                    # Formatting
                     if name == "EUR/USD": fmt_val = f"{close:.4f}"
                     elif name == "BTC": fmt_val = f"{close/1000:.1f}K"
                     else: fmt_val = f"{close:,.0f}"
@@ -205,9 +205,7 @@ def get_market_data():
             except:
                 results.append((name, "-", "0%", "u"))
     except:
-        # Fallback αν αποτύχει τελείως το Yahoo
         return [("ATHEX","-","0%","u"), ("S&P500","-","0%","u"), ("EUR/USD","-","0%","u"), ("BTC","-","0%","u")]
-    
     return results
 
 def get_image_as_base64(file_path):
@@ -434,15 +432,19 @@ def render_hero(dataset):
         dots_html += f'<span class="dot {active_class}"></span>'
     st.markdown(f"""<div class="hero-container"><img src="{get_img(r)}" class="hero-img"><div class="hero-text-box"><div style="margin-bottom:8px;">{tags_html}</div><a href="{r['link']}" target="_blank" style="color:white; font-size:1.6rem; font-weight:700; text-decoration:none; line-height:1.2;">{r['title']}</a></div><div class="slider-dots">{dots_html}</div></div>""", unsafe_allow_html=True)
 
+# --- REWRITTEN RENDER_NEWSROOM WITH CSS GRID (INSTANT LOAD) ---
 def render_newsroom(dataset, is_home=False, q=None):
     if dataset.empty: st.info("No data found."); return
     start = 0
+    LIMIT = 30 # Κόφτης για ταχύτητα
     
+    # 1. RENDER HERO & SIDEBAR (Μόνο στο Home)
     if is_home and not q:
         feat = dataset.head(13)
         side = dataset.iloc[0:4]
         bot = dataset.iloc[4:13]
         start = 13
+        
         c_hero, c_list = st.columns([2.3, 1])
         with c_hero: render_hero(feat)
         with c_list:
@@ -461,39 +463,47 @@ def render_newsroom(dataset, is_home=False, q=None):
                              st.markdown(f"""<div class="side-row" style="border-top:1px solid #222;"><img src="{get_img(r)}" class="side-thumb"><div class="side-content"><a href="{r['link']}" target="_blank" class="side-link-title">{r['title']}</a><div class="side-meta-date">{get_formatted_time(r['datetime_obj'])}</div></div></div>""", unsafe_allow_html=True)
         st.markdown('<div style="border-bottom:2px solid #333; color:white; font-weight:800; font-size:1.4rem; margin:40px 0 20px 0;">ARCHIVE</div>', unsafe_allow_html=True)
 
-    grid = dataset.iloc[start:]
-    if grid.empty and not is_home: st.write("No more news."); return
-    for i in range((len(grid)//3)+1):
-        cols = st.columns(3)
-        for j, col in enumerate(cols):
-            idx = i*3+j
-            if idx < len(grid):
-                r = grid.iloc[idx]
-                tags_html = get_tags_html(r)
-                with col:
-                    st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
+    # 2. RENDER GRID USING CSS (INSTANT)
+    grid_df = dataset.iloc[start:start+LIMIT]
+    
+    if grid_df.empty and not is_home: st.write("No more news."); return
+    
+    # Χτίζουμε ΟΛΟ το HTML σε ένα string για να σταλεί με τη μία
+    grid_html = ""
+    for _, r in grid_df.iterrows():
+        tags_html = get_tags_html(r)
+        card_html = f"""
+        <div class="news-card">
+            <a href="{r['link']}" target="_blank">
+                <img src="{get_img(r)}" class="news-thumb">
+                <div style="margin-bottom:5px;">{tags_html}</div>
+                <span class="news-title">{r['title']}</span>
+                <div class="news-meta">
+                    {str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}
+                </div>
+            </a>
+        </div>
+        """
+        grid_html += card_html
+        
+    # Τοποθετούμε το HTML μέσα στο Grid Container
+    st.markdown(f'<div class="news-grid-container">{grid_html}</div>', unsafe_allow_html=True)
 
 # --- 6. NAVIGATION FRAGMENT ---
 @st.fragment
 def render_navbar_and_toolbox():
-    # LIVE MARKET DATA FETCH
     data = get_market_data()
-    
     items = ""
     for n,v,c,d in data:
         col = "m-green" if d=="u" else "m-red"
         arr = "▲" if d=="u" else "▼"
-        # Αν είναι 'u', βάζουμε '+' μπροστά, αλλιώς '-' (το έχει ήδη το c)
         sign = "+" if d=="u" and "%" in c else ""
         items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{sign}{c}</span></div>'
-        
     st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
-    # BUTTONS
     c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
     with c_nav_l:
         st.button("☰", key="nav_menu", on_click=toggle_menu_callback)
-            
     with c_nav_r:
         btn_label = "Sign in/up"
         if st.session_state.user_email: btn_label = "MEMBER"
@@ -502,7 +512,6 @@ def render_navbar_and_toolbox():
         else:
              if st.button(btn_label, key="nav_user"): auth_dialog()
 
-    # DRAWER
     if st.session_state.menu_open:
         st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
@@ -568,7 +577,7 @@ else:
 
     tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
-    # USING PRE-CALCULATED COLUMNS FOR SPEED
+    # RENDER TABS WITH CSS GRID (MUCH FASTER)
     with tabs[0]: render_newsroom(df, is_home=True, q=q)
     with tabs[1]: render_newsroom(df[df['is_eng']] if 'is_eng' in df.columns else df)
     with tabs[2]: render_newsroom(df[df['is_law']] if 'is_law' in df.columns else df)
