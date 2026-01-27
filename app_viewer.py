@@ -35,7 +35,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (ALL FIXES INCLUDED) ---
+# --- 2. CSS & STYLING ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -50,70 +50,38 @@ st.markdown("""
     header[data-testid="stHeader"] { display: none !important; }
     [data-testid="stToolbar"] { display: none !important; }
     
-    /* === 1. MODAL (POP-UP) - THE KING (HIGHEST Z-INDEX) === */
-    div[data-testid="stModal"], div[role="dialog"], .stDialog {
-        z-index: 2147483647 !important; /* Maximum possible value */
-    }
-    div[role="dialog"] { 
-        background-color: #0b0d0f !important; 
-        border: 1px solid #333 !important;
-        box-shadow: 0 0 50px rgba(0,0,0,0.9) !important;
-    }
-    div[data-testid="stModalBackground"] {
-        backdrop-filter: blur(5px);
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 2147483646 !important;
-    }
+    /* MODAL (POP-UP) */
+    div[data-testid="stModal"], div[role="dialog"], .stDialog { z-index: 2147483647 !important; }
+    div[role="dialog"] { background-color: #0b0d0f !important; border: 1px solid #333 !important; box-shadow: 0 0 50px rgba(0,0,0,0.9) !important; }
+    div[data-testid="stModalBackground"] { backdrop-filter: blur(5px); background-color: rgba(0, 0, 0, 0.7); z-index: 2147483646 !important; }
     div[role="dialog"] input { background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }
 
-    /* === 2. NAVBAR CONTAINER === */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) { 
-        z-index: 9999 !important; 
-        position: relative; 
-        align-items: center !important; gap: 0 !important; padding-top: 10px !important;
-    }
+    /* NAVBAR CONTAINER */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) { z-index: 9999 !important; position: relative; align-items: center !important; gap: 0 !important; padding-top: 10px !important; }
 
-    /* === 3. BUTTONS (STYLES FROM UPLOADED FILE) === */
+    /* BUTTONS */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button {
-        background-color: #000000 !important;
-        border: 1px solid #000000 !important; color: white !important;
-        border-radius: 4px !important; padding: 0 !important; margin: 0 !important; 
-        transition: none !important; box-shadow: none !important;
-        z-index: 10000 !important;
-    }
-
-    /* HAMBURGER */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {
-        width: 40px !important;
-        height: 38px !important; font-size: 1.6rem !important;
-        line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
+        background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
+        border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important; z-index: 10000 !important;
     }
     
-    /* USER BUTTON DESKTOP */
+    /* HAMBURGER */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {
+        width: 40px !important; height: 38px !important; font-size: 1.6rem !important; line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
+    }
+    
+    /* USER BUTTON */
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {
-        height: 28px !important;
-        min-height: 28px !important; width: 100% !important; min-width: 100px !important;
-        margin-top: 5px !important; background-image: none !important; display: flex !important;
-        align-items: center !important; justify-content: center !important;
+        height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important; margin-top: 5px !important; background-image: none !important; display: flex; align-items: center; justify-content: center;
     }
     [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button p {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 10px !important; font-weight: 300 !important;
-        letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
-        white-space: nowrap !important;
-        line-height: 1 !important; margin: 0 !important; padding: 0 !important;
+        font-family: 'Inter', sans-serif !important; font-size: 10px !important; font-weight: 300 !important; letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important; white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
     }
-
-    /* NO HOVER EFFECTS */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover { background-color: #000000 !important;
-    border-color: #000000 !important; color: #ffffff !important; }
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover { background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }
     [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * { color: #ffffff !important; }
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active, [data-testid="stHorizontalBlock"]:nth-of-type(1) button:focus {
-        background-color: #000000 !important;
-        border-color: #000000 !important; color: #ffffff !important; box-shadow: none !important;
-    }
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active { background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; box-shadow: none !important; }
 
-    /* DRAWER STYLING */
+    /* DRAWER & MARKET */
     .menu-panel { background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }
     .drawer-brand { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }
     .drawer-brand img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; }
@@ -122,8 +90,6 @@ st.markdown("""
     .drawer-mid { height: 100%; border-right: 1px solid #222; padding-right: 20px; }
     .toolbox-title { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
     .toolbox-section-header { color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }
-
-    /* MARKET TICKER */
     .market-row { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9000; display: flex; align-items: center; overflow: hidden; }
     .scrolling-wrapper { display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }
     @keyframes scroll-text { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
@@ -131,38 +97,14 @@ st.markdown("""
     .m-val { color: #fff; font-weight: 700; }
     .m-green { color: #4ade80; } .m-red { color: #f87171; }
 
-    /* === MOBILE FIXES (FROM FILE + Z-INDEX ADJUSTMENT) === */
+    /* MOBILE */
     @media only screen and (max-width: 768px) {
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {
-            position: fixed !important;
-            top: 10px !important;
-            right: 15px !important;
-            z-index: 999999 !important; /* High but below Modal */
-            width: auto !important;
-            min-width: auto !important;
-            background: transparent !important;
-            height: auto !important;
-            display: block !important;
-        }
-        
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {
-            background-color: #000 !important;
-            border: 1px solid #333 !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
-            margin: 0 !important;
-            width: 100px !important;
-        }
-
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) { position: fixed !important; top: 10px !important; right: 15px !important; z-index: 999999 !important; width: auto !important; min-width: auto !important; background: transparent !important; height: auto !important; display: block !important; }
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button { background-color: #000000 !important; border: 1px solid #333 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important; margin: 0 !important; width: 100px !important; }
         .date-container { margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }
         .date-text { padding-top: 0 !important; font-size: 0.75rem !important; }
         .mobile-push-down { margin-top: 40px !important; display: block; }
-        .news-card div:last-child, .side-meta-date { 
-            font-size: 0.55rem !important;
-            letter-spacing: -0.5px !important;
-            line-height: 1 !important;
-            margin-top: 2px !important;
-            white-space: nowrap !important;
-        }
+        .news-card div:last-child, .side-meta-date { font-size: 0.55rem !important; letter-spacing: -0.5px !important; line-height: 1 !important; margin-top: 2px !important; white-space: nowrap !important; }
         .brand-title { font-size: 2rem !important; }
         .header-area { flex-direction: row !important; align-items: center !important; gap: 10px !important; }
         .logo-img-custom { width: 60px !important; }
@@ -174,7 +116,7 @@ st.markdown("""
         button[data-baseweb="tab"] { padding: 10px 5px !important; font-size: 0.7rem !important; }
     }
 
-    /* Content UI */
+    /* GENERAL UI */
     .block-container { padding-top: 4px !important; }
     .header-area { margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
     .logo-img-custom { width: 90px; height: auto; border-radius: 0px; }
@@ -242,8 +184,7 @@ def analyze_content_deep(row):
     content_body = str(row.get('content', '')).upper() 
     tags = set()
     
-    # 1. ΛΕΞΕΙΣ "ΔΙΑΣΩΣΗΣ" (Αν έχει αυτές, ΔΕΝ το πετάμε ακόμα κι αν λέει για ομάδες)
-    # Πχ: "Νέο γήπεδο Παναθηναϊκού" -> ΣΩΖΕΤΑΙ
+    # 1. ΛΕΞΕΙΣ "ΔΙΑΣΩΣΗΣ"
     keep_keywords = [
         "γηπεδο", "stadium", "βοτανικος", "νεα τουμπα", "αναπλαση",
         "κατασκευη", "εργο", "αδεια", "πολεοδομ", "διαγωνισμος",
@@ -252,23 +193,17 @@ def analyze_content_deep(row):
     
     # 2. ΦΙΛΤΡΑ ΑΘΛΗΤΙΚΩΝ / "ΣΚΟΥΠΙΔΙΩΝ"
     trash_keywords = [
-        # Γενικά
         "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip",
-        # Αθλητικά / Ομάδες
         "ολυμπιακος", "παναθηναϊκος", "παναθηναικος", "αεκ", "παοκ", "αρης", "aris", "paok", "aek", "olympiacos", "olympiakos", "panathinaikos",
         "ποδοσφαιρο", "μπασκετ", "basket", "football", "soccer", "champions league", "europa", "conference", "fifa", "uefa", "nba", "euroleague",
         "αθλητικ", "superleague", "mundial", "euro", "πρωταθλημα", "κυπελλο ελλαδας", "atromitos", "volos", "lamia", "panserraikos", "ofhi", "ofi"
     ]
     
-    # ΕΛΕΓΧΟΣ:
-    # Αν έχει λέξη διάσωσης (π.χ. "γήπεδο"), το αγνοούμε και προχωράμε.
     is_relevant_eng = any(kw in title for kw in keep_keywords)
-    
-    # Αν ΔΕΝ είναι σχετικό με μηχανικούς (π.χ. "Νίκησε ο Παναθηναϊκός"), τότε τσέκαρε αν είναι στα "σκουπίδια"
     if not is_relevant_eng:
          if any(kw in title for kw in trash_keywords): return ["TRASH"]
     
-    # Κανονική Κατηγοριοποίηση
+    # ΚΑΤΗΓΟΡΙΟΠΟΙΗΣΗ
     if "ENG" in ai_category or "ENG" in content_body: tags.add("ENG")
     if "LAW" in ai_category or "LAW" in content_body: tags.add("LAW")
     if "FEK" in ai_category or "FEK" in content_body: tags.add("FEK")
@@ -315,7 +250,19 @@ def load_data():
                 r['smart_tags'] = tags
                 clean_records.append(r)
         
-        return pd.DataFrame(clean_records)
+        final_df = pd.DataFrame(clean_records)
+        
+        # --- 30 DAYS RULE: KEEP ONLY NEWS FROM LAST 30 DAYS ---
+        if not final_df.empty and 'datetime_obj' in final_df.columns:
+            cutoff_date = datetime.now() - timedelta(days=30)
+            final_df = final_df[final_df['datetime_obj'] > cutoff_date]
+            
+            # Recalculate masks after filtering
+            final_df['is_eng'] = final_df['smart_tags'].apply(lambda x: 'ENG' in x)
+            final_df['is_law'] = final_df['smart_tags'].apply(lambda x: 'LAW' in x)
+            final_df['is_fek'] = final_df['smart_tags'].apply(lambda x: 'FEK' in x)
+        
+        return final_df
 
     except Exception as e:
         return pd.DataFrame()
@@ -324,9 +271,10 @@ def get_img(row):
     i = str(row.get('image_url', '')).strip()
     if not i.startswith('http'):
         tags = row.get('smart_tags', [])
-        if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600"
-        if "LAW" in tags: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=600"
-        return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600"
+        # --- SPEED OPTIMIZATION: SMALLER IMAGES (w=400, q=60) ---
+        if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=60&w=400"
+        if "LAW" in tags: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=60&w=400"
+        return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=60&w=400"
     return i
 
 def get_formatted_time(dt):
@@ -351,7 +299,7 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-# --- 4. AUTHENTICATION & CALLBACKS (INSTANT ACTION) ---
+# --- 4. AUTHENTICATION & CALLBACKS ---
 if 'menu_open' not in st.session_state: st.session_state.menu_open = False
 if 'user_email' not in st.session_state: st.session_state.user_email = None
 
@@ -439,6 +387,7 @@ def render_hero(dataset):
 def render_newsroom(dataset, is_home=False, q=None):
     if dataset.empty: st.info("No data found."); return
     start = 0
+    
     if is_home and not q:
         feat = dataset.head(13)
         side = dataset.iloc[0:4]
@@ -474,10 +423,10 @@ def render_newsroom(dataset, is_home=False, q=None):
                 with col:
                     st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
 
-# --- 6. NAVIGATION FRAGMENT (OPTIMIZED) ---
+# --- 6. NAVIGATION FRAGMENT ---
 @st.fragment
 def render_navbar_and_toolbox():
-    # A. MARKET TICKER
+    # MARKET TICKER
     items = ""
     data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
     for n,v,c,d in data:
@@ -486,7 +435,7 @@ def render_navbar_and_toolbox():
         items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
     st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
-    # B. BUTTONS (Top Nav) - Using Callbacks for INSTANT CLICK
+    # BUTTONS
     c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
     with c_nav_l:
         st.button("☰", key="nav_menu", on_click=toggle_menu_callback)
@@ -494,20 +443,17 @@ def render_navbar_and_toolbox():
     with c_nav_r:
         btn_label = "Sign in/up"
         if st.session_state.user_email: btn_label = "MEMBER"
-        # Αν είναι MEMBER δεν κάνει τίποτα (toast), αλλιώς ανοίγει dialog
         if st.session_state.user_email:
              if st.button(btn_label, key="nav_user"): st.toast(f"Logged in: {st.session_state.user_email}")
         else:
-             # Κουμπί που ανοίγει το Dialog (server action, αλλά γρήγορο)
              if st.button(btn_label, key="nav_user"): auth_dialog()
 
-    # C. TOOLBOX DRAWER (Render ONLY if open to save resources)
+    # DRAWER
     if st.session_state.menu_open:
         st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
         st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
         col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
         with col_t1:
-            # Φορτώνουμε την εικόνα εδώ για να μην βαραίνει το main loop
             logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
             st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
         with col_t2:
@@ -537,7 +483,7 @@ def render_navbar_and_toolbox():
 # ΚΑΛΕΣΜΑ ΤΟΥ NAVBAR
 render_navbar_and_toolbox()
 
-# --- 7. MAIN CONTENT (HEAVY LOAD) ---
+# --- 7. MAIN CONTENT ---
 c1, c2 = st.columns([1.5, 0.3])
 logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
 
@@ -566,16 +512,16 @@ else:
     date_str = get_greek_date()
     st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
 
-    tabs = st.tabs(["ΓΕΝΙΚΑ", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
+    tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
+    # USING PRE-CALCULATED COLUMNS FOR SPEED
     with tabs[0]: render_newsroom(df, is_home=True, q=q)
-    with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
-    with tabs[2]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'LAW' in x)])
-    with tabs[3]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'FEK' in x)])
+    with tabs[1]: render_newsroom(df[df['is_eng']] if 'is_eng' in df.columns else df)
+    with tabs[2]: render_newsroom(df[df['is_law']] if 'is_law' in df.columns else df)
+    with tabs[3]: render_newsroom(df[df['is_fek']] if 'is_fek' in df.columns else df)
     with tabs[4]: 
         st.markdown("### 📊 Στατιστικά")
         col1, col2 = st.columns(2)
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
-
