@@ -433,7 +433,7 @@ def render_hero(dataset):
 def render_newsroom(dataset, is_home=False, q=None):
     if dataset.empty: st.info("No data found."); return
     start = 0
-    LIMIT = 30
+    LIMIT = 900 # INCREASED TO 900
     
     if is_home and not q:
         feat = dataset.head(13)
@@ -557,8 +557,9 @@ else:
     date_str = get_greek_date()
     st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
 
-    tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
+    tabs = st.tabs(["ΓΕΝΙΚΑ", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
+    # RENDER TABS WITH CSS GRID (MUCH FASTER)
     with tabs[0]: render_newsroom(df, is_home=True, q=q)
     with tabs[1]: render_newsroom(df[df['is_eng']] if 'is_eng' in df.columns else df)
     with tabs[2]: render_newsroom(df[df['is_law']] if 'is_law' in df.columns else df)
