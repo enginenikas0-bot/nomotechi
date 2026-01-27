@@ -11,6 +11,7 @@ import streamlit.components.v1 as components
 import hashlib
 from oauth2client.service_account import ServiceAccountCredentials
 from PIL import Image
+import yfinance as yf  # <-- NEW: ΓΙΑ ΤΙΣ ΜΕΤΟΧΕΣ
 
 # --- 1. SETUP ---
 
@@ -100,7 +101,7 @@ st.markdown("""
         height: 35px; 
         background-color: #000; 
         border-bottom: 1px solid #222; 
-        z-index: 999999 !important; /* ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ - ΠΟΛΥ ΨΗΛΑ */
+        z-index: 999999 !important; 
         display: flex; 
         align-items: center; 
         overflow: hidden; 
@@ -165,6 +166,50 @@ st.markdown("""
 
 # --- 3. HELPERS & LOGIC ---
 
+# --- NEW: LIVE MARKET DATA ---
+@st.cache_data(ttl=900) # Ανανέωση κάθε 15 λεπτά για να μην κολλάει
+def get_market_data():
+    symbols = {
+        "ATHEX": "^ATG", 
+        "S&P500": "^GSPC", 
+        "EUR/USD": "EURUSD=X", 
+        "BTC": "BTC-USD", 
+        "GOLD": "GC=F"
+    }
+    results = []
+    try:
+        # Κατεβάζουμε όλα μαζί για ταχύτητα
+        tickers = yf.Tickers(" ".join(symbols.values()))
+        for name, sym in symbols.items():
+            try:
+                hist = tickers.tickers[sym].history(period="2d")
+                if len(hist) >= 1:
+                    close = hist['Close'].iloc[-1]
+                    # Υπολογισμός αλλαγής (αν υπάρχει προηγούμενη μέρα)
+                    if len(hist) > 1:
+                        prev = hist['Close'].iloc[-2]
+                        change = ((close - prev) / prev) * 100
+                    else:
+                        change = 0.0
+                    
+                    # Formatting
+                    if name == "EUR/USD": fmt_val = f"{close:.4f}"
+                    elif name == "BTC": fmt_val = f"{close/1000:.1f}K"
+                    else: fmt_val = f"{close:,.0f}"
+                    
+                    direction = "u" if change >= 0 else "d"
+                    pct = f"{abs(change):.1f}%"
+                    results.append((name, fmt_val, pct, direction))
+                else:
+                    results.append((name, "-", "0%", "u"))
+            except:
+                results.append((name, "-", "0%", "u"))
+    except:
+        # Fallback αν αποτύχει τελείως το Yahoo
+        return [("ATHEX","-","0%","u"), ("S&P500","-","0%","u"), ("EUR/USD","-","0%","u"), ("BTC","-","0%","u")]
+    
+    return results
+
 def get_image_as_base64(file_path):
     try:
         with open(file_path, "rb") as f: data = f.read()
@@ -198,14 +243,12 @@ def analyze_content_deep(row):
     content_body = str(row.get('content', '')).upper() 
     tags = set()
     
-    # 1. ΛΕΞΕΙΣ "ΔΙΑΣΩΣΗΣ"
     keep_keywords = [
         "γηπεδο", "stadium", "βοτανικος", "νεα τουμπα", "αναπλαση",
         "κατασκευη", "εργο", "αδεια", "πολεοδομ", "διαγωνισμος",
         "μελετη", "εγκαταστασεις", "υποδομες"
     ]
     
-    # 2. ΦΙΛΤΡΑ ΑΘΛΗΤΙΚΩΝ / "ΣΚΟΥΠΙΔΙΩΝ"
     trash_keywords = [
         "super league", "κυπελλο", "τζοκερ", "λοττο", "lotto", "joker", "survivor", "masterchef", "eurovision", "ζωδια", "gossip",
         "ολυμπιακος", "παναθηναϊκος", "παναθηναικος", "αεκ", "παοκ", "αρης", "aris", "paok", "aek", "olympiacos", "olympiakos", "panathinaikos",
@@ -217,7 +260,6 @@ def analyze_content_deep(row):
     if not is_relevant_eng:
          if any(kw in title for kw in trash_keywords): return ["TRASH"]
     
-    # ΚΑΤΗΓΟΡΙΟΠΟΙΗΣΗ
     if "ENG" in ai_category or "ENG" in content_body: tags.add("ENG")
     if "LAW" in ai_category or "LAW" in content_body: tags.add("LAW")
     if "FEK" in ai_category or "FEK" in content_body: tags.add("FEK")
@@ -231,22 +273,33 @@ def analyze_content_deep(row):
     if not tags: tags.add("GENERAL")
     return list(tags)
 
+@st.cache_resource
+def init_google_connection():
+    try:
+        if os.path.exists("service_account.json"):
+             creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        elif "GCP_CREDENTIALS" in os.environ:
+             creds_json = os.environ["GCP_CREDENTIALS"]
+             creds_dict = json.loads(creds_json)
+             if "\\n" in creds_dict["private_key"]:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        elif "gcp_service_account" in st.secrets:
+             creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        else:
+             return None
+        return gspread.authorize(creds)
+    except Exception as e:
+        print(f"Connection Error: {e}")
+        return None
+
 @st.cache_data(ttl=600)
 def load_data():
     try:
-        if os.path.exists("service_account.json"):
-            gc = gspread.service_account(filename="service_account.json")
-        elif "GCP_CREDENTIALS" in os.environ:
-            creds_json = os.environ["GCP_CREDENTIALS"]
-            creds_dict = json.loads(creds_json)
-            if "\\n" in creds_dict["private_key"]:
-                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-            gc = gspread.authorize(creds)
-        elif "gcp_service_account" in st.secrets:
-            gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        else:
+        gc = init_google_connection()
+        if not gc:
+            st.error("❌ Δεν βρέθηκε αρχείο σύνδεσης.")
             return pd.DataFrame()
 
         raw = gc.open("laws_database").sheet1.get_all_records()
@@ -266,12 +319,10 @@ def load_data():
         
         final_df = pd.DataFrame(clean_records)
         
-        # --- 30 DAYS RULE: KEEP ONLY NEWS FROM LAST 30 DAYS ---
         if not final_df.empty and 'datetime_obj' in final_df.columns:
             cutoff_date = datetime.now() - timedelta(days=30)
             final_df = final_df[final_df['datetime_obj'] > cutoff_date]
             
-            # Recalculate masks after filtering
             final_df['is_eng'] = final_df['smart_tags'].apply(lambda x: 'ENG' in x)
             final_df['is_law'] = final_df['smart_tags'].apply(lambda x: 'LAW' in x)
             final_df['is_fek'] = final_df['smart_tags'].apply(lambda x: 'FEK' in x)
@@ -279,13 +330,13 @@ def load_data():
         return final_df
 
     except Exception as e:
+        print(f"DB Error: {e}")
         return pd.DataFrame()
 
 def get_img(row):
     i = str(row.get('image_url', '')).strip()
     if not i.startswith('http'):
         tags = row.get('smart_tags', [])
-        # --- SPEED OPTIMIZATION: SMALLER IMAGES (w=400, q=60) ---
         if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=60&w=400"
         if "LAW" in tags: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=60&w=400"
         return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=60&w=400"
@@ -323,24 +374,9 @@ def toggle_menu_callback():
 def hash_pass(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
-def get_gc_auth():
-    if os.path.exists("service_account.json"):
-         return gspread.service_account(filename="service_account.json")
-    elif "GCP_CREDENTIALS" in os.environ:
-         creds_json = os.environ["GCP_CREDENTIALS"]
-         creds_dict = json.loads(creds_json)
-         if "\\n" in creds_dict["private_key"]:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-         return gspread.authorize(creds)
-    elif "gcp_service_account" in st.secrets:
-         return gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-    return None
-
 def register_subscriber(email, password):
     try:
-        gc = get_gc_auth()
+        gc = init_google_connection()
         if not gc: return "ERROR"
         sh = gc.open("laws_database").worksheet("subscribers")
         existing = sh.col_values(1)
@@ -351,7 +387,7 @@ def register_subscriber(email, password):
 
 def login_subscriber(email, password):
     try:
-        gc = get_gc_auth()
+        gc = init_google_connection()
         if not gc: return False
         sh = gc.open("laws_database").worksheet("subscribers")
         cell = sh.find(email)
@@ -440,13 +476,17 @@ def render_newsroom(dataset, is_home=False, q=None):
 # --- 6. NAVIGATION FRAGMENT ---
 @st.fragment
 def render_navbar_and_toolbox():
-    # MARKET TICKER
+    # LIVE MARKET DATA FETCH
+    data = get_market_data()
+    
     items = ""
-    data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
     for n,v,c,d in data:
         col = "m-green" if d=="u" else "m-red"
         arr = "▲" if d=="u" else "▼"
-        items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
+        # Αν είναι 'u', βάζουμε '+' μπροστά, αλλιώς '-' (το έχει ήδη το c)
+        sign = "+" if d=="u" and "%" in c else ""
+        items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{sign}{c}</span></div>'
+        
     st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
     # BUTTONS
