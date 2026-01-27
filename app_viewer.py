@@ -35,46 +35,46 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (FIX: Z-INDEX HIERARCHY FOR POP-UP) ---
-st.markdown(f"""
+# --- 2. CSS & STYLING (FIXED: REMOVED 'f' STRING TO PREVENT Z-INDEX ERROR) ---
+st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
     
-    .stApp, html, body, [class*="css"] {{ background-color: #000000 !important; font-family: 'Inter', sans-serif !important; color: #e0e0e0 !important; }}
+    .stApp, html, body, [class*="css"] { background-color: #000000 !important; font-family: 'Inter', sans-serif !important; color: #e0e0e0 !important; }
     
     /* HIDE LOADING INDICATORS */
-    div[data-testid="stStatusWidget"] {{ visibility: hidden !important; }}
+    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
     
-    section[data-testid="stSidebar"] {{ display: none !important; }}
-    [data-testid="collapsedControl"] {{ display: none !important; }}
-    header[data-testid="stHeader"] {{ display: none !important; }}
-    [data-testid="stToolbar"] {{ display: none !important; }}
+    section[data-testid="stSidebar"] { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    header[data-testid="stHeader"] { display: none !important; }
+    [data-testid="stToolbar"] { display: none !important; }
     
     /* === 1. MODAL (POP-UP) - THE KING (HIGHEST Z-INDEX) === */
     div[data-testid="stModal"], div[role="dialog"], .stDialog {
         z-index: 2147483647 !important; /* Maximum possible value */
     }
-    div[role="dialog"] {{ 
+    div[role="dialog"] { 
         background-color: #0b0d0f !important; 
         border: 1px solid #333 !important;
         box-shadow: 0 0 50px rgba(0,0,0,0.9) !important;
-    }}
+    }
     /* Backdrop styling to cover weird glitches */
-    div[data-testid="stModalBackground"] {{
+    div[data-testid="stModalBackground"] {
         backdrop-filter: blur(5px);
         background-color: rgba(0, 0, 0, 0.7);
         z-index: 2147483646 !important;
-    }}
-    div[role="dialog"] input {{ background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }}
+    }
+    div[role="dialog"] input { background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }
 
     /* === 2. NAVBAR - THE VICE KING (HIGH Z-INDEX BUT LOWER THAN MODAL) === */
-    [data-testid="stHorizontalBlock"] {{ 
+    [data-testid="stHorizontalBlock"] { 
         z-index: 9999 !important; /* High enough to be clickable, low enough to be behind modal */
         position: relative; 
-    }}
+    }
     
     /* Buttons in Navbar */
-    button {{
+    button {
         border: 1px solid #000 !important; 
         background-color: #000 !important;
         color: white !important;
@@ -82,48 +82,48 @@ st.markdown(f"""
         z-index: 10000 !important; /* Slightly higher than navbar container */
         position: relative;
         touch-action: manipulation;
-    }}
-    button:active {{ transform: scale(0.90); background-color: #222 !important; }}
+    }
+    button:active { transform: scale(0.90); background-color: #222 !important; }
 
     /* DRAWER STYLING */
-    .menu-panel {{ background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }}
-    .drawer-brand {{ display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
-    .drawer-brand img {{ width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; }}
-    .drawer-brand-title {{ font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }}
-    .drawer-brand-sub {{ font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }}
-    .drawer-mid {{ height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
-    .toolbox-title {{ font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }}
-    .toolbox-section-header {{ color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }}
+    .menu-panel { background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }
+    .drawer-brand { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }
+    .drawer-brand img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; }
+    .drawer-brand-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }
+    .drawer-brand-sub { font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }
+    .drawer-mid { height: 100%; border-right: 1px solid #222; padding-right: 20px; }
+    .toolbox-title { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
+    .toolbox-section-header { color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }
 
     /* MARKET TICKER */
-    .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9000; display: flex; align-items: center; overflow: hidden; }}
-    .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }}
-    @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
-    .m-item {{ font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }}
-    .m-val {{ color: #fff; font-weight: 700; }}
-    .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
+    .market-row { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9000; display: flex; align-items: center; overflow: hidden; }
+    .scrolling-wrapper { display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }
+    @keyframes scroll-text { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
+    .m-item { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }
+    .m-val { color: #fff; font-weight: 700; }
+    .m-green { color: #4ade80; } .m-red { color: #f87171; }
 
     /* SIGN IN BUTTON (DESKTOP) */
-    [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
+    [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button { 
         width: auto !important; min-width: 120px !important; white-space: nowrap !important;
         display: flex !important; align-items: center !important; justify-content: center !important; 
         padding: 0 10px !important; font-size: 0.8rem !important;
-    }}
+    }
 
     /* === MOBILE FIXES === */
-    @media only screen and (max-width: 768px) {{
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{ 
+    @media only screen and (max-width: 768px) {
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button { 
             width: 45px !important; height: 45px !important; font-size: 1.8rem !important; border: 1px solid #000 !important; 
-        }}
+        }
         
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ 
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) { 
             position: fixed !important; top: 8px !important; right: 8px !important; 
             z-index: 10001 !important; /* Higher than navbar, lower than modal */
             width: auto !important; display: block !important; 
-        }}
+        }
         
         /* SIGN IN BUTTON (MOBILE) - TINY & CLEAN */
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button { 
             background-color: #000 !important; 
             border: 1px solid #000 !important; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.8) !important; 
@@ -135,54 +135,54 @@ st.markdown(f"""
             font-size: 11px !important; 
             font-weight: 600 !important;
             line-height: 40px !important;
-        }}
+        }
         
-        .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
-        .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
-        .mobile-push-down {{ margin-top: 40px !important; display: block; }}
-        .news-card div:last-child, .side-meta-date {{ font-size: 0.55rem !important; letter-spacing: -0.5px !important; line-height: 1 !important; margin-top: 2px !important; white-space: nowrap !important; }}
-        .brand-title {{ font-size: 2rem !important; }}
-        .header-area {{ flex-direction: row !important; align-items: center !important; gap: 10px !important; }}
-        .logo-img-custom {{ width: 60px !important; }}
-        .hero-container {{ height: 300px !important; }}
-        .hero-text-box a {{ font-size: 1.2rem !important; }}
-        .menu-panel {{ padding: 10px !important; }}
-        .drawer-brand, .drawer-mid {{ border-right: none !important; border-bottom: 1px solid #222 !important; padding-bottom: 15px !important; margin-bottom: 15px !important; padding-right: 0 !important; }}
-        .m-item {{ font-size: 0.6rem !important; padding: 0 10px !important; }}
-        button[data-baseweb="tab"] {{ padding: 10px 5px !important; font-size: 0.7rem !important; }}
-    }}
+        .date-container { margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }
+        .date-text { padding-top: 0 !important; font-size: 0.75rem !important; }
+        .mobile-push-down { margin-top: 40px !important; display: block; }
+        .news-card div:last-child, .side-meta-date { font-size: 0.55rem !important; letter-spacing: -0.5px !important; line-height: 1 !important; margin-top: 2px !important; white-space: nowrap !important; }
+        .brand-title { font-size: 2rem !important; }
+        .header-area { flex-direction: row !important; align-items: center !important; gap: 10px !important; }
+        .logo-img-custom { width: 60px !important; }
+        .hero-container { height: 300px !important; }
+        .hero-text-box a { font-size: 1.2rem !important; }
+        .menu-panel { padding: 10px !important; }
+        .drawer-brand, .drawer-mid { border-right: none !important; border-bottom: 1px solid #222 !important; padding-bottom: 15px !important; margin-bottom: 15px !important; padding-right: 0 !important; }
+        .m-item { font-size: 0.6rem !important; padding: 0 10px !important; }
+        button[data-baseweb="tab"] { padding: 10px 5px !important; font-size: 0.7rem !important; }
+    }
 
     /* Content UI */
-    .block-container {{ padding-top: 4px !important; }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) {{ align-items: center !important; gap: 0 !important; padding-top: 10px !important; }}
-    .header-area {{ margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }}
-    .logo-img-custom {{ width: 90px; height: auto; border-radius: 0px; }}
-    .brand-title {{ font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }}
-    .brand-sub {{ font-family: 'Inter', sans-serif !important; font-size: 0.8rem; color: #888; margin-top: 5px; letter-spacing: 0.5px; }}
-    div[data-baseweb="input"] {{ background-color: #000 !important; border: 1px solid #333 !important; border-radius: 2px !important; height: 35px !important; max-width: 250px !important; }}
-    .stTextInput input {{ color: #ccc !important; font-size: 0.85rem !important; }}
-    .news-card {{ margin-bottom: 25px; padding: 10px; }}
-    .news-card:hover {{ background: #050505; }}
-    .news-thumb {{ width: 100%; height: 160px; object-fit: cover; margin-bottom: 8px; filter: grayscale(20%); border: 1px solid #222; }}
-    .news-title {{ font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; text-decoration: none; display: block;}}
-    .bg-eng {{ background: #ea580c; color: white; }} .bg-law {{ background: #1e3a8a; color: white; }} .bg-fek {{ background: #e9e9d0; color: #000; }} .bg-sos {{ background: #dc2626; color: white; }} .bg-gen {{ background: #9ca3af; color: black; }}
-    .meta-tag {{ font-family: 'Roboto Mono', monospace; font-size: 0.6rem; padding: 2px 6px; font-weight: 700; margin-right: 5px; display: inline-block; border-radius: 2px; }}
-    button[data-baseweb="tab"] {{ font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: #777; }}
-    button[data-baseweb="tab"][aria-selected="true"] {{ color: #fff; border-bottom-color: #fff; }}
-    .hero-container {{ position: relative; height: 450px; background: #000; border: 1px solid #222; }}
-    .hero-img {{ width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }}
-    .hero-text-box {{ position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; background: linear-gradient(to top, black, transparent); }}
-    .slider-dots {{ position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }}
-    .dot {{ width: 6px; height: 6px; background-color: #444; border-radius: 50%; display: inline-block; }}
-    .dot.active {{ background-color: #fff; }}
-    .side-row {{ height: 112px; border-bottom: 1px solid #222; display: flex; align-items: flex-start; gap: 12px; padding: 10px 5px; }}
-    .side-thumb {{ width: 80px; height: 70px; object-fit: cover; filter: grayscale(20%); border: 1px solid #222; flex-shrink: 0; }}
-    .side-content {{ display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%; }}
-    a.side-link-title {{ font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; font-weight: 600 !important; color: #e0e0e0 !important; text-decoration: none !important; line-height: 1.3 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }}
-    a.side-link-title:hover {{ color: #fff !important; }}
-    .side-meta-date {{ font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }}
-    .date-container {{ display: flex; justify-content: flex-end; align-items: center; margin-bottom: -38px; position: relative; z-index: 1; padding-right: 5px; height: 40px; }}
-    .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
+    .block-container { padding-top: 4px !important; }
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) { align-items: center !important; gap: 0 !important; padding-top: 10px !important; }
+    .header-area { margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+    .logo-img-custom { width: 90px; height: auto; border-radius: 0px; }
+    .brand-title { font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }
+    .brand-sub { font-family: 'Inter', sans-serif !important; font-size: 0.8rem; color: #888; margin-top: 5px; letter-spacing: 0.5px; }
+    div[data-baseweb="input"] { background-color: #000 !important; border: 1px solid #333 !important; border-radius: 2px !important; height: 35px !important; max-width: 250px !important; }
+    .stTextInput input { color: #ccc !important; font-size: 0.85rem !important; }
+    .news-card { margin-bottom: 25px; padding: 10px; }
+    .news-card:hover { background: #050505; }
+    .news-thumb { width: 100%; height: 160px; object-fit: cover; margin-bottom: 8px; filter: grayscale(20%); border: 1px solid #222; }
+    .news-title { font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; text-decoration: none; display: block;}
+    .bg-eng { background: #ea580c; color: white; } .bg-law { background: #1e3a8a; color: white; } .bg-fek { background: #e9e9d0; color: #000; } .bg-sos { background: #dc2626; color: white; } .bg-gen { background: #9ca3af; color: black; }
+    .meta-tag { font-family: 'Roboto Mono', monospace; font-size: 0.6rem; padding: 2px 6px; font-weight: 700; margin-right: 5px; display: inline-block; border-radius: 2px; }
+    button[data-baseweb="tab"] { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: #777; }
+    button[data-baseweb="tab"][aria-selected="true"] { color: #fff; border-bottom-color: #fff; }
+    .hero-container { position: relative; height: 450px; background: #000; border: 1px solid #222; }
+    .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+    .hero-text-box { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; background: linear-gradient(to top, black, transparent); }
+    .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
+    .dot { width: 6px; height: 6px; background-color: #444; border-radius: 50%; display: inline-block; }
+    .dot.active { background-color: #fff; }
+    .side-row { height: 112px; border-bottom: 1px solid #222; display: flex; align-items: flex-start; gap: 12px; padding: 10px 5px; }
+    .side-thumb { width: 80px; height: 70px; object-fit: cover; filter: grayscale(20%); border: 1px solid #222; flex-shrink: 0; }
+    .side-content { display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%; }
+    a.side-link-title { font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; font-weight: 600 !important; color: #e0e0e0 !important; text-decoration: none !important; line-height: 1.3 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
+    a.side-link-title:hover { color: #fff !important; }
+    .side-meta-date { font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }
+    .date-container { display: flex; justify-content: flex-end; align-items: center; margin-bottom: -38px; position: relative; z-index: 1; padding-right: 5px; height: 40px; }
+    .date-text { font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -532,5 +532,3 @@ else:
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
-
-
