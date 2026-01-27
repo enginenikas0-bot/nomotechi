@@ -15,7 +15,10 @@ from PIL import Image
 # --- 1. SETUP ---
 
 try:
-    if os.path.exists("PAGEICON.JPG"):
+    # ΑΛΛΑΓΗ: Ψάχνει πρώτα για .png (που υποστηρίζει διαφάνεια)
+    if os.path.exists("PAGEICON.png"):
+        app_icon = Image.open("PAGEICON.png")
+    elif os.path.exists("PAGEICON.JPG"):
         app_icon = Image.open("PAGEICON.JPG")
     elif os.path.exists("LOGONOMO.JPG"):
         app_icon = Image.open("LOGONOMO.JPG")
@@ -511,3 +514,4 @@ else:
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
+
