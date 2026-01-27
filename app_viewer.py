@@ -15,7 +15,6 @@ from PIL import Image
 # --- 1. SETUP ---
 
 try:
-    # ΑΛΛΑΓΗ: Ψάχνει πρώτα για .png (που υποστηρίζει διαφάνεια)
     if os.path.exists("PAGEICON.png"):
         app_icon = Image.open("PAGEICON.png")
     elif os.path.exists("PAGEICON.JPG"):
@@ -36,14 +35,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (FONT SIZE REDUCTION FOR SIGN IN) ---
+# --- 2. CSS & STYLING (SURGICAL FIXES) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
     
     .stApp, html, body, [class*="css"] {{ background-color: #000000 !important; font-family: 'Inter', sans-serif !important; color: #e0e0e0 !important; }}
     
-    /* ΚΡΥΨΙΜΟ ΤΟΥ 'RUNNING MAN' (Speed Hack) */
+    /* HIDE LOADING INDICATORS FOR CLEAN LOOK */
     div[data-testid="stStatusWidget"] {{ visibility: hidden !important; }}
     
     section[data-testid="stSidebar"] {{ display: none !important; }}
@@ -74,48 +73,52 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* BUTTONS GENERAL */
+    /* BUTTONS GENERAL - FAST REACTION */
     button {{
         border: 1px solid #000 !important; 
         background-color: #000 !important;
         color: white !important;
-        transition: background-color 0.1s ease !important;
+        transition: transform 0.05s ease-in-out !important; /* Instant feel */
         z-index: 9999999 !important;
         position: relative;
+        touch-action: manipulation; /* Removes tap delay on mobile */
     }}
-    button:active {{ background-color: #222 !important; border-color: #333 !important; }}
+    button:active {{ transform: scale(0.90); background-color: #222 !important; }}
     [data-testid="stHorizontalBlock"] {{ z-index: 9999999 !important; position: relative; }}
 
     /* SIGN IN BUTTON (DESKTOP) */
     [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
-        width: auto !important; 
-        min-width: 120px !important; 
-        white-space: nowrap !important;
-        display: flex !important; 
-        align-items: center !important; 
-        justify-content: center !important; 
-        padding: 0 10px !important;
-        font-size: 0.75rem !important; /* Μίκρυνση γραμματοσειράς */
-        letter-spacing: 0.5px !important;
+        width: auto !important; min-width: 120px !important; white-space: nowrap !important;
+        display: flex !important; align-items: center !important; justify-content: center !important; 
+        padding: 0 10px !important; font-size: 0.8rem !important;
     }}
 
-    /* MOBILE FIXES */
+    /* === MOBILE FIXES (THE SURGERY) === */
     @media only screen and (max-width: 768px) {{
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{ width: 50px !important; height: 50px !important; font-size: 2rem !important; border: 1px solid #000 !important; }}
+        /* Hamburger */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{ 
+            width: 45px !important; height: 45px !important; font-size: 1.8rem !important; border: 1px solid #000 !important; 
+        }}
         
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999999 !important; width: auto !important; display: block !important; }}
+        /* Fixed Position Container for Sign In */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ 
+            position: fixed !important; top: 8px !important; right: 8px !important; z-index: 9999999 !important; 
+            width: auto !important; display: block !important; 
+        }}
         
-        /* SIGN IN BUTTON (MOBILE) - SMALLER TEXT */
+        /* SIGN IN BUTTON (MOBILE) - TINY FONT, SINGLE LINE FORCED */
         [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
             background-color: #000 !important; 
             border: 1px solid #000 !important; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important; 
-            height: 45px !important; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.8) !important; 
+            height: 40px !important; 
             width: auto !important; 
-            min-width: 100px !important; 
-            white-space: nowrap !important; 
-            padding: 0 5px !important; 
-            font-size: 0.75rem !important; /* Μικρή γραμματοσειρά για να χωράει */
+            min-width: 80px !important; /* Smaller min-width */
+            white-space: nowrap !important; /* NO WRAPPING */
+            padding: 0 5px !important; /* Minimal padding */
+            font-size: 11px !important; /* SMALL FONT */
+            font-weight: 600 !important;
+            line-height: 40px !important;
         }}
         
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
@@ -232,7 +235,6 @@ def load_data():
         elif "gcp_service_account" in st.secrets:
             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         else:
-            st.error("❌ Δεν βρέθηκε αρχείο σύνδεσης.")
             return pd.DataFrame()
 
         raw = gc.open("laws_database").sheet1.get_all_records()
@@ -253,7 +255,6 @@ def load_data():
         return pd.DataFrame(clean_records)
 
     except Exception as e:
-        print(f"❌ DB ERROR: {e}") 
         return pd.DataFrame()
 
 def get_img(row):
@@ -514,4 +515,3 @@ else:
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
-
