@@ -15,7 +15,9 @@ from PIL import Image
 # --- 1. SETUP ---
 
 try:
-    if os.path.exists("LOGONOMO.JPG"):
+    if os.path.exists("PAGEICON.JPG"):
+        app_icon = Image.open("PAGEICON.JPG")
+    elif os.path.exists("LOGONOMO.JPG"):
         app_icon = Image.open("LOGONOMO.JPG")
     elif os.path.exists("logo.jpg"):
         app_icon = Image.open("logo.jpg")
@@ -31,7 +33,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (ΔΙΟΡΘΩΣΕΙΣ: BLACK BORDERS, BUTTON WIDTH, Z-INDEX) ---
+# --- 2. CSS & STYLING (UNIVERSAL SINGLE LINE FIX) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -47,70 +49,94 @@ st.markdown(f"""
     div[role="dialog"] input {{ background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }}
     
     /* DRAWER STYLING */
-    .menu-panel {{ background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }}
-
-    /* ----------------------------------------------------------- */
-    /* ΚΟΥΜΠΙΑ: ΜΑΥΡΑ ΠΕΡΙΓΡΑΜΜΑΤΑ & CLICK FIX (Z-INDEX)          */
-    /* ----------------------------------------------------------- */
+    .menu-panel {{
+        background-color: #050505;
+        border-bottom: 1px solid #333;
+        padding: 25px;
+        margin-top: 5px;
+        margin-bottom: 25px;
+        border-radius: 0px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.9);
+    }}
+    .drawer-brand {{ display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
     
-    /* Γενικό στυλ κουμπιών (Navbar & Toolbox) */
+    /* LOGO DRAWER (NO BORDER) */
+    .drawer-brand img {{ 
+        width: 70px; 
+        height: 70px; 
+        border-radius: 50%; 
+        object-fit: cover; 
+        margin-bottom: 15px; 
+    }}
+
+    .drawer-brand-title {{ font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-align: center; }}
+    .drawer-brand-sub {{ font-family: 'Inter', sans-serif; font-size: 0.65rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }}
+    .drawer-mid {{ height: 100%; border-right: 1px solid #222; padding-right: 20px; }}
+    .toolbox-title {{ font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }}
+    .toolbox-section-header {{ color: #888; font-size: 0.75rem; font-weight: 600; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Inter', sans-serif; }}
+
+    /* MARKET TICKER */
+    .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden; }}
+    .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }}
+    @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
+    .m-item {{ font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }}
+    .m-val {{ color: #fff; font-weight: 700; }}
+    .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
+
+    /* BUTTONS GENERAL (BLACK BORDER EVERYWHERE) */
     button {{
-        border: 1px solid #000 !important; /* ΜΑΥΡΟ ΠΕΡΙΓΡΑΜΜΑ */
+        border: 1px solid #000 !important; 
         background-color: #000 !important;
         color: white !important;
         transition: transform 0.1s ease !important;
-        z-index: 9999999 !important; /* Να είναι πάνω από όλα για να πατιούνται */
-        position: relative;
-    }}
-    
-    /* Όταν πατάς το κουμπί */
-    button:active {{
-        transform: scale(0.95);
-        border-color: #333 !important; /* Λίγο γκρι όταν πατιέται για εφέ */
-    }}
-
-    /* Navbar Container - Να μην καλύπτει τα κουμπιά */
-    [data-testid="stHorizontalBlock"] {{
         z-index: 9999999 !important;
         position: relative;
     }}
+    button:active {{ transform: scale(0.95); border-color: #333 !important; }}
+    [data-testid="stHorizontalBlock"] {{ z-index: 9999999 !important; position: relative; }}
 
-    /* ----------------------------------------------------------- */
-    /* SIGN IN BUTTON FIX (ΜΙΑ ΣΕΙΡΑ)                             */
-    /* ----------------------------------------------------------- */
-    
-    /* Desktop Sign In Button */
-    [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{
-        min-width: 140px !important; /* Πιο πλατύ για να χωράει */
-        white-space: nowrap !important; /* Να μην σπάει σε 2 γραμμές */
+    /* ============================================================ */
+    /* SIGN IN BUTTON FIX (UNIVERSAL - DESKTOP & MOBILE)           */
+    /* ============================================================ */
+    /* Αυτό πιάνει το κουμπί Sign in/up ΠΑΝΤΟΥ και το αναγκάζει σε μία γραμμή */
+    [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
+        width: auto !important;           /* Να ανοίγει όσο χρειάζεται */
+        min-width: 120px !important;      /* Ελάχιστο πλάτος για ασφάλεια */
+        white-space: nowrap !important;   /* ΑΠΑΓΟΡΕΥΕΤΑΙ Η ΑΛΛΑΓΗ ΓΡΑΜΜΗΣ */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 15px !important;
+        box-shadow: none !important;
     }}
 
-    /* ----------------------------------------------------------- */
-    /* MOBILE FIXES                                               */
-    /* ----------------------------------------------------------- */
+    /* ============================================================ */
+    /* MOBILE SPECIFIC ADJUSTMENTS                                  */
+    /* ============================================================ */
     @media only screen and (max-width: 768px) {{
-        /* Hamburger Button (Left) */
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{
-            width: 50px !important; height: 50px !important; font-size: 2rem !important;
-            border: 1px solid #000 !important; /* Μαύρο και εδώ */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{ width: 50px !important; height: 50px !important; font-size: 2rem !important; border: 1px solid #000 !important; }}
+        
+        /* Θέση στο κινητό (πάνω δεξιά σταθερά) */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{ 
+            position: fixed !important; 
+            top: 10px !important; 
+            right: 10px !important; 
+            z-index: 9999999 !important; 
+            width: auto !important; 
+            display: block !important; 
         }}
         
-        /* Sign In Button (Right) - Fixed Position */
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{
-            position: fixed !important; top: 10px !important; right: 10px !important; 
-            z-index: 9999999 !important;
-            width: auto !important; display: block !important;
-        }}
-        
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{
+        /* Στυλ στο κινητό (Extra touch friendly) */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{ 
             background-color: #000 !important; 
-            border: 1px solid #000 !important; /* Μαύρο περίγραμμα */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
-            width: 120px !important; /* Πλατύ για να χωράει το κείμενο */
-            height: 45px !important;
-            white-space: nowrap !important;
+            border: 1px solid #000 !important; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important; 
+            height: 45px !important; 
+            /* Κρατάμε και εδώ το nowrap για σιγουριά */
+            white-space: nowrap !important; 
+            font-size: 0.85rem !important;    
         }}
-
+        
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
         .mobile-push-down {{ margin-top: 40px !important; display: block; }}
@@ -127,26 +153,36 @@ st.markdown(f"""
     }}
 
     /* OTHER UI */
+    .block-container {{ padding-top: 4px !important; }}
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) {{ align-items: center !important; gap: 0 !important; padding-top: 10px !important; }}
+    .header-area {{ margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }}
+    .logo-img-custom {{ width: 90px; height: auto; border-radius: 0px; }}
+    .brand-title {{ font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }}
+    .brand-sub {{ font-family: 'Inter', sans-serif !important; font-size: 0.8rem; color: #888; margin-top: 5px; letter-spacing: 0.5px; }}
+    div[data-baseweb="input"] {{ background-color: #000 !important; border: 1px solid #333 !important; border-radius: 2px !important; height: 35px !important; max-width: 250px !important; }}
+    .stTextInput input {{ color: #ccc !important; font-size: 0.85rem !important; }}
     .news-card {{ margin-bottom: 25px; padding: 10px; }}
     .news-card:hover {{ background: #050505; }}
     .news-thumb {{ width: 100%; height: 160px; object-fit: cover; margin-bottom: 8px; filter: grayscale(20%); border: 1px solid #222; }}
     .news-title {{ font-size: 1rem; font-weight: 700; color: white; line-height: 1.4; text-decoration: none; display: block;}}
     .bg-eng {{ background: #ea580c; color: white; }} .bg-law {{ background: #1e3a8a; color: white; }} .bg-fek {{ background: #e9e9d0; color: #000; }} .bg-sos {{ background: #dc2626; color: white; }} .bg-gen {{ background: #9ca3af; color: black; }}
     .meta-tag {{ font-family: 'Roboto Mono', monospace; font-size: 0.6rem; padding: 2px 6px; font-weight: 700; margin-right: 5px; display: inline-block; border-radius: 2px; }}
+    button[data-baseweb="tab"] {{ font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: #777; }}
+    button[data-baseweb="tab"][aria-selected="true"] {{ color: #fff; border-bottom-color: #fff; }}
     .hero-container {{ position: relative; height: 450px; background: #000; border: 1px solid #222; }}
     .hero-img {{ width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }}
     .hero-text-box {{ position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; background: linear-gradient(to top, black, transparent); }}
+    .slider-dots {{ position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }}
+    .dot {{ width: 6px; height: 6px; background-color: #444; border-radius: 50%; display: inline-block; }}
+    .dot.active {{ background-color: #fff; }}
     .side-row {{ height: 112px; border-bottom: 1px solid #222; display: flex; align-items: flex-start; gap: 12px; padding: 10px 5px; }}
     .side-thumb {{ width: 80px; height: 70px; object-fit: cover; filter: grayscale(20%); border: 1px solid #222; flex-shrink: 0; }}
     .side-content {{ display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%; }}
-    a.side-link-title {{ font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; font-weight: 600 !important; color: #e0e0e0 !important; text-decoration: none !important; line-height: 1.3 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
-    
-    .market-row {{ position: fixed; top: 0; left: 0; width: 100%; height: 35px; background-color: #000; border-bottom: 1px solid #222; z-index: 9999; display: flex; align-items: center; overflow: hidden; }}
-    .scrolling-wrapper {{ display: flex; white-space: nowrap; animation: scroll-text 90s linear infinite; }}
-    @keyframes scroll-text {{ 0% {{ transform: translateX(0%); }} 100% {{ transform: translateX(-50%); }} }}
-    .m-item {{ font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #ccc; padding: 0 20px; display: inline-flex; align-items: center; gap: 5px; }}
-    .m-val {{ color: #fff; font-weight: 700; }}
-    .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
+    a.side-link-title {{ font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; font-weight: 600 !important; color: #e0e0e0 !important; text-decoration: none !important; line-height: 1.3 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }}
+    a.side-link-title:hover {{ color: #fff !important; }}
+    .side-meta-date {{ font-family: 'Roboto Mono', monospace; font-size: 0.65rem; color: #888; margin-top: auto; letter-spacing: -0.5px; }}
+    .date-container {{ display: flex; justify-content: flex-end; align-items: center; margin-bottom: -38px; position: relative; z-index: 1; padding-right: 5px; height: 40px; }}
+    .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 </style>
 """, unsafe_allow_html=True)
 
