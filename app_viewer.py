@@ -35,7 +35,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (FIXED: REMOVED 'f' STRING TO PREVENT Z-INDEX ERROR) ---
+# --- 2. CSS & STYLING (MERGED: LATEST FIXES + BUTTONS FROM FILE) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -59,7 +59,6 @@ st.markdown("""
         border: 1px solid #333 !important;
         box-shadow: 0 0 50px rgba(0,0,0,0.9) !important;
     }
-    /* Backdrop styling to cover weird glitches */
     div[data-testid="stModalBackground"] {
         backdrop-filter: blur(5px);
         background-color: rgba(0, 0, 0, 0.7);
@@ -67,23 +66,54 @@ st.markdown("""
     }
     div[role="dialog"] input { background-color: #111 !important; color: #fff !important; border: 1px solid #333 !important; }
 
-    /* === 2. NAVBAR - THE VICE KING (HIGH Z-INDEX BUT LOWER THAN MODAL) === */
-    [data-testid="stHorizontalBlock"] { 
-        z-index: 9999 !important; /* High enough to be clickable, low enough to be behind modal */
+    /* === 2. NAVBAR CONTAINER === */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) { 
+        z-index: 9999 !important; /* Below modal, above content */
         position: relative; 
+        align-items: center !important; gap: 0 !important; padding-top: 10px !important;
+    }
+
+    /* === 3. BUTTONS (STYLES FROM UPLOADED FILE) === */
+    /* General Button Reset in Navbar */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button {
+        background-color: #000000 !important;
+        border: 1px solid #000000 !important; color: white !important;
+        border-radius: 4px !important; padding: 0 !important; margin: 0 !important; 
+        transition: none !important; box-shadow: none !important;
+        z-index: 10000 !important;
+    }
+
+    /* HAMBURGER (From File) */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {
+        width: 40px !important;
+        height: 38px !important; font-size: 1.6rem !important;
+        line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
     }
     
-    /* Buttons in Navbar */
-    button {
-        border: 1px solid #000 !important; 
-        background-color: #000 !important;
-        color: white !important;
-        transition: transform 0.05s ease-in-out !important;
-        z-index: 10000 !important; /* Slightly higher than navbar container */
-        position: relative;
-        touch-action: manipulation;
+    /* USER BUTTON DESKTOP (From File) */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {
+        height: 28px !important;
+        min-height: 28px !important; width: 100% !important; min-width: 100px !important;
+        margin-top: 5px !important; background-image: none !important; display: flex !important;
+        align-items: center !important; justify-content: center !important;
     }
-    button:active { transform: scale(0.90); background-color: #222 !important; }
+    /* Inner text styling to ensure single line */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button p {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 10px !important; font-weight: 300 !important;
+        letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
+        white-space: nowrap !important;
+        line-height: 1 !important; margin: 0 !important; padding: 0 !important;
+    }
+
+    /* NO HOVER EFFECTS (From File) */
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover { background-color: #000000 !important;
+    border-color: #000000 !important; color: #ffffff !important; }
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover * { color: #ffffff !important; }
+    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:active, [data-testid="stHorizontalBlock"]:nth-of-type(1) button:focus {
+        background-color: #000000 !important;
+        border-color: #000000 !important; color: #ffffff !important; box-shadow: none !important;
+    }
 
     /* DRAWER STYLING */
     .menu-panel { background-color: #050505; border-bottom: 1px solid #333; padding: 25px; margin-top: 5px; margin-bottom: 25px; }
@@ -103,44 +133,39 @@ st.markdown("""
     .m-val { color: #fff; font-weight: 700; }
     .m-green { color: #4ade80; } .m-red { color: #f87171; }
 
-    /* SIGN IN BUTTON (DESKTOP) */
-    [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button { 
-        width: auto !important; min-width: 120px !important; white-space: nowrap !important;
-        display: flex !important; align-items: center !important; justify-content: center !important; 
-        padding: 0 10px !important; font-size: 0.8rem !important;
-    }
-
-    /* === MOBILE FIXES === */
+    /* === MOBILE FIXES (FROM FILE + Z-INDEX ADJUSTMENT) === */
     @media only screen and (max-width: 768px) {
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button { 
-            width: 45px !important; height: 45px !important; font-size: 1.8rem !important; border: 1px solid #000 !important; 
+        /* BUTTON POSITIONING */
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {
+            position: fixed !important;
+            top: 10px !important;
+            right: 15px !important;
+            z-index: 999999 !important; /* High but below Modal */
+            width: auto !important;
+            min-width: auto !important;
+            background: transparent !important;
+            height: auto !important;
+            display: block !important;
         }
         
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) { 
-            position: fixed !important; top: 8px !important; right: 8px !important; 
-            z-index: 10001 !important; /* Higher than navbar, lower than modal */
-            width: auto !important; display: block !important; 
+        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {
+            background-color: #000 !important;
+            border: 1px solid #333 !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
+            margin: 0 !important;
+            width: 100px !important;
         }
-        
-        /* SIGN IN BUTTON (MOBILE) - TINY & CLEAN */
-        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button { 
-            background-color: #000 !important; 
-            border: 1px solid #000 !important; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.8) !important; 
-            height: 40px !important; 
-            width: auto !important; 
-            min-width: 80px !important; 
-            white-space: nowrap !important; 
-            padding: 0 5px !important; 
-            font-size: 11px !important; 
-            font-weight: 600 !important;
-            line-height: 40px !important;
-        }
-        
+
         .date-container { margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }
         .date-text { padding-top: 0 !important; font-size: 0.75rem !important; }
         .mobile-push-down { margin-top: 40px !important; display: block; }
-        .news-card div:last-child, .side-meta-date { font-size: 0.55rem !important; letter-spacing: -0.5px !important; line-height: 1 !important; margin-top: 2px !important; white-space: nowrap !important; }
+        .news-card div:last-child, .side-meta-date { 
+            font-size: 0.55rem !important;
+            letter-spacing: -0.5px !important;
+            line-height: 1 !important;
+            margin-top: 2px !important;
+            white-space: nowrap !important;
+        }
         .brand-title { font-size: 2rem !important; }
         .header-area { flex-direction: row !important; align-items: center !important; gap: 10px !important; }
         .logo-img-custom { width: 60px !important; }
@@ -154,7 +179,6 @@ st.markdown("""
 
     /* Content UI */
     .block-container { padding-top: 4px !important; }
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) { align-items: center !important; gap: 0 !important; padding-top: 10px !important; }
     .header-area { margin-top: 15px; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
     .logo-img-custom { width: 90px; height: auto; border-radius: 0px; }
     .brand-title { font-family: 'Playfair Display', serif !important; font-size: 3rem; line-height: 1; color: white; letter-spacing: 1px; }
@@ -277,7 +301,6 @@ def get_img(row):
     i = str(row.get('image_url', '')).strip()
     if not i.startswith('http'):
         tags = row.get('smart_tags', [])
-        # ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ ΣΩΣΤΟ INDENTATION
         if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600"
         if "LAW" in tags: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=600"
         return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600"
@@ -520,7 +543,7 @@ else:
     date_str = get_greek_date()
     st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
 
-    tabs = st.tabs(["LATEST", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
+    tabs = st.tabs(["ΓΕΝΙΚΑ", "ΜΗΧΑΝΙΚΟΙ&ΑΚΙΝΗΤΑ", "ΝΟΜΙΚΑ&ΔΙΚΑΙΟΣΥΝΗ", "ΦΕΚ/ΝΟΜΟΘΕΣΙΑ", "ANALYTICS"])
 
     with tabs[0]: render_newsroom(df, is_home=True, q=q)
     with tabs[1]: render_newsroom(df[df['smart_tags'].apply(lambda x: 'ENG' in x)])
