@@ -8,3 +8,4 @@ requests
 oauth2client
 schedule
 google-auth
+yfinance
