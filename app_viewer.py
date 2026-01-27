@@ -277,9 +277,10 @@ def get_img(row):
     i = str(row.get('image_url', '')).strip()
     if not i.startswith('http'):
         tags = row.get('smart_tags', [])
-        if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600"    # ΑΛΛΑΞΑ ΤΟ w=1200 ΣΕ w=600
-if "LAW" in tags: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=600"
-return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600"
+        # ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ ΣΩΣΤΟ INDENTATION
+        if "ENG" in tags: return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600"
+        if "LAW" in tags: return "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=600"
+        return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600"
     return i
 
 def get_formatted_time(dt):
@@ -531,4 +532,5 @@ else:
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
+
 
