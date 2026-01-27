@@ -10,16 +10,28 @@ import json
 import streamlit.components.v1 as components
 import hashlib
 from oauth2client.service_account import ServiceAccountCredentials
+from PIL import Image
 
 # --- 1. SETUP ---
+
+try:
+    if os.path.exists("LOGONOMO.JPG"):
+        app_icon = Image.open("LOGONOMO.JPG")
+    elif os.path.exists("logo.jpg"):
+        app_icon = Image.open("logo.jpg")
+    else:
+        app_icon = "⚖️"
+except:
+    app_icon = "⚖️"
+
 st.set_page_config(
-    page_title="NomoTech | Enterprise",
-    page_icon="⚖️",
+    page_title="NomoTech | Ειδήσεις Μηχανικών & Νομικά Νέα",
+    page_icon=app_icon,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS & STYLING (v4.0.1) ---
+# --- 2. CSS & STYLING (ΒΕΛΤΙΩΜΕΝΟ ΓΙΑ MOBILE) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
@@ -84,28 +96,19 @@ st.markdown(f"""
     .m-val {{ color: #fff; font-weight: 700; }}
     .m-green {{ color: #4ade80; }} .m-red {{ color: #f87171; }}
 
-    /* 6. CUSTOM BUTTONS */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button {{
-        background-color: #000000 !important; border: 1px solid #000000 !important; color: white !important;
-        border-radius: 4px !important; padding: 0 !important; margin: 0 !important; transition: none !important; box-shadow: none !important;
+    /* 6. CUSTOM BUTTONS (Updated for Mobile Touch) */
+    [data-testid="stHorizontalBlock"] button {{
+        background-color: #000000 !important; 
+        border: 1px solid #333 !important; 
+        color: white !important;
+        border-radius: 4px !important; 
+        transition: transform 0.1s ease !important;
+        z-index: 10000 !important;
     }}
-    /* HAMBURGER */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(1) button {{
-        width: 40px !important; height: 38px !important; font-size: 1.6rem !important;
-        line-height: 1 !important; color: #ffffff !important; display: flex; align-items: center; justify-content: center;
+    [data-testid="stHorizontalBlock"] button:active {{
+        transform: scale(0.95);
+        border-color: #4ade80 !important;
     }}
-    /* USER BUTTON */
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-        height: 28px !important; min-height: 28px !important; width: 100% !important; min-width: 100px !important;
-        margin-top: 5px !important; background-image: none !important; display: flex !important;
-        align-items: center !important; justify-content: center !important;
-    }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button p {{
-        font-family: 'Inter', sans-serif !important; font-size: 10px !important; font-weight: 300 !important;
-        letter-spacing: 1px !important; color: #ffffff !important; text-transform: none !important;
-        white-space: nowrap !important; line-height: 1 !important; margin: 0 !important; padding: 0 !important;
-    }}
-    [data-testid="stHorizontalBlock"]:nth-of-type(1) button:hover {{ background-color: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }}
 
     /* 7. GENERAL UI */
     .block-container {{ padding-top: 4px !important; }}
@@ -143,16 +146,36 @@ st.markdown(f"""
     .date-container {{ display: flex; justify-content: flex-end; align-items: center; margin-bottom: -38px; position: relative; z-index: 1; padding-right: 5px; height: 40px; }}
     .date-text {{ font-family: 'Inter', sans-serif; font-size: 11px; color: #888; font-weight: 400; letter-spacing: 0.5px; padding-top: 12px; }}
 
-    /* MOBILE FIXES */
+    /* MOBILE FIXES - BIGGER TOUCH TARGETS */
     @media only screen and (max-width: 768px) {{
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) {{
-            position: fixed !important; top: 10px !important; right: 15px !important; z-index: 999999 !important;
-            width: auto !important; min-width: auto !important; background: transparent !important; height: auto !important; display: block !important;
+        /* Μεγαλώνουμε τα κουμπιά να πατιούνται εύκολα */
+        [data-testid="stHorizontalBlock"] button {{
+            min-height: 48px !important;
+            min-width: 48px !important;
+            margin: 5px 0 !important;
         }}
-        [data-testid="stHorizontalBlock"]:nth-of-type(1) [data-testid="column"]:nth-of-type(3) button {{
-            background-color: #000 !important; border: 1px solid #333 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
-            margin: 0 !important; width: 100px !important;
+        
+        /* Hamburger Button (Left) */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) {{
+            z-index: 999999 !important;
         }}
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(1) button {{
+            width: 50px !important; height: 48px !important; font-size: 2rem !important;
+        }}
+        
+        /* Member Button (Right) - Fixed Position Fix */
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) {{
+            position: fixed !important; top: 12px !important; right: 15px !important; 
+            z-index: 999999 !important;
+            width: auto !important; min-width: auto !important; background: transparent !important; 
+            height: auto !important; display: block !important;
+        }}
+        [data-testid="stHorizontalBlock"] [data-testid="column"]:nth-of-type(3) button {{
+            background-color: #000 !important; border: 1px solid #333 !important; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8) !important;
+            width: 110px !important; height: 40px !important;
+        }}
+
         .date-container {{ margin-bottom: 10px !important; justify-content: flex-start !important; padding-left: 5px !important; height: auto !important; }}
         .date-text {{ padding-top: 0 !important; font-size: 0.75rem !important; }}
         .mobile-push-down {{ margin-top: 40px !important; display: block; }}
@@ -222,11 +245,8 @@ def analyze_content_deep(row):
 @st.cache_data(ttl=600)
 def load_data():
     try:
-        # 1. Προσπάθεια ανάγνωσης από το Secret File του Render (ΑΥΤΟ ΕΙΝΑΙ Η ΛΥΣΗ ΓΙΑ ΤΟ PADDING)
         if os.path.exists("service_account.json"):
             gc = gspread.service_account(filename="service_account.json")
-            
-        # 2. Fallback: Προσπάθεια σύνδεσης μέσω Render Env (για ασφάλεια)
         elif "GCP_CREDENTIALS" in os.environ:
             creds_json = os.environ["GCP_CREDENTIALS"]
             creds_dict = json.loads(creds_json)
@@ -235,24 +255,19 @@ def load_data():
             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
             gc = gspread.authorize(creds)
-            
-        # 3. Fallback για τοπική χρήση (Secrets)
         elif "gcp_service_account" in st.secrets:
             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
         else:
             st.error("❌ Δεν βρέθηκε αρχείο σύνδεσης.")
             return pd.DataFrame()
 
-        # Ανάγνωση δεδομένων
         raw = gc.open("laws_database").sheet1.get_all_records()
         df = pd.DataFrame(raw)
         
-        # Μετατροπή ημερομηνίας και ταξινόμηση
         if 'last_update' in df.columns:
             df['datetime_obj'] = pd.to_datetime(df['last_update'], errors='coerce')
             df = df.sort_values(by='datetime_obj', ascending=False)
         
-        # Smart Tags & Filtering
         records = df.to_dict('records')
         clean_records = []
         for r in records: 
@@ -298,12 +313,9 @@ def get_tags_html(row):
     if not html: html = '<span class="meta-tag bg-gen">GEN</span>'
     return html
 
-# --- 4. AUTHENTICATION (SUBSCRIBERS) ---
+# --- 4. AUTHENTICATION ---
 if 'menu_open' not in st.session_state: st.session_state.menu_open = False
 if 'user_email' not in st.session_state: st.session_state.user_email = None
-
-def toggle_menu():
-    st.session_state.menu_open = not st.session_state.menu_open
 
 def hash_pass(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
@@ -421,61 +433,72 @@ def render_newsroom(dataset, is_home=False, q=None):
                 with col:
                     st.markdown(f"""<div class="news-card"><a href="{r['link']}" target="_blank" style="text-decoration:none;"><img src="{get_img(r)}" class="news-thumb"><div style="margin-bottom:5px;">{tags_html}</div><span class="news-title">{r['title']}</span><div style="font-size:0.7rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:5px;">{str(r['source']).upper()[:10]} • {get_formatted_time(r['datetime_obj'])}</div></a></div>""", unsafe_allow_html=True)
 
-# --- 6. MAIN EXECUTION ---
-# A. MARKET TICKER
-items = ""
-data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
-for n,v,c,d in data:
-    col = "m-green" if d=="u" else "m-red"
-    arr = "▲" if d=="u" else "▼"
-    items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
-st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
+# --- 6. NAVIGATION & TOOLBOX FRAGMENT (INSTANT ACTION) ---
+# Αυτό είναι το "μαγικό" κομμάτι που τρέχει χωρίς να φορτώνει τη βάση
+@st.fragment
+def render_navbar_and_toolbox():
+    # A. MARKET TICKER
+    items = ""
+    data = [("ATHEX","1,425","+0.4%","u"),("S&P500","5,110","+0.2%","u"),("EUR/USD","1.08","+0.0%","u"),("BTC","68K","+2.5%","u"),("GOLD","2,155","+0.9%","u")]
+    for n,v,c,d in data:
+        col = "m-green" if d=="u" else "m-red"
+        arr = "▲" if d=="u" else "▼"
+        items += f'<div class="m-item"><span>{n}</span><span class="m-val">{v}</span><span class="{col}">{arr}{c}</span></div>'
+    st.markdown(f"""<div class="market-row"><div class="scrolling-wrapper">{items*10}</div></div>""", unsafe_allow_html=True)
 
-# B. NAV BAR
-c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
-with c_nav_l:
-    if st.button("☰", key="nav_menu"): toggle_menu()
-with c_nav_r:
-    btn_label = "Sign in/up"
-    if st.session_state.user_email: btn_label = "MEMBER"
-    if st.button(btn_label, key="nav_user", help="Account"):
-        if not st.session_state.user_email: auth_dialog()
-        else: st.toast(f"Logged in as: {st.session_state.user_email}")
+    # B. BUTTONS (Top Nav)
+    c_nav_l, c_nav_m, c_nav_r = st.columns([1, 20, 1.7])
+    with c_nav_l:
+        # Toggle Menu Button
+        if st.button("☰", key="nav_menu"): 
+            st.session_state.menu_open = not st.session_state.menu_open
+            st.rerun() # Τοπικό rerun (γρήγορο)
+            
+    with c_nav_r:
+        # Auth Button
+        btn_label = "Sign in/up"
+        if st.session_state.user_email: btn_label = "MEMBER"
+        if st.button(btn_label, key="nav_user"):
+            if not st.session_state.user_email: auth_dialog()
+            else: st.toast(f"Logged in as: {st.session_state.user_email}")
 
-# C. THE TOOLBOX DRAWER (EDW EINAI O KODIKOS ANANEWSHS)
-if st.session_state.menu_open:
-    st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
-    col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
-    with col_t1:
-        logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
-        st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
-    with col_t2:
-        st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
-        st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
-        components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
+    # C. TOOLBOX DRAWER
+    if st.session_state.menu_open:
+        st.markdown('<div class="menu-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="toolbox-title">ΕΡΓΑΛΕΙΟΘΗΚΗ</div>', unsafe_allow_html=True)
+        col_t1, col_t2, col_t3 = st.columns([1, 2, 1.5], gap="large") 
+        with col_t1:
+            logo_src = f"data:image/jpeg;base64,{nikas_logo_b64}" if nikas_logo_b64 else "https://via.placeholder.com/80?text=NiKAS"
+            st.markdown(f"""<div class="drawer-brand"><img src="{logo_src}"><div class="drawer-brand-title">NiKAS Technical</div><div class="drawer-brand-sub">ENGINEERING & CONSULTING</div></div>""", unsafe_allow_html=True)
+        with col_t2:
+            st.markdown('<div class="drawer-mid">', unsafe_allow_html=True)
+            st.markdown('<div class="toolbox-section-header">LIVE ΚΑΙΡΟΣ</div>', unsafe_allow_html=True)
+            components.iframe("https://www.meteoblue.com/en/weather/widget/three/athens_greece_264371?geoloc=fixed&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=dark", height=135)
+            st.markdown('</div>', unsafe_allow_html=True)
+        with col_t3:
+            st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
+            tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
+            with tool_tabs[0]:
+                amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
+                if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
+            with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
+            with tool_tabs[2]:
+                # ΕΔΩ ΕΙΝΑΙ Η ΠΡΟΣΤΑΣΙΑ ΓΙΑ ΤΗΝ ΑΝΑΝΕΩΣΗ
+                admin_pass = st.text_input("Admin Password", type="password", key="sys_pass")
+                if st.button("ΑΝΑΝΕΩΣΗ SITE", use_container_width=True):
+                    correct = os.environ.get("admin_password") or st.secrets.get("admin_password")
+                    if admin_pass == correct:
+                        st.cache_data.clear()
+                        st.rerun() # Full Rerun αν γίνει ανανέωση
+                    else:
+                        st.error("Λάθος κωδικός!")
+                st.caption("Status: Online v9.2")
         st.markdown('</div>', unsafe_allow_html=True)
-    with col_t3:
-        st.markdown('<div class="toolbox-section-header">ΕΡΓΑΛΕΙΑ</div>', unsafe_allow_html=True)
-        tool_tabs = st.tabs(["ΦΠΑ", "CALENDAR", "SYSTEM"])
-        with tool_tabs[0]:
-            amount = st.number_input("Ποσό (€)", min_value=0.0, step=10.0, key="calc_vat")
-            if amount > 0: st.caption(f"Τελικό με ΦΠΑ 24%: **{amount * 1.24:.2f}€**")
-        with tool_tabs[1]: st.date_input("Επιλογή", label_visibility="collapsed", key="cal_tool")
-        with tool_tabs[2]:
-            # ΕΔΩ ΕΙΝΑΙ Η ΠΡΟΣΤΑΣΙΑ ΓΙΑ ΤΗΝ ΑΝΑΝΕΩΣΗ
-            admin_pass = st.text_input("Admin Password", type="password", key="sys_pass")
-            if st.button("ΑΝΑΝΕΩΣΗ SITE", use_container_width=True):
-                correct = os.environ.get("admin_password") or st.secrets.get("admin_password")
-                if admin_pass == correct:
-                    st.cache_data.clear()
-                    st.rerun()
-                else:
-                    st.error("Λάθος κωδικός!")
-            st.caption("Status: Online v9.2")
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# D. MAIN CONTENT (ΕΛΕΥΘΕΡΟ)
+# ΚΑΛΕΣΜΑ ΤΟΥ NAVBAR (Τρέχει πρώτο και γρήγορα)
+render_navbar_and_toolbox()
+
+# --- 7. MAIN CONTENT (HEAVY LOAD) ---
 c1, c2 = st.columns([1.5, 0.3])
 logo_html = f'<img src="data:image/jpeg;base64,{main_logo_b64}" class="logo-img-custom">' if main_logo_b64 else '<div style="color:red;">LOGO</div>'
 
@@ -485,6 +508,7 @@ with c1:
 with c2:
     st.markdown("<div style='height:45px'></div>", unsafe_allow_html=True)
     q = st.text_input("Search", placeholder="Search", label_visibility="collapsed")
+    st.caption("Η NomoTech παρέχει άμεση ενημέρωση για Μηχανικούς, Νομικά Νέα, ΦΕΚ, αποφάσεις Δικαστηρίων και Τεχνική Νομοθεσία στην Ελλάδα.")
 
 if st.session_state.user_email:
     st.markdown(f"""<div style="background-color:#0f1113; border:1px solid #333; padding:10px; border-radius:4px; margin-bottom:20px; text-align:center;"><span style="color:#4ade80; font-weight:bold;">● SUBSCRIBER ACTIVE</span> <span style="color:#ccc; font-size:0.9rem;"> | Καλωσήρθατε, έχετε πρόσβαση σε προνομιακό περιεχόμενο.</span></div>""", unsafe_allow_html=True)
@@ -499,7 +523,7 @@ else:
 
     if not df.empty:
         txt = "   ///   ".join([f"{r['title']}" for i,r in df.head(10).iterrows()]) * 3
-        st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 60s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div style="width:100%; overflow:hidden; background:#080808; border-top:1px solid #333; border-bottom:1px solid #333; height:40px; display:flex; align-items:center; margin-bottom:25px;"><div style="white-space:nowrap; animation: scroll-text 90s linear infinite;"><span style="font-family:'Inter'; font-weight:500; color:#e0e0e0; font-size:0.9rem;">{txt}</span></div></div>""", unsafe_allow_html=True)
 
     date_str = get_greek_date()
     st.markdown(f'<div class="date-container"><span class="date-text">{date_str}</span></div>', unsafe_allow_html=True)
@@ -516,4 +540,3 @@ else:
         with col1: st.bar_chart(df['source'].value_counts())
         with col2:
             st.write(f"Total Articles: {len(df)}")
-
